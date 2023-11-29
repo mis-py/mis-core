@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "mis-project-api2"
+version = "0.2.0"
+description = "Management Information System Project API"
+authors = ["Jake Jameson <jake.jameson9983@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.104.1"
+uvicorn = {extras = ["standard"], version = "^0.23.2"}
+loguru = "^0.7.2"
+python-multipart = "^0.0.6"
+itsdangerous = "^2.1.2"
+tortoise-orm = {extras = ["asyncpg"], version = "^0.20.0"}
+yoyo-migrations = "^8.2.0"
+apscheduler = "^3.10.4"
+aio-pika = "^9.3.0"
+ujson = "^5.8.0"
+python-dotenv = "^1.0.0"
+pydantic-settings = "^2.0.3"
+python-jose = "^3.3.0"
+passlib = "^1.7.4"
+redis = "^5.0.1"
+dataclasses-json = "^0.6.1"
+psycopg2-binary = "^2.9.9"
+pymongo = {extras = ["srv"], version = "^4.6.0"}
+motor = "^3.3.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
