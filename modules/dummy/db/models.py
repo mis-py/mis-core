@@ -1,5 +1,5 @@
 from tortoise import Model, fields
-from core.db.mixins import RestrictedObjectMixin
+from core.db.restricted import RestrictedObjectMixin
 from tortoise.contrib.pydantic import pydantic_model_creator, pydantic_queryset_creator
 
 

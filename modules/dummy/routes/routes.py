@@ -6,10 +6,10 @@ from ..db import DummyModel, DummyModelSchema, DummyListModelSchema
 
 from .schemas import DummyResponse
 
-from core.db.schemas import UserModelShort
-from core.dependencies.settings import get_settings_proxy
+from core.schemas.common import UserModelShort
+from core.dependencies.variables import get_settings_proxy
 from services.modules.components import APIRoutes
-from services.variables.variables import SettingsProxy
+from services.variables.variables import VariableSet
 router = APIRouter()
 
 
@@ -27,7 +27,7 @@ async def create_new(new_string: str):
 @router.get('/get_dummy_data', response_model=DummyResponse)
 async def get_dummy_data(
         request: Request,
-        settings_proxy: SettingsProxy = Depends(get_settings_proxy)
+        settings_proxy: VariableSet = Depends(get_settings_proxy)
 ):
 
     schema = await DummyListModelSchema.from_queryset(DummyModel.all())

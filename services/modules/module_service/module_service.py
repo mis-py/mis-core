@@ -5,7 +5,7 @@ from .utils import apps_sort_by_dependency, import_module, unload_module
 from ..utils.BaseModule import BaseModule
 # from .exceptions import ModuleError
 # from core.db import App
-from core.db.crud import crud_app
+from core.crud import module
 from const import MODULES_DIR, MODULES_DIR_NAME
 
 # from modules.core.notifications.handlers import eventory_message_handler
@@ -90,7 +90,7 @@ class ModuleService:
     @classmethod
     async def init_module(cls, application, module: BaseModule):
 
-        app_model, is_created = await crud_app.get_or_create(name=module.name)
+        app_model, is_created = await module.get_or_create(name=module.name)
 
         module.model = app_model
 

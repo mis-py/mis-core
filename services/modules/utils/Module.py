@@ -8,7 +8,7 @@ import dataclasses
 from typing import Callable
 
 from pydantic_settings import BaseSettings
-from core.db.models import App
+from core.db.models import Module
 
 # from libs.eventory import Consumer
 from .BaseModule import BaseModule
@@ -16,13 +16,13 @@ from services.modules.component import Component
 
 from .module_dependency import ModuleDependency
 from services.modules.context import AppContext
-from services.variables.variables import SettingsManager
+from services.variables.variables import VariablesManager
 
 
 @dataclasses.dataclass
 class ModuleTemplate(BaseModule):
     # DB reference to app model
-    model: App = None
+    model: Module = None
     # List of module components
     pre_init_components: list[Component] = dataclasses.field(default_factory=list[Component])
     components: list[Component] = dataclasses.field(default_factory=list[Component])
@@ -65,7 +65,7 @@ class ModuleTemplate(BaseModule):
     async def get_context(self, user=None, team=None):
         return AppContext(
             module=self,
-            settings=await SettingsManager.make_settings_proxy(user=user, team=team, app=self.model)
+            settings=await VariablesManager.make_variable_set(user=user, team=team, app=self.model)
         )
 
 

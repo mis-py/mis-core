@@ -1,7 +1,7 @@
-from core.db.crud import access_group
+from core.crud import access_group
 
 from services.modules.utils import ModuleTemplate
-from services.modules.components import Settings, ModuleLogs, TortoiseModels, EventRoutingKeys
+from services.modules.components import Variables, ModuleLogs, TortoiseModels, EventRoutingKeys
 
 from .config import UserSettings, RoutingKeys, ModuleSettings
 from .routes import routes

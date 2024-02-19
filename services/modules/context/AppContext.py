@@ -7,14 +7,14 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from services.modules.utils import ModuleTemplate
-    from services.variables.variables_proxy import SettingsProxy
+    from services.variables.variable_set import VariableSet
 
 
 @dataclass
 class AppContext:
     """Context data for modules"""
     module: 'ModuleTemplate'
-    settings: 'SettingsProxy'
+    settings: 'VariableSet'
 
     @property
     def app_name(self):

@@ -3,10 +3,10 @@ import loguru
 from fastapi import Depends, Header
 from fastapi.security import SecurityScopes
 from starlette.requests import Request
-from core.db.crud import crud_user
 from core.exceptions import AuthError
 from config import CoreSettings
-from core.security.auth_backend import oauth2_scheme, user_form_token, check_user_perm
+from core.auth_backend import oauth2_scheme, user_form_token, check_user_perm
+from core import crud
 
 settings = CoreSettings()
 
@@ -18,7 +18,7 @@ async def get_current_user(
         token: str = Depends(oauth2_scheme)
 ):
     if not settings.AUTHORIZATION_ENABLED:
-        return await crud_user.get(id=1)
+        return await crud.user.get(id=1)
 
     if token:
         user = await user_form_token(token)

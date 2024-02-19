@@ -7,14 +7,12 @@ from apscheduler.jobstores.redis import RedisJobStore
 from apscheduler.job import Job
 from apscheduler.jobstores.base import ConflictingIdError
 from apscheduler.triggers.combining import OrTrigger
-from typing import Literal
-from apscheduler.triggers.base import BaseTrigger
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 
-from core.db import ScheduledJob
-from core.utils import validate_task_extra
-from core.db.crud import crud_jobs
+from core.db.models import ScheduledJob
+from core.utils.common import validate_task_extra
+from core.crud import job
 
 from .exceptions import NotFound, AlreadyExists, ValidationFailed
 from .utils import Task
@@ -27,6 +25,7 @@ from services.modules.context import AppContext
 from .config import SchedulerSettings
 
 settings = SchedulerSettings()
+
 
 # TODO need to implement task type for team
 class SchedulerService:
@@ -105,8 +104,8 @@ class SchedulerService:
         job = cls.get_job(job_id)
         job.pause()
 
-        job_instance = await crud_jobs.get_scheduled_job(job_id=job_id, user=user)
-        await crud_jobs.set_job_paused_status(job_instance)
+        job_instance = await job.get_scheduled_job(job_id=job_id, user=user)
+        await job.set_job_paused_status(job_instance)
         logger.info(f'[ModuleService]: Pause job {job.name}')
 
     @classmethod
@@ -114,8 +113,8 @@ class SchedulerService:
         job = cls.get_job(job_id)
         job.resume()
 
-        job_instance = await crud_jobs.get_scheduled_job(job_id=job_id, user=user)
-        await crud_jobs.set_job_running_status(job_instance)
+        job_instance = await job.get_scheduled_job(job_id=job_id, user=user)
+        await job.set_job_running_status(job_instance)
         logger.info(f'[ModuleService]: Resume job {job.name} (next run= {job.next_run_time})')
 
     @classmethod
@@ -197,7 +196,7 @@ class SchedulerService:
 
         # save it in database
         team = await user.team if task.type == 'team' else None
-        await crud_jobs.create_scheduled_job(job_id=job_id, user=user, team=team, extra=extra)
+        await job.create_scheduled_job(job_id=job_id, user=user, team=team, extra=extra)
         return job
 
     @classmethod
@@ -205,9 +204,9 @@ class SchedulerService:
         job = cls.get_job(job_id)
         job.remove()
 
-        saved_job = await crud_jobs.get_scheduled_job(job_id=job_id, user=user)
+        saved_job = await job.get_scheduled_job(job_id=job_id, user=user)
         if not saved_job:
             raise NotFound(f"[ModuleService] Saved job {job_id} not found")
 
-        await crud_jobs.delete_scheduled_job(job_id=job_id, user=user)
+        await job.delete_scheduled_job(job_id=job_id, user=user)
         logger.info(f'[ModuleService]: Removed job {job_id}!')

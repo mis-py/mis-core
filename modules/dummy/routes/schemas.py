@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from core.db.schemas import UserModelShort
+from core.schemas.common import UserModelShort
 
 
 class DummyResponse(BaseModel):

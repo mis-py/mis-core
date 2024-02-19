@@ -24,7 +24,7 @@ from loaders import (
 from loaders import (
     shutdown_modules, shutdown_eventory, shutdown_scheduler, shutdown_db, shutdown_redis, shutdown_mongo)
 from core.exceptions import MISError, ErrorSchema
-from core.utils import generate_unique_id
+from core.utils.common import generate_unique_id
 
 logging.getLogger('uvicorn').handlers.clear()
 
@@ -65,12 +65,14 @@ origins = [
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
-    await init_redis(application)
-    await init_mongo(application)
-    await init_eventory(application)
-    await init_scheduler(application)
+    await init_redis()
+    await init_mongo()
+    await init_eventory()
+    await init_scheduler()
 
-    # await self.init_settings()
+    # TODO why should we load settings to env??
+    # await init_settings()
+
     await pre_init_db()
     await pre_init_modules(app)
     await init_db(application)
@@ -126,8 +128,8 @@ app.add_middleware(
 async def analyze(request: Request, call_next):
     headers = dict(request.headers)
     if request.headers.get('user-agent') == 'testclient':
-        for l in json.dumps(headers, indent=4, ensure_ascii=False).splitlines():
-            logger.debug(l)
+        for line in json.dumps(headers, indent=4, ensure_ascii=False).splitlines():
+            logger.debug(line)
 
     return await call_next(request)
 
@@ -150,7 +152,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         data=exc.errors(),
     )
     return JSONResponse(
-        content={"error": error_schema.dict()},
+        content={"error": error_schema.model_dump()},
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
     )
 
@@ -166,7 +168,7 @@ async def mis_error_exception_handler(request: Request, exc: MISError):
         data=exc.data,
     )
     return JSONResponse(
-        content={"error": error_schema.dict()},
+        content={"error": error_schema.model_dump()},
         status_code=exc.status_code,
     )
 
@@ -178,4 +180,4 @@ async def root():
 
 # for debugging
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8080, log_level='error')
+    uvicorn.run(app, host="localhost", port=8000, log_level='error')

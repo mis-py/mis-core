@@ -14,14 +14,14 @@ from aiormq import DuplicateConsumerTag
 
 # from core.db import ScheduledJob
 # from core.utils import validate_task_extra
-from core.db.crud import crud_jobs
+from core.crud import job
 
 from config import CoreSettings
 from const import DEFAULT_ADMIN_USERNAME, PROD_ENVIRONMENT, ENVIRONMENT, LOGS_DIR, MODULES_DIR
 from core.dependencies.misc import inject_context, inject_user
-from core.db.crud import crud_user, crud_permission, crud_setting
-from core.utils import pydatic_model_to_dict, signature_to_dict
-from core.db.helpers import StatusTask
+from core.crud import user, permission, variables
+from core.utils.common import pydatic_model_to_dict, signature_to_dict
+from core.utils.database import StatusTask
 from services.modules.context import AppContext
 
 from services.scheduler.scheduler import SchedulerService
@@ -30,7 +30,7 @@ from services.eventory.eventory import Eventory
 from services.eventory.consumer import Consumer
 from services.eventory.utils import EventTemplate
 # from services.modules.context import AppContext
-from services.notifications.crud_notifications import routing_key
+from core.crud.notification import routing_key
 from services.tortoise_manager import TortoiseManager
 from services.modules.component import Component
 
@@ -165,7 +165,7 @@ class ScheduledTasks(Component):
         Restore running tasks that saved in DB
         :return:
         """
-        saved_scheduled_jobs = await crud_jobs.get_all_scheduled_jobs(self.module.name)
+        saved_scheduled_jobs = await job.get_all_scheduled_jobs(self.module.name)
         for saved_job in saved_scheduled_jobs:
             await SchedulerService.restore_job(saved_job, self.module, saved_job.status == StatusTask.RUNNING)
 
@@ -234,7 +234,7 @@ class APIRoutes(Component):
         self.application.setup()
 
 
-class Settings(Component):
+class Variables(Component):
     def __init__(self, module_settings, user_settings):
         self.module_settings = module_settings
         self.user_settings = user_settings
@@ -243,12 +243,12 @@ class Settings(Component):
         pass
 
     async def init(self, application, app_db_model, is_created: bool):
-        logger.debug(f'[Settings] Connecting settings for {self.module.name}')
+        logger.debug(f'[Variables] Connecting variables for {self.module.name}')
 
         await self.save_permissions(app_db_model)
-        await self.save_settings(app_db_model)
+        await self.save_variables(app_db_model)
 
-        logger.debug(f'[Settings] Settings connected for {self.module.name}')
+        logger.debug(f'[Variables] Variables connected for {self.module.name}')
 
     async def start(self):
         pass
@@ -260,26 +260,26 @@ class Settings(Component):
         pass
 
     async def save_permissions(self, app_model):
-        admin_user = await crud_user.get(username=DEFAULT_ADMIN_USERNAME)
+        admin_user = await user.get(username=DEFAULT_ADMIN_USERNAME)
 
         exist_permission_ids = []
         for scope, description in self.module.permissions.items():
-            perm = await crud_permission.update_or_create(
+            perm = await permission.update_or_create(
                 app=app_model,
                 name=description,
                 scope=scope,
             )
-            logger.debug(f'[Settings] Created permission {scope} for {self.module.name}')
+            logger.debug(f'[Variables] Created permission {scope} for {self.module.name}')
 
             await admin_user.add_permission(f'{app_model.name}:{scope}')
             exist_permission_ids.append(perm.id)
 
-        logger.debug(f'[Settings] Permissions saved for {self.module.name}')
+        logger.debug(f'[Variables] Permissions saved for {self.module.name}')
 
-        deleted_count = await crud_permission.remove_unused(app=app_model, exist_ids=exist_permission_ids)
-        logger.debug(f'[Settings] Deleted {deleted_count} unused permissions for {self.module.name}')
+        deleted_count = await permission.remove_unused(app=app_model, exist_ids=exist_permission_ids)
+        logger.debug(f'[Variables] Deleted {deleted_count} unused permissions for {self.module.name}')
 
-    async def save_settings(self, app_model):
+    async def save_variables(self, app_model):
         app_settings, user_settings = dict(self.module_settings), dict(self.user_settings)
         settings = itertools.chain(app_settings.items(), user_settings.items())
 
@@ -291,7 +291,7 @@ class Settings(Component):
         for key, default_value in settings:
             setting_type = typed_settings[key]["type"]
             is_global = key in app_settings
-            setting, is_created = await crud_setting.get_or_create(
+            setting, is_created = await variables.get_or_create(
                 app=app_model,
                 key=key,
                 default_value=default_value,
@@ -299,20 +299,20 @@ class Settings(Component):
                 type=setting_type
             )
             if not is_created:
-                await crud_setting.update_params(
-                    setting=setting,
+                await variables.update_params(
+                    variable=setting,
                     default_value=default_value,
                     is_global=is_global,
                     type=setting_type
                 )
 
             if ENVIRONMENT != PROD_ENVIRONMENT:
-                logger.debug(f'[Settings] Setting saved {key} ({default_value}) for {self.module.name}')
+                logger.debug(f'[Variables] Variable saved {key} ({default_value}) for {self.module.name}')
 
-        deleted_count = await crud_setting.remove_unused(
+        deleted_count = await variables.remove_unused(
             app=app_model, exist_keys=[*app_settings.keys(), *user_settings.keys()],
         )
-        logger.debug(f'[Settings] Deleted {deleted_count} unused settings for {self.module.name}')
+        logger.debug(f'[Variables] Deleted {deleted_count} unused variables for {self.module.name}')
 
 
 class ModuleLogs(Component):

@@ -1,7 +1,7 @@
 from fastapi import Request, Depends
 
 from config import CoreSettings
-from core.db import App, User
+from core.db.models import Module, User
 from core.dependencies import get_current_user
 from core.exceptions import NotFound
 
@@ -13,7 +13,7 @@ async def get_current_app(request: Request):
     path_array = path.split('/')
     path_array = list(filter(len, path_array))
     name = path_array[0]
-    app = await App.get_or_none(name=name)
+    app = await Module.get_or_none(name=name)
     if not app:
         raise NotFound('AppModel is not found in DB')
     return app
@@ -28,7 +28,7 @@ async def inject_user(
 
 async def inject_context(
         request: Request,
-        current_app: App = Depends(get_current_app)
+        current_app: Module = Depends(get_current_app)
 ):
     request.state.current_app = current_app
 

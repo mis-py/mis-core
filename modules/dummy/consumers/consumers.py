@@ -1,6 +1,6 @@
 from loguru import logger
 
-from services.notifications.utils import Message
+from core.utils.notification import Message
 from services.modules.components import EventManager
 from services.modules.context import AppContext
 from ..config import RoutingKeys

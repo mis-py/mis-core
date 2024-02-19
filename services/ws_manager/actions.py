@@ -4,11 +4,13 @@ from enum import Enum
 import loguru
 from loguru import logger
 
-from core.db import User
-from services.notifications.utils import IncomingProcessedMessage
-# from libs.redis import RedisService
-from core.utils import get_log_levels_above
-from .sockets import WSManager
+from core.db.models import User
+from core.utils.notification import IncomingProcessedMessage
+from core.utils.common import get_log_levels_above
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .sockets import WSManager
 
 
 class Action(str, Enum):
@@ -16,7 +18,7 @@ class Action(str, Enum):
     NOTIFICATIONS = 'notifications'
 
 
-async def send_log_to_subscribers(ws_manager: WSManager, message: str):
+async def send_log_to_subscribers(ws_manager: 'WSManager', message: str):
     action = Action.LOGS.value
     message_data = json.loads(message)
 
@@ -39,7 +41,7 @@ async def send_log_to_subscribers(ws_manager: WSManager, message: str):
 
 
 async def send_notification_to_subscribers(
-        ws_manager: WSManager,
+        ws_manager: 'WSManager',
         message: IncomingProcessedMessage,
         users: list[User],
         # redis: RedisService,

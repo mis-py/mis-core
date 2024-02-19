@@ -1,0 +1,28 @@
+MIGRATIONS
+https://ollycope.com/software/yoyo/latest/#postgresql-connections
+
+IMPORTS
+1. Standard library imports.
+2. Related third party imports.
+3. Local application/library specific imports.
+
+TYPE CHECKING
+import types vis type cheking
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from prog.ui.menus import MainMenu
+
+def funct(self, master: 'MainMenu', **kwargs):
+
+TODOS
+TODO which services or modules will use websockets? properly introduce it via WS manager
+TODO introduce mongodb to dummy  https://www.mongodb.com/developer/languages/python/python-quickstart-fastapi/
+TODO introduce websockets to dummy  https://fastapi.tiangolo.com/advanced/websockets/#handling-disconnections-and-multiple-clients
+TODO introduce redis to dummy  https://github.com/redis/redis-py
+TODO introduce or verify proper logging to dummy  https://github.com/Delgan/loguru
+TODO finish rename settings to variables
+TODO implement clickhouse  https://clickhouse.com/docs/en/intro
+TODO rework or verify restricted_objects logic  https://stackoverflow.com/questions/11891606/row-level-permissions-in-django
+TODO scopes.py replace hardcode strings with class
