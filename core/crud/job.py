@@ -1,5 +1,4 @@
 from core.db.models import ScheduledJob, User, Team, Module
-from core.utils.database import StatusTask
 from core.crud.base import CRUDBase
 
 
@@ -34,20 +33,20 @@ class CRUDJobs(CRUDBase):
             app=app,
             job_id=job_id,
             name=task_name,
-            status=StatusTask.PAUSED,
+            status=ScheduledJob.StatusTask.PAUSED,
             extra_data=extra,
         )
         return job
 
     async def set_job_paused_status(self, job: ScheduledJob) -> ScheduledJob:
         # TODO fix task can be None
-        job.status = StatusTask.PAUSED.value
+        job.status = ScheduledJob.StatusTask.PAUSED.value
         await job.save()
         return job
 
     async def set_job_running_status(self, job: ScheduledJob) -> ScheduledJob:
         # TODO fix task can be None
-        job.status = StatusTask.RUNNING.value
+        job.status = ScheduledJob.StatusTask.RUNNING.value
         await job.save()
         return job
 
@@ -68,7 +67,7 @@ class CRUDJobs(CRUDBase):
         jobs_dict = {job.job_id: job for job in jobs}
         return jobs_dict
 
-    async def get_scheduled_jobs_ids(self, status_enum: StatusTask) -> list[ScheduledJob]:
+    async def get_scheduled_jobs_ids(self, status_enum: ScheduledJob.StatusTask) -> list[ScheduledJob]:
         """
         Returns all jobs job_id with specified StatusTask
         :param status_enum:
@@ -85,7 +84,7 @@ class CRUDJobs(CRUDBase):
         """"""
         tasks_for_update = []
         async for task in self.model.filter(app__name=app_name):
-            task.status = StatusTask.PAUSED.value
+            task.status = ScheduledJob.StatusTask.PAUSED.value
             tasks_for_update.append(task)
 
         if tasks_for_update:

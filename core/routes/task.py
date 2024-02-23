@@ -18,7 +18,7 @@ async def get_all_tasks(task_id: str = None):
     Return all available tasks
     """
     res = list()
-    for task_name, task in SchedulerService.get_tasks():
+    for task_name, task in SchedulerService.get_tasks().items():
 
         if task_id and task_name != task_id:
             continue
@@ -29,7 +29,7 @@ async def get_all_tasks(task_id: str = None):
             TaskSchema(
                 id=task_name,
                 name=task.name,
-                module=task.module.name,
+                # module=task.module.name,
                 type=task.type,
                 extra_typed=task.extra_typed or None,
                 trigger=format_trigger(task.trigger),

@@ -28,7 +28,7 @@ class JobAdd(BaseModel):
 
 class TaskSchema(BaseModel):
     id: str
-    module: str
+    # module: str
     name: str
     type: Literal["user", "team"]
     extra_typed: Optional[dict]

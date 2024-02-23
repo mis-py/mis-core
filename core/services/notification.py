@@ -2,8 +2,8 @@ from tortoise.queryset import QuerySet
 
 from core.db.models import RoutingKey, User
 from core.crud import user
-from core.utils.notification import Recipient
 from core.crud.notification import subscription
+from core.utils.notification.recipient import Recipient
 
 
 async def subscribe_routing_key(user: User, routing_key: RoutingKey) -> None:

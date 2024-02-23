@@ -49,7 +49,7 @@ module = ModuleTemplate(
         routes,
         # just create plain component, all work will be in init() method
         # we declare that module has models in module.db package
-        Settings(app_settings, user_settings),
+        Variables(app_settings, user_settings),
         ModuleLogs(),
         EventRoutingKeys(routing_keys),
     ],

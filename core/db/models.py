@@ -1,8 +1,8 @@
+from enum import Enum
 
 from tortoise import fields
 from tortoise.models import Model
 from .mixin import UserPermissionsMixin, TeamPermissionsMixin, Permission
-from core.utils.database import StatusTask
 
 
 class User(Model, UserPermissionsMixin):
@@ -52,7 +52,7 @@ class Variable(Model):
 
 
 class VariableValue(Model):
-    setting = fields.ForeignKeyField('models.Setting', related_name='values')
+    setting = fields.ForeignKeyField('models.Variable', related_name='values')
 
     user = fields.ForeignKeyField('models.User', null=True, related_name='settings')
     team = fields.ForeignKeyField('models.Team', null=True, related_name='settings')
@@ -84,6 +84,10 @@ class Module(Model):
 
 class ScheduledJob(Model):
     """Needed for manage when to start scheduled tasks"""
+
+    class StatusTask(str, Enum):
+        PAUSED = 'paused'
+        RUNNING = 'running'
 
     app = fields.ForeignKeyField('models.Module', related_name='jobs')
     user = fields.ForeignKeyField('models.User', related_name='jobs')

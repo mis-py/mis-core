@@ -15,7 +15,7 @@ class GrantedPermission(Model):
 class Permission(Model):
     name = fields.CharField(max_length=50)
     scope = fields.CharField(max_length=30, unique=True)
-    app = fields.ForeignKeyField('models.App', related_name='permissions')
+    app = fields.ForeignKeyField('models.Module', related_name='permissions')
 
     @classmethod
     def create(cls, using_db=None, **kwargs):

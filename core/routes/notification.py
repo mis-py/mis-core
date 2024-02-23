@@ -9,8 +9,8 @@ from core.db.models import User, RoutingKey
 from core.dependencies.path import get_routing_key_by_id, PaginationDep
 from core.dependencies.security import get_current_user
 from core.services.notification import subscribe_routing_key, unsubscribe_routing_key
-from core.utils.notification import routing_key_to_dict
 from core.schemas.notification import RoutingKeyModel, EditRoutingKey
+from core.utils.notification.utils import routing_key_to_dict
 from services.redis import RedisService
 
 from core.crud.notification import routing_key, subscription

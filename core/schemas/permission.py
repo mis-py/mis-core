@@ -1,7 +1,9 @@
 from typing import Optional
 from pydantic import BaseModel
-from core.db.models import Permission, GrantedPermission
+from core.db.models import Permission
 from tortoise.contrib.pydantic import pydantic_model_creator, PydanticModel
+
+from core.db.permission import GrantedPermission
 from core.schemas.common import UserModelShort, TeamModelShort
 
 

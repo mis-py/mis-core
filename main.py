@@ -24,12 +24,12 @@ from loaders import (
 from loaders import (
     shutdown_modules, shutdown_eventory, shutdown_scheduler, shutdown_db, shutdown_redis, shutdown_mongo)
 from core.exceptions import MISError, ErrorSchema
-from core.utils.common import generate_unique_id
+from core.utils.common import generate_unique_id, custom_log_timezone
 
 logging.getLogger('uvicorn').handlers.clear()
 
 logger.remove()
-
+logger.configure(patcher=custom_log_timezone)
 logger.add(
     sys.stderr,
     format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "

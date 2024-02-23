@@ -35,10 +35,9 @@ async def authenticate(form_data) -> AccessToken:
     await user.save()
 
     access_token = create_access_token(user.username)
-
     return AccessToken(
         access_token=access_token,
-        bearer="bearer",
+        token_type="bearer",
         user_id=user.id,
         username=user.username
     )

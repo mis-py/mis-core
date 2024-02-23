@@ -18,10 +18,10 @@ from core.crud import job
 
 from config import CoreSettings
 from const import DEFAULT_ADMIN_USERNAME, PROD_ENVIRONMENT, ENVIRONMENT, LOGS_DIR, MODULES_DIR
+from core.db.models import ScheduledJob
 from core.dependencies.misc import inject_context, inject_user
 from core.crud import user, permission, variables
 from core.utils.common import pydatic_model_to_dict, signature_to_dict
-from core.utils.database import StatusTask
 from services.modules.context import AppContext
 
 from services.scheduler.scheduler import SchedulerService
@@ -167,7 +167,11 @@ class ScheduledTasks(Component):
         """
         saved_scheduled_jobs = await job.get_all_scheduled_jobs(self.module.name)
         for saved_job in saved_scheduled_jobs:
-            await SchedulerService.restore_job(saved_job, self.module, saved_job.status == StatusTask.RUNNING)
+            await SchedulerService.restore_job(
+                saved_job=saved_job,
+                module=self.module,
+                run_at_startup=saved_job.status == ScheduledJob.StatusTask.RUNNING
+            )
 
         # TODO implement autostart at root user
 

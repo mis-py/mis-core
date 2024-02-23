@@ -6,12 +6,12 @@ import random
 import string
 
 import loguru
+import pytz
 from fastapi.routing import APIRoute
 from pydantic import BaseModel
-from const import LOGS_DIR
+from const import LOGS_DIR, TIMEZONE
 from config import CoreSettings
 from core.exceptions import MISError
-
 
 settings = CoreSettings()
 
@@ -121,3 +121,9 @@ def pydatic_model_to_dict(model: BaseModel) -> dict[str, dict[str, str]]:
             "required": field.is_required,
         }
     return result
+
+
+def custom_log_timezone(record):
+    tz = pytz.timezone(TIMEZONE)
+    dt = datetime.datetime.now(tz)
+    record["extra"]["datetime"] = dt.strftime('%d-%m-%Y %H:%M:%S.%f')[:-3]

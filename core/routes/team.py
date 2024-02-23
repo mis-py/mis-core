@@ -23,7 +23,7 @@ async def get_teams(pagination: PaginationDep):
 @router.get(
     '/get',
     dependencies=[Depends(get_current_user)],
-    response_model=list[TeamDetailModel]
+    response_model=TeamDetailModel
 )
 async def get_team(team: Team = Depends(get_team_by_id)):
     schema = await TeamDetailModel.from_tortoise_orm(team)
@@ -45,7 +45,7 @@ async def create_team(team_data: TeamData):
     if team_data.users_ids:
         await crud.team.set_team_users(team=new_team, users_ids=team_data.users_ids)
 
-    for variable in team_data.settings:
+    for variable in team_data.variables:
         await crud.variable_value.set_variable_value(
             await Variable.get(id=variable.setting_id),
             variable.new_value, team=new_team

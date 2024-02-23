@@ -1,7 +1,7 @@
 from loguru import logger
 
+from core.utils.notification.message import Message
 from ..config import ModuleSettings, RoutingKeys
-from core.utils.notification import Message
 from services.modules.components import ScheduledTasks
 from services.modules.context import AppContext
 from services.eventory import Eventory

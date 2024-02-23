@@ -1,5 +1,6 @@
-from core.db.models import Module, Permission, GrantedPermission
+from core.db.models import Module, Permission
 from core.crud.base import CRUDBase
+from core.db.permission import GrantedPermission
 
 
 class CRUDPermission(CRUDBase):

@@ -17,7 +17,7 @@ router = APIRouter()
 
 @router.post("/token", response_model=AccessToken)
 async def get_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-    access_token = authenticate(form_data)
+    access_token = await authenticate(form_data)
     return access_token
 
 
@@ -33,7 +33,7 @@ async def logout(
 
 
 @router.post("/change_password")
-async def change_password(
+async def change_password_endpoint(
         data: ChangePasswordData,
         current_user: User = Depends(get_current_user),
 ):

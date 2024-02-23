@@ -1,6 +1,8 @@
 import types
 from loguru import logger
 import os
+
+from core import crud
 from .utils import apps_sort_by_dependency, import_module, unload_module
 from ..utils.BaseModule import BaseModule
 # from .exceptions import ModuleError
@@ -90,7 +92,7 @@ class ModuleService:
     @classmethod
     async def init_module(cls, application, module: BaseModule):
 
-        app_model, is_created = await module.get_or_create(name=module.name)
+        app_model, is_created = await crud.module.get_or_create(name=module.name)
 
         module.model = app_model
 

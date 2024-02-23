@@ -40,11 +40,6 @@ async def setup_admin_user():
         await team.set_permissions(['core:sudo'])
 
 
-class StatusTask(str, Enum):
-    PAUSED = 'paused'
-    RUNNING = 'running'
-
-
 class SettingType(str, Enum):
     str = "str"
     int = "int"
