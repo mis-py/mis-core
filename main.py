@@ -20,7 +20,7 @@ from const import DEV_ENVIRONMENT, ENVIRONMENT
 from config import CoreSettings
 from loaders import (
     init_core, init_modules, init_eventory, init_scheduler, init_core_routes,
-    init_redis, init_migrations, pre_init_db, pre_init_modules, init_db, init_admin_user, init_mongo)
+    init_redis, init_migrations, pre_init_db, pre_init_modules, init_db, init_admin_user, init_mongo, init_guardian)
 from loaders import (
     shutdown_modules, shutdown_eventory, shutdown_scheduler, shutdown_db, shutdown_redis, shutdown_mongo)
 from core.exceptions import MISError, ErrorSchema
@@ -80,6 +80,7 @@ async def lifespan(application: FastAPI):
     await init_migrations()
     await init_core()
     await init_admin_user()
+    await init_guardian()
     await init_core_routes(application)
 
     logger.success('MIS Project API started!')

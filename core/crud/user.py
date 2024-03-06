@@ -53,5 +53,8 @@ class CRUDUser(CRUDBase):
     async def query_get_all(self):
         return self.model.all()
 
+    async def get_from_ids(self, ids: list[int]) -> list[User]:
+        return await self.model.filter(id__in=ids)
+
 
 user = CRUDUser(User)

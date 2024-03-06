@@ -7,3 +7,5 @@ from .access_group import access_group
 from .restricted_object import restricted_object
 from .job import job
 from .notification import routing_key, subscription
+from .guardian import guardian_group, guardian_permissions, guardian_content_type, guardian_group_perm, \
+    guardian_user_perm

@@ -1,24 +1,21 @@
-import asyncio
-import time
 from loguru import logger
 
-from core.db.guardian import GuardianPermission, GuardianContentType, GuardianUserPermission, GuardianGroupPermission
+from core.db.guardian import GuardianPermission, GuardianContentType, GuardianUserPermission, GuardianGroupPermission, \
+    GuardianAccessGroup
 from core.db.models import User
-from core.db.restricted import AccessGroup
-from modules.dummy.db import DummyModel, DummyRestrictedModel
 
 
-async def assign_perm(perm: str, user_or_group: User | AccessGroup, obj):
+async def assign_perm(perm: str, user_or_group: User | GuardianAccessGroup, obj):
     """Assign object permission to user or group"""
-
-    permission = await GuardianPermission.get_or_none(code_name=perm)
-    if not permission:
-        raise Exception('Permission not found')
 
     class_name = obj.__class__.__name__
     content_type = await GuardianContentType.get_or_none(model=class_name)
     if not content_type:
         raise Exception('Content type not found')
+
+    permission = await GuardianPermission.get_or_none(code_name=perm, content_type=content_type)
+    if not permission:
+        raise Exception('Permission not found')
 
     if isinstance(user_or_group, User):
         user = user_or_group
@@ -28,11 +25,11 @@ async def assign_perm(perm: str, user_or_group: User | AccessGroup, obj):
             content_type=content_type,
             object_pk=obj.id,
         )
-    elif isinstance(user_or_group, AccessGroup):
+    elif isinstance(user_or_group, GuardianAccessGroup):
         group = user_or_group
         return await GuardianGroupPermission.get_or_create(
             group=group,
-            permission=perm,
+            permission=permission,
             content_type=content_type,
             object_pk=obj.id,
         )
@@ -53,7 +50,7 @@ async def get_user_assigned_objects(perm: str, queryset, user: User):
     all_objects_pks.extend(user_perm_objects_pks)
 
     # collect groups permission objects
-    groups = await user.groups.all()
+    groups = await user.access_groups.all()
     if groups:
         groups_ids = [group.id for group in groups]
         groups_perm_objects_pks = await GuardianGroupPermission.filter(
@@ -64,7 +61,7 @@ async def get_user_assigned_objects(perm: str, queryset, user: User):
     return await queryset.filter(id__in=all_objects_pks)
 
 
-async def get_group_assigned_objects(perm: str, queryset, group: AccessGroup):
+async def get_group_assigned_objects(perm: str, queryset, group: GuardianAccessGroup):
     """Return filtered queryset by permission"""
     objects_pks = await GuardianGroupPermission.filter(
         group=group, permission__code_name=perm, content_type__model=queryset.model.__name__
@@ -72,7 +69,7 @@ async def get_group_assigned_objects(perm: str, queryset, group: AccessGroup):
     return await queryset.filter(id__in=objects_pks)
 
 
-async def has_perm(perm: str, user_or_group: User | AccessGroup, obj) -> bool:
+async def has_perm(perm: str, user_or_group: User | GuardianAccessGroup, obj) -> bool:
     """User or Group permission checker"""
 
     model = obj.__class__.__name__
@@ -80,7 +77,7 @@ async def has_perm(perm: str, user_or_group: User | AccessGroup, obj) -> bool:
     if isinstance(user_or_group, User):
         user = user_or_group
         perms = await _get_user_perms(user=user, model=model, object_pk=object_pk)
-    elif isinstance(user_or_group, AccessGroup):
+    elif isinstance(user_or_group, GuardianAccessGroup):
         group = user_or_group
         perms = await _get_group_perm(group=group, model=model, object_pk=object_pk)
     else:
@@ -92,7 +89,7 @@ async def has_perm(perm: str, user_or_group: User | AccessGroup, obj) -> bool:
 async def _get_user_perms(user: User, model: str, object_pk: str):
     """Get user permission code names. Compared with groups permission code names"""
 
-    groups = await user.groups.all()
+    groups = await user.access_groups.all()
     groups_ids = [group.id for group in groups]
     user_perms = await GuardianPermission.filter(
         user_permissions__user_id=user.id,
@@ -109,7 +106,7 @@ async def _get_user_perms(user: User, model: str, object_pk: str):
     return user_perms
 
 
-async def _get_group_perm(group: AccessGroup, model: str, object_pk: str):
+async def _get_group_perm(group: GuardianAccessGroup, model: str, object_pk: str):
     """Get group permission code names"""
 
     group_perms = await GuardianPermission.filter(
@@ -118,62 +115,3 @@ async def _get_group_perm(group: AccessGroup, model: str, object_pk: str):
         group_permissions__object_pk=object_pk,
     ).values_list("code_name", flat=True)
     return group_perms
-
-
-async def test_guardian():
-    user = await User.get(id=1).prefetch_related("group")
-    group = await user.groups.all().first()
-    dummy = await DummyRestrictedModel.get(id=1)
-
-    # Guardian
-    logger.info(f"Guardian")
-    await assign_perm('edit', user, dummy)
-    await assign_perm('view', group, dummy)
-
-    is_user_has_view_perm = await has_perm('view', user, dummy)
-    is_user_has_edit_perm = await has_perm('edit', user, dummy)
-
-    is_group_has_view_perm = await has_perm('view', group, dummy)
-    is_group_has_edit_perm = await has_perm('edit', group, dummy)
-
-    logger.warning(f"User: view={is_user_has_view_perm} edit={is_user_has_edit_perm}")
-    logger.warning(f"Group: view={is_group_has_view_perm} edit={is_group_has_edit_perm}")
-
-    time_executions = []
-    times = 20
-    for i in range(times):
-        st = time.time()
-        is_user_has_view_perm = await has_perm('view', user, dummy)
-        end = time.time() - st
-        logger.info(f"has_perm={is_user_has_view_perm} | {end} seconds elapsed")
-        time_executions.append(end)
-    logger.info(f"Check has_perm avg {times} times: {sum(time_executions) / len(time_executions)} seconds elapsed")
-
-    time_executions = []
-    for i in range(times):
-        st = time.time()
-        await get_user_assigned_objects('view', queryset=DummyModel.all(), user=user)
-        end = time.time() - st
-        time_executions.append(end)
-    logger.info(
-        f"Check get_user_assigned_objects avg {times} times: "
-        f"{sum(time_executions) / len(time_executions)} seconds elapsed"
-    )
-
-    ######################################################################3
-    # RO
-    logger.info(f"Ro")
-    await dummy.allow(group)
-    is_allowed_for = await dummy.is_allowed_for(user)
-    logger.warning(f"User: is_allowed_for={is_allowed_for}")
-
-    time_executions = []
-    for i in range(times):
-        st = time.time()
-        is_allowed_for = await dummy.is_allowed_for(user)
-        end = time.time() - st
-        logger.info(f"is_allowed_for={is_allowed_for} | {end} seconds elapsed")
-        time_executions.append(end)
-
-    logger.info(
-        f"Check is_allowed_for avg {times} times: {sum(time_executions) / len(time_executions)} seconds elapsed")
