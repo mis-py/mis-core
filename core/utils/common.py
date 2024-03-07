@@ -3,6 +3,7 @@ import inspect
 import os
 import datetime
 import random
+import re
 import string
 
 import loguru
@@ -127,3 +128,8 @@ def custom_log_timezone(record):
     tz = pytz.timezone(TIMEZONE)
     dt = datetime.datetime.now(tz)
     record["extra"]["datetime"] = dt.strftime('%d-%m-%Y %H:%M:%S.%f')[:-3]
+
+
+def camel_to_spaces(camel_string: str):
+    list_words = re.split(r'(?=[A-Z])', camel_string)
+    return ' '.join(list_words).strip()

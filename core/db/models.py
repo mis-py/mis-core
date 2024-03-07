@@ -16,6 +16,7 @@ class User(Model, UserPermissionsMixin):
     team = fields.ForeignKeyField('models.Team', related_name='users', on_delete=fields.SET_NULL, null=True)
     settings: fields.ReverseRelation['VariableValue']
     groups: fields.ManyToManyRelation
+    access_groups: fields.ManyToManyRelation['GuardianAccessGroup']
 
     class PydanticMeta:
         exclude = ("hashed_password",)

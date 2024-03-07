@@ -1,1 +1,1 @@
-from .models import DummyModel, DummyRestrictedModel, DummyModelSchema, DummyListModelSchema
+from .models import DummyModel, DummyModelSchema, DummyListModelSchema

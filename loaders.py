@@ -11,10 +11,10 @@ from services.variables.variables import VariablesManager
 
 from config import CoreSettings
 
-from core.routes import access_group, variable, auth, websocket, notification, team, \
-    module, user, task, job, permission
+from core.routes import variable, auth, websocket, notification, team, \
+    module, user, task, job, permission, guardian
 
-from core.utils.database import setup_core, setup_admin_user
+from core.utils.database import setup_core, setup_admin_user, setup_guardian
 # from modules.core.websockets.actions import Action, send_log_to_subscribers, send_notification_to_subscribers
 # from modules.core.websockets.manager import WSManager, ws_manager
 # from fastapi.openapi.docs import get_swagger_ui_html
@@ -39,7 +39,6 @@ async def init_core_routes(app):
     router.include_router(auth.router, prefix='/auth', tags=['core | auth'])
     router.include_router(user.router, prefix='/users', tags=['core | users'])
     router.include_router(team.router, prefix='/teams', tags=['core | teams'])
-    router.include_router(access_group.router, prefix='/groups', tags=['core | groups'])
     router.include_router(permission.router, prefix='/permissions', tags=['core | permissions'])
     router.include_router(variable.router, prefix='/settings', tags=['core | settings'])
     # router.include_router(restricted_object.router, prefix='/restricted_objects', tags=['core | restricted_objects'])
@@ -50,6 +49,7 @@ async def init_core_routes(app):
     router.include_router(notification.router, prefix='/notifications', tags=['core | notifications'])
     # router.include_router(log.router, prefix='/logs', tags=['core | logs'])
     router.include_router(websocket.router, prefix='/ws', tags=['core | websockets'])
+    router.include_router(guardian.router, prefix='/guardian', tags=['core | guardian'])
 
     app.include_router(router)
 
@@ -97,6 +97,11 @@ async def init_admin_user():
         logger.success('Admin user and team initialized')
     else:
         logger.info('Admin user and team already initialized')
+
+
+async def init_guardian():
+    await setup_guardian()
+    logger.info('Guardian initialized')
 
 
 async def init_scheduler():
