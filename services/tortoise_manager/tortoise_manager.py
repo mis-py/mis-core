@@ -29,7 +29,7 @@ class TortoiseManager:
         "apps": {
             # models is module name
             "models": {
-                "models": ["core.db.models", "core.db.mixin", "core.db.restricted", "core.db.guardian"],
+                "models": ["core.db.models", "core.db.mixin", "core.db.guardian"],
                 "default_connection": "default",
             },
         },

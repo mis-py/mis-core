@@ -1,7 +1,6 @@
 from tortoise.queryset import QuerySet
 
 from core.db.models import User
-from core.db.restricted import AccessGroup
 from core.crud.base import CRUDBase, CreateSchemaType, UpdateSchemaType
 from core.auth_backend import set_password
 
@@ -35,12 +34,6 @@ class CRUDUser(CRUDBase):
         await user.update_from_dict(update_data).save()
         return user
 
-    async def set_user_groups(self, user: User, groups_ids: list[int]):
-        """Clear old user groups and set new"""
-        await user.groups.clear()
-        for group in await AccessGroup.filter(id__in=groups_ids):
-            await user.groups.add(group)
-        return user
 
     async def query_get_by_subscription(self, routing_key: str, query: QuerySet = None):
         """Get or modify users queryset who subscribed on routing_key"""

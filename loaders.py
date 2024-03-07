@@ -11,7 +11,7 @@ from services.variables.variables import VariablesManager
 
 from config import CoreSettings
 
-from core.routes import access_group, variable, auth, websocket, notification, team, \
+from core.routes import variable, auth, websocket, notification, team, \
     module, user, task, job, permission, guardian
 
 from core.utils.database import setup_core, setup_admin_user, setup_guardian
@@ -39,7 +39,6 @@ async def init_core_routes(app):
     router.include_router(auth.router, prefix='/auth', tags=['core | auth'])
     router.include_router(user.router, prefix='/users', tags=['core | users'])
     router.include_router(team.router, prefix='/teams', tags=['core | teams'])
-    router.include_router(access_group.router, prefix='/groups', tags=['core | groups'])
     router.include_router(permission.router, prefix='/permissions', tags=['core | permissions'])
     router.include_router(variable.router, prefix='/settings', tags=['core | settings'])
     # router.include_router(restricted_object.router, prefix='/restricted_objects', tags=['core | restricted_objects'])
