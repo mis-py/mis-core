@@ -25,7 +25,7 @@ steps = [
             "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
             "object_pk" VARCHAR(255) NOT NULL,
             "content_type_id" INT NOT NULL REFERENCES "mis_guardian_content_type" ("id") ON DELETE CASCADE,
-            "group_id" INT NOT NULL REFERENCES "mis_usergroup" ("id") ON DELETE CASCADE,
+            "group_id" INT NOT NULL REFERENCES "mis_guardian_access_group" ("id") ON DELETE CASCADE,
             "permission_id" INT NOT NULL REFERENCES "mis_guardian_permission" ("id") ON DELETE CASCADE
         );
         CREATE TABLE IF NOT EXISTS "mis_guardian_user_permission" (

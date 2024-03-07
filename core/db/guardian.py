@@ -57,7 +57,7 @@ class GuardianGroupPermission(Model):
     object_pk = fields.CharField(max_length=255)
     content_type = fields.ForeignKeyField('models.GuardianContentType', related_name='group_permissions')
     permission = fields.ForeignKeyField('models.GuardianPermission', related_name='group_permissions')
-    group = fields.ForeignKeyField('models.AccessGroup', related_name='group_permissions')
+    group = fields.ForeignKeyField('models.GuardianAccessGroup', related_name='group_permissions')
 
     class Meta:
         table = 'mis_guardian_group_permission'
