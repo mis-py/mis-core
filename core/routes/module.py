@@ -3,6 +3,7 @@ from fastapi import APIRouter, Security, Depends
 from fastapi import Response, Request
 from loguru import logger
 
+from core import crud
 from core.crud import module
 from core.db.models import Module
 
@@ -14,6 +15,7 @@ from core.schemas.common import AppModel
 
 from services.modules.exceptions import LoadModuleError, StartModuleError
 from services.modules.module_service import ModuleService
+from services.modules.module_service.utils import read_module_manifest
 
 router = APIRouter()
 
@@ -24,16 +26,16 @@ router = APIRouter()
     response_model=list[AppModel]
 )
 async def get_modules(pagination: PaginationDep, app_id: int = None):
-    apps = await module.query_get_multi(**pagination, app_id=app_id)
-    return await AppModel.from_queryset(apps)
-    # for app in apps:
-        # if app.name in os.listdir(FRONTEND_DIR):
-        #     app.front_bundle_path = f'/modules/{app.name}'
+    queryset_modules = await crud.module.query_get_multi(**pagination, app_id=app_id)
+    modules = await queryset_modules
 
-        # flag is_editable=False for frontend
-        # if app.name == 'core':
-        #     app.is_editable = False
-    #return apps
+    # add module manifests to response
+    for module in modules:
+        if module.name == 'core':  # skip module without manifest
+            continue
+
+        module.manifest = read_module_manifest(module.name)
+    return modules
 
 
 # @router.get(
@@ -42,7 +44,7 @@ async def get_modules(pagination: PaginationDep, app_id: int = None):
 # )
 # async def get_loaded_modules(request: Request):
 #     app_models = await BundleAppModel.from_queryset(App.all())
-#     loaded_apps = request.app.module_loader.loaded_apps
+#     loaded_modules = request.app.module_loader.loaded_apps
 #
 #     response = []
 #     for app in app_models:
@@ -99,7 +101,7 @@ async def get_modules(pagination: PaginationDep, app_id: int = None):
 async def init_module(request: Request, app: Module = Depends(get_app_by_id)):
     try:
         if app.enabled:
-            await ModuleService.stop_app(app)
+            await ModuleService.stop_module(app)
 
         await ModuleService.init_module(app.name, request.app)
     except ModuleNotFoundError as e:
@@ -131,7 +133,7 @@ async def shutdown_application(app: Module = Depends(get_app_by_id)):
 )
 async def start_module(app: Module = Depends(get_app_by_id)):
     try:
-        await ModuleService.start_app(app.name)
+        await ModuleService.start_module(app.name)
     except Exception as e:
         logger.exception(e)
         raise StartModuleError(f"Error while starting app. Details: {str(e)}")
@@ -143,7 +145,7 @@ async def start_module(app: Module = Depends(get_app_by_id)):
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:modules'])]
 )
 async def stop_module(app: Module = Depends(get_app_by_id)):
-    await ModuleService.stop_app(app.name)
+    await ModuleService.stop_module(app.name)
     return True
 
 

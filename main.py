@@ -19,8 +19,21 @@ from starlette.middleware.sessions import SessionMiddleware
 from const import DEV_ENVIRONMENT, ENVIRONMENT
 from config import CoreSettings
 from loaders import (
-    init_core, init_modules, init_eventory, init_scheduler, init_core_routes,
-    init_redis, init_migrations, pre_init_db, pre_init_modules, init_db, init_admin_user, init_mongo, init_guardian)
+    init_core,
+    init_modules,
+    init_eventory,
+    init_scheduler,
+    init_core_routes,
+    init_redis,
+    init_migrations,
+    pre_init_db,
+    pre_init_modules,
+    init_db,
+    init_admin_user,
+    init_mongo,
+    init_guardian,
+    manifest_init_modules,
+)
 from loaders import (
     shutdown_modules, shutdown_eventory, shutdown_scheduler, shutdown_db, shutdown_redis, shutdown_mongo)
 from core.exceptions import MISError, ErrorSchema
@@ -74,6 +87,7 @@ async def lifespan(application: FastAPI):
     # await init_settings()
 
     await pre_init_db()
+    await manifest_init_modules(app)
     await pre_init_modules(app)
     await init_db(application)
     await init_modules(application)

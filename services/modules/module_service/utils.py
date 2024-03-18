@@ -2,7 +2,12 @@ from loguru import logger
 import importlib
 import sys
 
-from services.modules.utils.module_dependency import ModuleDependency
+from packaging.specifiers import SpecifierSet
+from packaging.version import Version
+from pydantic import ValidationError
+
+from const import MODULES_DIR
+from services.modules.utils.manifest import ModuleManifest, ModuleDependency
 
 
 def import_module(app_name: str, package: str = 'modules'):
@@ -24,44 +29,32 @@ def unload_module(app_name: str, package: str = 'modules'):
         del sys.modules[module]
 
 
-def module_dependency_check(module, loaded_apps):
-    # TODO currently not work
-    if not set(module.dependencies.keys()).issubset(set(loaded_apps.keys())):
-        logger.warning(f"[{module.name}] Dependency modules {list(module.dependencies.keys())} not loaded, please add them first!")
-        return False
-
-    for dependency_module_name, dependency_info in module.dependencies.items():
-        dependency_module = loaded_apps[dependency_module_name]
-        min_version = dependency_info["min_version"]
-        max_version = dependency_info["max_version"]
-        if not version_check(dependency_module.version, min_version, max_version):
-            logger.warning(f"[{module.name}] Dependency module '{dependency_module_name}' "
-                           f"version='{dependency_module.version}' "
-                           f"but need {dependency_info}")
+def module_dependency_check(module_manifest: ModuleManifest, all_manifests: dict[str, ModuleManifest]) -> bool:
+    """Checks is all dependencies has correct version"""
+    for dependency in module_manifest.dependencies:
+        is_valid_dependency = check_version_dependency(
+            current_version=all_manifests[dependency.module].version,
+            dependency_version=dependency.version,
+        )
+        if not is_valid_dependency:
+            logger.warning(f"[{module_manifest.name}] Version dependency error! "
+                           f"Dependency module '{dependency.module}' required '{dependency.version}'")
             return False
     return True
 
 
-def apps_sort_by_dependency(apps: list['App']) -> list['App']:
+def manifests_sort_by_dependency(manifests: dict[str, ModuleManifest]) -> dict[str, ModuleManifest]:
     """Sort apps by their dependencies on other apps"""
     dependency_graph: dict[str, list[ModuleDependency]] = {}
-    apps_dict: dict[str: 'App'] = {}
 
-    for app in apps:
-        # import can return None
-        if app is None:
-            continue
+    for module_name, manifest in manifests.items():
+        dependency_graph[module_name] = manifest.dependencies
 
-        module = app.module
-
-        dependency_graph[module.name] = module.dependencies
-        apps_dict[module.name] = module
-
-    result: list['App'] = []
-    for app_name in topological_sort(dependency_graph):
-        app = apps_dict.get(app_name)
-        result.append(app)
-    return result
+    sorted_manifests: dict[str, ModuleManifest] = {}
+    for module_name in topological_sort(dependency_graph):
+        manifest = manifests.get(module_name)
+        sorted_manifests[module_name] = manifest
+    return sorted_manifests
 
 
 def topological_sort(graph: dict[str, list[ModuleDependency]]):
@@ -87,7 +80,7 @@ def topological_sort(graph: dict[str, list[ModuleDependency]]):
             return
         visited.add(node_item)
         for dependency in graph.get(node_item, []):  # Visit dependencies
-            visit(dependency.module_name)
+            visit(dependency.module)
         result.append(node_item)  # Add the current node to the result
 
     for node in graph:  # Start sorting from each node
@@ -96,14 +89,11 @@ def topological_sort(graph: dict[str, list[ModuleDependency]]):
     return result
 
 
-def version_check(version: str, min_version: str, max_version: str):
-    # function to compare versions in string format (e.g., "1.0.4")
-    version_parts = tuple(map(int, version.split('.')))
-    min_version_parts = tuple(map(int, min_version.split('.')))
-    max_version_parts = tuple(map(int, max_version.split('.')))
-    if min_version_parts <= version_parts <= max_version_parts:
-        return True
-    return False
+def check_version_dependency(current_version: str, dependency_version: str):
+    """Check version dependency by packaging"""
+    version = Version(current_version)
+    dependency = SpecifierSet(dependency_version)
+    return dependency.contains(version)
 
 
 def _try_clone(self, url, branch, path):
@@ -135,3 +125,14 @@ def download_app(self, url: str, branch: str):
     #
     # return app_name
     logger.error(f'GIT NOT IMPLEMENTED')
+
+
+def read_module_manifest(module_name: str) -> ModuleManifest | None:
+    with open(MODULES_DIR / module_name / 'manifest.json', 'r') as f:
+        manifest_json = f.read()
+
+    try:
+        return ModuleManifest.model_validate_json(manifest_json)
+    except ValidationError as error:
+        logger.error(f"[{module_name}] Invalid manifest.json content! {error}")
+        return None

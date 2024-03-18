@@ -8,17 +8,17 @@ class BaseModule:
     Basic module data container
     """
     # System name of module
-    name: str
+    name: str = None
     # Verbose name of module
-    display_name: str
+    display_name: str = None
     # Description of module
-    description: str
+    description: str = None
     # Module version
-    version: str
+    version: str = None
     # Module author
-    author: str
+    author: str = None
     # Module category
-    category: str
+    category: str = None
     # Permissions that module is required to use
     permissions: dict = dataclasses.field(default_factory=dict)
 

@@ -146,7 +146,7 @@ class Eventory:
         yield "core", cls._core_consumer
 
         # module consumers
-        for app_name, module in cls._loaded_apps.items():
+        for app_name, module in cls._loaded_modules.items():
             for consumer in module.consumers:
                 yield app_name, consumer
 
