@@ -36,16 +36,6 @@ async def init(module_instance: ModuleTemplate):
     # logger.info(f"{group.name} read={is_read_perm} edit={is_edit_perm} delete={is_delete_perm}")
 
 module = ModuleTemplate(
-    name="dummy",
-    display_name="Dummy",
-    description="Module with examples of core functions and libs extensions",
-    version="1.0",
-    author="Jake Jameson",
-    category='example',
-    dependencies=[],
-    permissions={
-        "dummy": "Just for demonstration",
-    },
     pre_init_components=[
         TortoiseModels(),
     ],

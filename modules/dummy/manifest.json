@@ -1,0 +1,12 @@
+{
+  "name": "dummy",
+  "display_name": "Dummy",
+  "description": "Module with examples of core functions and libs extensions",
+  "version": "1.0",
+  "author": "Jake Jameson",
+  "category": "example",
+  "dependencies": [],
+  "permissions": {
+    "dummy": "Just for demonstration"
+  }
+}

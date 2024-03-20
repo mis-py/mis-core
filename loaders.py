@@ -134,6 +134,11 @@ async def shutdown_mongo():
     logger.info('MongoService shutdown')
 
 
+async def manifest_init_modules(app):
+    await ModuleService.manifest_init(app)
+    logger.success('Modules manifest initialized')
+
+
 async def pre_init_modules(app):
     await ModuleService.pre_init(app)
     logger.success('Modules pre initialized')
@@ -141,7 +146,6 @@ async def pre_init_modules(app):
 
 async def init_modules(app):
     await ModuleService.init(app)
-    await ModuleService.start_app('dummy')
     logger.success('Modules initialized')
 
 

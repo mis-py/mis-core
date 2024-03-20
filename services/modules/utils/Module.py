@@ -13,8 +13,8 @@ from core.db.models import Module
 # from libs.eventory import Consumer
 from .BaseModule import BaseModule
 from services.modules.component import Component
+from .manifest import ModuleManifest, ModuleDependency
 
-from .module_dependency import ModuleDependency
 from services.modules.context import AppContext
 from services.variables.variables import VariablesManager
 
@@ -46,20 +46,20 @@ class ModuleTemplate(BaseModule):
     #     permissions: dict = None,
     #     app_settings: BaseSettings = None,
     #     user_settings: BaseSettings = None,
-        # notification_sender: Callable = None,
+    # notification_sender: Callable = None,
     # ):
-        # self.permissions = permissions or {}
-        # self.app_settings = app_settings or {}
-        # self.user_settings = user_settings or {}
-        # self.sender: Optional[Callable] = notification_sender
+    # self.permissions = permissions or {}
+    # self.app_settings = app_settings or {}
+    # self.user_settings = user_settings or {}
+    # self.sender: Optional[Callable] = notification_sender
 
-        # self.module_proxy = ModuleProxy(self, misapp.eventory, misapp.redis, app_settings, user_settings)
+    # self.module_proxy = ModuleProxy(self, misapp.eventory, misapp.redis, app_settings, user_settings)
 
-        # self.jobs: list[Job] = []
-        # self.consumers: list[Consumer] = []
+    # self.jobs: list[Job] = []
+    # self.consumers: list[Consumer] = []
 
-        # self.model: App = model
-        # self.components: list[Component] = components
+    # self.model: App = model
+    # self.components: list[Component] = components
 
     # if user or team is defined then they will be available in context
     async def get_context(self, user=None, team=None):
@@ -68,4 +68,12 @@ class ModuleTemplate(BaseModule):
             settings=await VariablesManager.make_variable_set(user=user, team=team, app=self.model)
         )
 
-
+    def set_manifest(self, manifest: ModuleManifest):
+        self.name = manifest.name
+        self.display_name = manifest.display_name
+        self.description = manifest.description
+        self.version = manifest.version
+        self.author = manifest.author
+        self.category = manifest.category
+        self.permissions = manifest.permissions
+        self.dependencies = manifest.dependencies

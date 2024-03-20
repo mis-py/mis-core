@@ -3,12 +3,15 @@ from loguru import logger
 import os
 
 from core import crud
-from .utils import apps_sort_by_dependency, import_module, unload_module
+from .utils import manifests_sort_by_dependency, import_module, unload_module, read_module_manifest, \
+    module_dependency_check
+from ..utils import ModuleTemplate
 from ..utils.BaseModule import BaseModule
 # from .exceptions import ModuleError
 # from core.db import App
-from core.crud import module
 from const import MODULES_DIR, MODULES_DIR_NAME
+from ..utils.manifest import ModuleManifest
+
 
 # from modules.core.notifications.handlers import eventory_message_handler
 # from core.utils import async_partial
@@ -16,39 +19,63 @@ from const import MODULES_DIR, MODULES_DIR_NAME
 
 
 class ModuleService:
-    _loaded_apps: dict[str, BaseModule] = {}
+    _modules_manifests: dict[str, ModuleManifest] = {}
+    _loaded_modules: dict[str, ModuleTemplate] = {}
+
     # _core_consumer: Optional[Consumer]
 
     @classmethod
-    def loaded_apps(cls):
+    def loaded_modules(cls):
         # MappingProxyType will allow to access members of dict but restrict their modifying
-        return types.MappingProxyType(cls._loaded_apps)
+        return types.MappingProxyType(cls._loaded_modules)
+
+    @classmethod
+    async def manifest_init(cls, application):
+        # collect manifest.json files from each module in modules directory
+        manifests = {}
+        for module in os.listdir(MODULES_DIR):
+            if "__" in module:
+                continue
+            manifest = read_module_manifest(module)
+
+            if not manifest:
+                continue
+            manifests[module] = manifest
+
+        # we need to load modules in specific order, so we sort it by dependency tree
+        sorted_module_manifests = manifests_sort_by_dependency(manifests)
+
+        # validation dependency version
+        for module_name, manifest in sorted_module_manifests.items():
+            is_valid_dependency_version = module_dependency_check(
+                module_manifest=manifest, all_manifests=sorted_module_manifests
+            )
+            if not is_valid_dependency_version:
+                continue
+
+            cls._modules_manifests[manifest.name] = manifest
 
     @classmethod
     async def pre_init(cls, application):
-        modules_dirs = os.listdir(MODULES_DIR)
-        modules = [import_module(module, MODULES_DIR_NAME) for module in modules_dirs if "__" not in module]
+        # import modules by sorted manifests and run pre init for each module
+        for manifest in cls._modules_manifests.values():
+            module = import_module(manifest.name, MODULES_DIR_NAME)
+            module.module.set_manifest(manifest)
 
-        # we need to load apps in specific order, so we sort it by dependency tree
-        sorted_modules = apps_sort_by_dependency(modules)
-
-        for module in sorted_modules:
-            logger.debug(f'[ModuleService] Started pre init module: {module.name}')
-
-            await cls.pre_init_module(application, module)
-
-            logger.debug(f"[ModuleService] Module '{module.name}' pre init finished!")
+            logger.debug(f'[ModuleService] Started pre init module: {manifest.name}')
+            await cls.pre_init_module(application, module.module)
+            logger.debug(f"[ModuleService] Module '{manifest.name}' pre init finished!")
 
     @classmethod
     async def init(cls, application):
-        for module_name, module in cls._loaded_apps.items():
+        for module_name, module in cls._loaded_modules.items():
             logger.debug(f'[ModuleService] Started init module: {module.name}')
 
             is_loaded_success = await cls.init_module(application, module)
 
-            # if is_loaded_success and app.enabled:
-            #     await cls.start_app(app)
-            #     logger.debug(f'[ModuleService] Module {app.name} started!')
+            if is_loaded_success and module.model.enabled:
+                await cls.start_module(module.name)
+                logger.debug(f'[ModuleService] Module {module.name} started!')
 
             logger.info(f"[ModuleService] Module '{module.name}' init finished!")
 
@@ -59,12 +86,12 @@ class ModuleService:
     async def shutdown(cls):
         """
         Executes when application shutdowns.
-        Calls stop_app for every enabled app
+        Calls stop_module for every enabled app
         :return:
         """
-        for module_name, module in cls._loaded_apps.items():
+        for module_name, module in cls._loaded_modules.items():
             logger.info(f"[ModuleService] Stopping {module.name}")
-            await cls.stop_app(module_name)
+            await cls.stop_module(module_name)
 
     @classmethod
     async def pre_init_module(cls, application, module: BaseModule):
@@ -86,7 +113,7 @@ class ModuleService:
             logger.error(f"[ModuleService] Module '{module.name}' component not loaded. {error.__class__.__name__}")
             return False
 
-        cls._loaded_apps[module.name] = module
+        cls._loaded_modules[module.name] = module
         return True
 
     @classmethod
@@ -115,18 +142,18 @@ class ModuleService:
 
     @classmethod
     async def shutdown_app(cls, app_name):
-        app = cls._loaded_apps[app_name]
+        app = cls._loaded_modules[app_name]
 
         # if app.name == 'core':
         #     return
-        # elif app.name not in cls._loaded_apps:
+        # elif app.name not in cls._loaded_modules:
         #     # await app.delete()
         #     return
 
         if app.enabled:
-            await cls.stop_app(app)
+            await cls.stop_module(app)
 
-        module = cls._loaded_apps.pop(app.name)
+        module = cls._loaded_modules.pop(app.name)
         for component in module.components:
             await component.shutdown()
             logger.debug(f'[{app.name}] component {component.__class__.__name__} shutdown')
@@ -140,37 +167,37 @@ class ModuleService:
         # await app.delete()
 
     @classmethod
-    async def start_app(cls, app_name):
-        app = cls._loaded_apps[app_name]
+    async def start_module(cls, app_name):
+        module = cls._loaded_modules[app_name]
         try:
-            for component in app.components:
+            for component in module.components:
                 await component.start()
-                logger.debug(f'[{app.name}] component {component.__class__.__name__} started')
-            await app.start()
+                logger.debug(f'[{module.name}] component {component.__class__.__name__} started')
+            await module.start()
         except Exception as error:
             logger.exception(error)
-            logger.error(f"Module '{app.name}' not started. {error.__class__.__name__}")
+            logger.error(f"Module '{module.name}' not started. {error.__class__.__name__}")
             return False
 
-        app.enabled = True
+        module.model.enabled = True
 
-        # await app.save()
+        await module.model.save()
         #
         # if app.sender:
         #     await cls._restart_core_consumer()
 
     @classmethod
-    async def stop_app(cls, app_name):
-        app = cls._loaded_apps[app_name]
+    async def stop_module(cls, app_name):
+        module = cls._loaded_modules[app_name]
 
-        for component in app.components:
+        for component in module.components:
             await component.stop()
-            logger.debug(f'[{app.name}] component {component.__class__.__name__} stopped')
-        await app.stop()
+            logger.debug(f'[{module.name}] component {component.__class__.__name__} stopped')
+        await module.stop()
 
-        app.enabled = False
+        module.model.enabled = False
 
-        # await app.save()
+        await module.model.save()
         # if module.sender:
         #     await cls._restart_core_consumer()
 
