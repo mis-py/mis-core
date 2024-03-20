@@ -13,4 +13,4 @@ class GenericResponse(BaseModel, Generic[T]):
     @computed_field
     @property
     def status(self) -> bool:
-        return self.code != 0
+        return self.code == 0
