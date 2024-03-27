@@ -1,12 +1,16 @@
-from fastapi import Depends, APIRouter, Security
-
+from fastapi import Depends, APIRouter, Security, Query
+from fastapi_pagination import Page
 
 from core.crud import variables, variable_value
 from core.db.models import Team, User, Module
 from core.dependencies import get_team_by_id, get_user_by_id, get_current_user
+from core.dependencies.misc import UnitOfWorkDep
 from core.dependencies.path import get_app_by_id, PaginationDep
 from core.exceptions import NotFound, ValidationFailed
-from core.schemas.variable import UpdateVariableModel, VariableValueModel, VariableModel
+from core.schemas.variable import UpdateVariableModel, VariableValueModel, VariableModel, VariableResponse
+from core.schemas.variable_value import VariableValueResponse
+from core.services.variable_service import VariableService
+from core.services.variable_value_service import VariableValueService
 
 from services.modules.module_service import ModuleService
 from services.variables.variables import VariablesManager
@@ -18,39 +22,51 @@ router = APIRouter()
 @router.get(
     '',
     dependencies=[Security(get_current_user)],
-    response_model=list[VariableModel]
+    response_model=Page[VariableResponse]
 )
-async def get_all_variables(pagination: PaginationDep):
-    query = await variables.query_get_multi(**pagination)
-    return await VariableModel.from_queryset(query)
+async def get_all_variables(
+        uow: UnitOfWorkDep,
+        is_global: bool = Query(default=None)
+):
+    return await VariableService(uow).filter_and_paginate(is_global=is_global)
 
 
 @router.get(
     '/my',
-    response_model=list[VariableValueModel]
+    response_model=Page[VariableValueResponse]
 )
-async def get_my_variables(pagination: PaginationDep, user: User = Depends(get_current_user)):
-    query = await variable_value.query_get_multi(**pagination, user=user)
-    return await VariableValueModel.from_queryset(query)
+async def get_my_variables(
+        uow: UnitOfWorkDep,
+        user: User = Depends(get_current_user)
+):
+    return await VariableValueService(uow).filter_and_paginate(
+        user_id=user.pk,
+        prefetch_related=['setting']
+    )
 
 
 @router.put(
     '/my',
-    response_model=list[UpdateVariableModel]
 )
-async def edit_my_variables(data: list[UpdateVariableModel], user: User = Depends(get_current_user)):
-    variable_value.set_variables_values(data, user)
+async def edit_my_variables(
+        uow: UnitOfWorkDep,
+        variables: list[UpdateVariableModel],
+        user: User = Depends(get_current_user)
+):
+    await VariableValueService(uow).set_variables_values(user_id=user.pk, variables=variables)
     await VariablesManager.update_variables(user=user)
+    return True
 
 
 @router.get(
     '/app',
     dependencies=[Security(get_current_user, scopes=['core:sudo'])],
-    response_model=list[VariableModel]
+    response_model=Page[VariableModel]
 )
-async def get_app_variables(pagination: PaginationDep, app: Module = Depends(get_app_by_id)):
-    query = await variables.query_get_multi(**pagination, app=app)
-    return await VariableModel.from_queryset(query)
+async def get_app_variables(uow: UnitOfWorkDep, app: Module = Depends(get_app_by_id)):
+    return await VariableService(uow).filter_and_paginate(
+        app_id=app.pk,
+    )
 
 
 @router.put(
@@ -59,7 +75,7 @@ async def get_app_variables(pagination: PaginationDep, app: Module = Depends(get
     response_model=list[UpdateVariableModel]
 )
 async def set_default_value(variable_data: list[UpdateVariableModel], app: Module = Depends(get_app_by_id)):
-    module = ModuleService.loaded_apps()[app.name]
+    module = ModuleService.loaded_modules()[app.name]
     updated_variables = list()
     for variable in variable_data:
         variable_model = await variables.get(id=variable.setting_id, app=app)
@@ -90,45 +106,54 @@ async def set_default_value(variable_data: list[UpdateVariableModel], app: Modul
 
 @router.get(
     '/user',
-    response_model=list[VariableValueModel],
+    response_model=Page[VariableValueResponse],
     dependencies=[Security(get_current_user, scopes=['core:sudo'])]
 )
-async def get_user_variables(pagination: PaginationDep, user: User = Depends(get_user_by_id)):
-    query = await variable_value.query_get_multi(**pagination, user=user)
-    return await VariableValueModel.from_queryset(query)
+async def get_user_variables(
+        uow: UnitOfWorkDep,
+        user: User = Depends(get_user_by_id)
+):
+    return await VariableValueService(uow).filter_and_paginate(
+        user_id=user.pk,
+        prefetch_related=['setting']
+    )
 
 
 @router.put(
     '/user',
-    response_model=list[UpdateVariableModel],
     dependencies=[Security(get_current_user, scopes=['core:sudo'])]
 )
 async def update_user_variable(
-        data: list[UpdateVariableModel],
+        uow: UnitOfWorkDep,
+        variables: list[UpdateVariableModel],
         user: User = Depends(get_user_by_id),
 ):
-    variable_value.set_variables_values(data, user)
+    await VariableValueService(uow).set_variables_values(user_id=user.pk, variables=variables)
     await VariablesManager.update_variables(user=user)
+    return True
 
 
 @router.get(
     '/team',
-    response_model=list[VariableValueModel],
+    response_model=Page[VariableValueModel],
     dependencies=[Security(get_current_user, scopes=['core:sudo'])]
 )
-async def get_team_variables(pagination: PaginationDep, team: Team = Depends(get_team_by_id)):
-    query = await variable_value.query_get_multi(**pagination, team=team)
-    return await VariableValueModel.from_queryset(query)
+async def get_team_variables(uow: UnitOfWorkDep, team: Team = Depends(get_team_by_id)):
+    return await VariableValueService(uow).filter_and_paginate(
+        team_id=team.pk,
+        prefetch_related=['setting']
+    )
 
 
 @router.put(
     '/team',
     dependencies=[Security(get_current_user, scopes=['core:sudo'])],
-    response_model=list[UpdateVariableModel]
 )
 async def update_team_variables(
-        data: list[UpdateVariableModel],
+        uow: UnitOfWorkDep,
+        variables: list[UpdateVariableModel],
         team: Team = Depends(get_team_by_id)
 ):
-    variable_value.set_variables_values(data, team)
+    await VariableValueService(uow).set_variables_values(team_id=team.pk, variables=variables)
     await VariablesManager.update_variables(team=team)
+    return True
