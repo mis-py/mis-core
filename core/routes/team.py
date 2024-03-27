@@ -11,7 +11,7 @@ from core import crud
 from core.dependencies import get_team_by_id, get_current_user
 from core.dependencies.misc import UnitOfWorkDep
 from core.schemas.team import TeamResponse, TeamListResponse, TeamCreate, TeamUpdate
-from core.services.team_service import TeamService
+from core.services.team import TeamService
 
 router = APIRouter()
 

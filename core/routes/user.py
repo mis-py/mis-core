@@ -10,8 +10,8 @@ from core.dependencies.misc import UnitOfWorkDep
 from core.exceptions import NotFound, AlreadyExists
 from core.schemas.user import UserListResponse, \
     UserResponse, UserUpdate, UserCreate, UserSelfUpdate
-from core.services.team_service import TeamService
-from core.services.user_service import UserService
+from core.services.team import TeamService
+from core.services.user import UserService
 
 router = APIRouter()
 

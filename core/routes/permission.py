@@ -5,8 +5,8 @@ from core.db.models import User, Team
 from core.dependencies.misc import UnitOfWorkDep
 from core.schemas.permission import GrantedPermissionModel, PermissionModel, UpdatePermissionModel
 from core.dependencies import get_user_by_id, get_team_by_id, get_current_user
-from core.services.granted_permission_service import GrantedPermissionService
-from core.services.permission_service import PermissionService
+from core.services.granted_permission import GrantedPermissionService
+from core.services.permission import PermissionService
 
 router = APIRouter()
 

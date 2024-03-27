@@ -9,8 +9,8 @@ from core.dependencies.path import get_app_by_id, PaginationDep
 from core.exceptions import NotFound, ValidationFailed
 from core.schemas.variable import UpdateVariableModel, VariableValueModel, VariableModel, VariableResponse
 from core.schemas.variable_value import VariableValueResponse
-from core.services.variable_service import VariableService
-from core.services.variable_value_service import VariableValueService
+from core.services.variable import VariableService
+from core.services.variable_value import VariableValueService
 
 from services.modules.module_service import ModuleService
 from services.variables.variables import VariablesManager
