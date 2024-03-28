@@ -104,17 +104,6 @@ twisted = ["twisted"]
 zookeeper = ["kazoo"]
 
 [[package]]
-name = "async-timeout"
-version = "4.0.3"
-description = "Timeout context manager for asyncio programs"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "async-timeout-4.0.3.tar.gz", hash = "sha256:4640d96be84d82d02ed59ea2b7105a0f7b33abe8703703cd0ab0bf87c427522f"},
-    {file = "async_timeout-4.0.3-py3-none-any.whl", hash = "sha256:7405140ff1230c310e51dc27b3145b9092d659ce68ff733fb0cefe3ee42be028"},
-]
-
-[[package]]
 name = "asyncpg"
 version = "0.28.0"
 description = "An asyncio PostgreSQL driver"
@@ -1753,4 +1742,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "3a98bd5d1bce02d0ef30ae9b6c7da8dd831e8a925fca3ac1e857b284f8ed483d"
+content-hash = "a53ccaaffb693a162d1523fbe2b94130f5c9764f60f7620962eab79c43965b02"
