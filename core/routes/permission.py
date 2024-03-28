@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, Security
+from fastapi_pagination import Page
 
-from core import crud
 from core.db.models import User, Team
+from core.dependencies.misc import UnitOfWorkDep
 from core.schemas.permission import GrantedPermissionModel, PermissionModel, UpdatePermissionModel
 from core.dependencies import get_user_by_id, get_team_by_id, get_current_user
-from core.dependencies.path import PaginationDep
+from core.services.granted_permission import GrantedPermissionService
+from core.services.permission import PermissionService
 
 router = APIRouter()
 
@@ -12,60 +14,61 @@ router = APIRouter()
 @router.get(
     '',
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])],
-    response_model=list[PermissionModel]
+    response_model=Page[PermissionModel]
 )
-async def permissions_list(pagination: PaginationDep):
-    return await PermissionModel.from_queryset(await crud.permission.query_get_multi(**pagination))
+async def permissions_list(uow: UnitOfWorkDep):
+    return await PermissionService(uow).filter_and_paginate()
 
 
 @router.get(
     '/my',
-    response_model=list[GrantedPermissionModel]
+    response_model=Page[GrantedPermissionModel]
 )
-async def get_my_permissions(user: User = Depends(get_current_user)):
-    return await GrantedPermissionModel.from_queryset(await user.get_granted_permissions())
+async def get_my_permissions(uow: UnitOfWorkDep, user: User = Depends(get_current_user)):
+    return await GrantedPermissionService(uow).filter_and_paginate(
+        user_id=user.pk,
+        prefetch_related=['team', 'user', 'permission'],
+    )
 
 
 @router.get(
     '/get/user',
-    response_model=list[GrantedPermissionModel],
+    response_model=Page[GrantedPermissionModel],
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])]
 )
-async def get_user_permissions(user: User = Depends(get_user_by_id)):
-    return await GrantedPermissionModel.from_queryset(await user.get_granted_permissions())
-
+async def get_user_permissions(uow: UnitOfWorkDep, user: User = Depends(get_user_by_id)):
+    return await GrantedPermissionService(uow).filter_and_paginate(
+        user_id=user.pk,
+        prefetch_related=['team', 'user', 'permission'],
+    )
 
 @router.put(
     '/edit/user',
-    response_model=list[GrantedPermissionModel],
+    response_model=Page[GrantedPermissionModel],
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])]
 )
 async def set_user_permissions(
-        data: list[UpdatePermissionModel],
+        uow: UnitOfWorkDep,
+        permissions: list[UpdatePermissionModel],
         user: User = Depends(get_user_by_id)
 ):
-    for permission in data:
-        if user.id == 1 and permission.permission_id == 1:
-            continue
-
-        perm = await crud.permission.get(id=permission.permission_id)
-        if not perm:
-            continue
-
-        if permission.granted:
-            await user.add_permission(perm.scope)
-        else:
-            await user.remove_permission(perm.scope)
-    return await GrantedPermissionModel.from_queryset(await user.get_granted_permissions())
+    await GrantedPermissionService(uow).set_for_user(permissions=permissions, user=user)
+    return await GrantedPermissionService(uow).filter_and_paginate(
+        user_id=user.pk,
+        prefetch_related=['team', 'user', 'permission']
+    )
 
 
 @router.get(
     '/get/team',
-    response_model=list[GrantedPermissionModel],
+    response_model=Page[GrantedPermissionModel],
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])]
 )
-async def get_team_permissions(team: Team = Depends(get_team_by_id)):
-    return await GrantedPermissionModel.from_queryset(await team.get_granted_permissions())
+async def get_team_permissions(uow: UnitOfWorkDep, team: Team = Depends(get_team_by_id)):
+    return await GrantedPermissionService(uow).filter_and_paginate(
+        team_id=team.pk,
+        prefetch_related=['team', 'user', 'permission'],
+    )
 
 
 @router.put(
@@ -74,18 +77,12 @@ async def get_team_permissions(team: Team = Depends(get_team_by_id)):
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])]
 )
 async def set_team_permissions(
-        data: list[UpdatePermissionModel],
+        uow: UnitOfWorkDep,
+        permissions: Page[UpdatePermissionModel],
         team: Team = Depends(get_team_by_id)
 ):
-    for permission in data:
-
-        perm = await crud.permission.get(id=permission.permission_id)
-        if not perm:
-            continue
-
-        if permission.granted:
-            await team.add_permission(perm.scope)
-        else:
-            await team.remove_permission(perm.scope)
-
-    return await GrantedPermissionModel.from_queryset(await team.get_granted_permissions())
+    await GrantedPermissionService(uow).set_for_team(permissions=permissions, team=team)
+    return await GrantedPermissionService(uow).filter_and_paginate(
+        team_id=team.pk,
+        prefetch_related=['team', 'user', 'permission']
+    )

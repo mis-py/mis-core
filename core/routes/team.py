@@ -1,75 +1,65 @@
-from fastapi import Depends, APIRouter, Security, Response
+from typing import Optional
+
+from fastapi import Depends, APIRouter, Security, Response, Query
+from fastapi_pagination import Page
+from fastapi_pagination.ext.tortoise import paginate
+from tortoise.transactions import in_transaction
 
 from core.db.models import Team, Variable
 from core import crud
 
 from core.dependencies import get_team_by_id, get_current_user
-from core.dependencies.path import PaginationDep
-from core.schemas.team import TeamData, TeamListModel, TeamDetailModel
+from core.dependencies.misc import UnitOfWorkDep
+from core.schemas.team import TeamResponse, TeamListResponse, TeamCreate, TeamUpdate
+from core.services.team import TeamService
 
 router = APIRouter()
 
 
 @router.get(
     '',
-    response_model=list[TeamListModel],
     dependencies=[Depends(get_current_user)]
 )
-async def get_teams(pagination: PaginationDep):
-    query = await crud.team.query_get_multi(**pagination)
-    return await TeamListModel.from_queryset(query)
+async def get_teams(uow: UnitOfWorkDep) -> Page[TeamListResponse]:
+    return await TeamService(uow).filter_and_paginate(prefetch_related=['users'])
 
 
 @router.get(
     '/get',
     dependencies=[Depends(get_current_user)],
-    response_model=TeamDetailModel
+    response_model=TeamResponse
 )
-async def get_team(team: Team = Depends(get_team_by_id)):
-    schema = await TeamDetailModel.from_tortoise_orm(team)
-    schema.permissions = await team.get_granted_permissions(scopes_list=True)
-    return schema
+async def get_team(uow: UnitOfWorkDep, team: Team = Depends(get_team_by_id)):
+    team_with_related = await TeamService(uow).get(id=team.pk, prefetch_related=['users', 'settings'])
+    team_with_related.permissions = await TeamService(uow).get_permissions(team_with_related)
+    return team_with_related
 
 
 @router.post(
     '/add',
-    response_model=TeamDetailModel,
+    response_model=TeamResponse,
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:teams'])]
 )
-async def create_team(team_data: TeamData):
-    new_team = await crud.team.create_by_name(name=team_data.name)
-
-    if team_data.permissions:
-        await new_team.set_permissions(team_data.permissions)
-
-    if team_data.users_ids:
-        await crud.team.set_team_users(team=new_team, users_ids=team_data.users_ids)
-
-    for variable in team_data.variables:
-        await crud.variable_value.set_variable_value(
-            await Variable.get(id=variable.setting_id),
-            variable.new_value, team=new_team
-        )
-    return await TeamDetailModel.from_tortoise_orm(new_team)
+async def create_team(uow: UnitOfWorkDep, team_in: TeamCreate):
+    new_team = await TeamService(uow).create_with_perms_users_vars(team_in)
+    team_with_related = await TeamService(uow).get(id=new_team.pk, prefetch_related=['users', 'settings'])
+    return team_with_related
 
 
 @router.put(
     '/edit',
-    response_model=TeamDetailModel,
+    response_model=TeamResponse,
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:teams'])]
 )
-async def edit_team(team_data: TeamData, team: Team = Depends(get_team_by_id)):
-    if team_data.name:
-        await crud.team.update(team, {"name": team_data.name})
+async def edit_team(uow: UnitOfWorkDep, team_in: TeamUpdate, team: Team = Depends(get_team_by_id)):
+    team_with_related = await TeamService(uow).get(
+        id=team.pk, prefetch_related=['users'])
 
-    if team_data.users_ids:
-        await crud.team.clear_team_users(team)  # clear old team members
-        await crud.team.set_team_users(team, team_data.users_ids)  # set new team members
+    await TeamService(uow).update_with_perms_and_users(team=team_with_related, team_in=team_in)
 
-    if team_data.permissions:
-        await team.set_permissions(team_data.permissions)
-
-    return await TeamDetailModel.from_tortoise_orm(team)
+    updated_team_with_related = await TeamService(uow).get(
+        id=team_with_related.pk, prefetch_related=['users', 'settings'])
+    return updated_team_with_related
 
 
 @router.delete(
@@ -77,17 +67,24 @@ async def edit_team(team_data: TeamData, team: Team = Depends(get_team_by_id)):
     response_model=bool,
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:teams'])]
 )
-async def delete_team(team: Team = Depends(get_team_by_id)):
-    await crud.team.remove(id=team.id)
+async def delete_team(uow: UnitOfWorkDep, team: Team = Depends(get_team_by_id)):
+    await TeamService(uow).delete(id=team.pk)
     return Response(status_code=204)
 
 
 @router.put(
     '/edit/users',
-    response_model=bool,
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:teams'])]
 )
-async def set_team_users(users_ids: list[int], team: Team = Depends(get_team_by_id)):
-    await crud.team.clear_team_users(team)  # clear old team members
-    await crud.team.set_team_users(team, users_ids)  # set new team members
-    return Response(status_code=200)
+async def set_team_users(
+        uow: UnitOfWorkDep,
+        users_ids: list[int],
+        team: Team = Depends(get_team_by_id)
+) -> TeamResponse:
+    team_with_related = await TeamService(uow).get(
+        id=team.pk, prefetch_related=['users'])
+    await TeamService(uow).set_users(team=team_with_related, users_ids=users_ids)
+
+    updated_team_with_related = await TeamService(uow).get(
+        id=team.pk, prefetch_related=['users', 'settings'])
+    return updated_team_with_related
