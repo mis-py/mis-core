@@ -133,3 +133,7 @@ def custom_log_timezone(record):
 def camel_to_spaces(camel_string: str):
     list_words = re.split(r'(?=[A-Z])', camel_string)
     return ' '.join(list_words).strip()
+
+
+def exclude_none_values(data: dict):
+    return {key: value for key, value in data.items() if value is not None}

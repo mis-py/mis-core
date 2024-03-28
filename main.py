@@ -1,6 +1,7 @@
 import logging
 import sys
 import uvicorn
+from fastapi_pagination import add_pagination
 from loguru import logger
 from contextlib import asynccontextmanager
 from functools import lru_cache
@@ -96,6 +97,7 @@ async def lifespan(application: FastAPI):
     await init_admin_user()
     await init_guardian()
     await init_core_routes(application)
+    add_pagination(app)  # required after init routes
 
     logger.success('MIS Project API started!')
     yield
