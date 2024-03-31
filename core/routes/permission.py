@@ -7,6 +7,7 @@ from core.schemas.permission import GrantedPermissionModel, PermissionModel, Upd
 from core.dependencies import get_user_by_id, get_team_by_id, get_current_user
 from core.services.granted_permission import GrantedPermissionService
 from core.services.permission import PermissionService
+from core.utils.schema import ResponsePage, MisResponse
 
 router = APIRouter()
 
@@ -14,7 +15,7 @@ router = APIRouter()
 @router.get(
     '',
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])],
-    response_model=Page[PermissionModel]
+    response_model=ResponsePage[PermissionModel]
 )
 async def permissions_list(uow: UnitOfWorkDep):
     return await PermissionService(uow).filter_and_paginate()
@@ -22,7 +23,7 @@ async def permissions_list(uow: UnitOfWorkDep):
 
 @router.get(
     '/my',
-    response_model=Page[GrantedPermissionModel]
+    response_model=ResponsePage[GrantedPermissionModel]
 )
 async def get_my_permissions(uow: UnitOfWorkDep, user: User = Depends(get_current_user)):
     return await GrantedPermissionService(uow).filter_and_paginate(
@@ -33,8 +34,8 @@ async def get_my_permissions(uow: UnitOfWorkDep, user: User = Depends(get_curren
 
 @router.get(
     '/get/user',
-    response_model=Page[GrantedPermissionModel],
-    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])]
+    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])],
+    response_model=ResponsePage[GrantedPermissionModel],
 )
 async def get_user_permissions(uow: UnitOfWorkDep, user: User = Depends(get_user_by_id)):
     return await GrantedPermissionService(uow).filter_and_paginate(
@@ -42,10 +43,11 @@ async def get_user_permissions(uow: UnitOfWorkDep, user: User = Depends(get_user
         prefetch_related=['team', 'user', 'permission'],
     )
 
+
 @router.put(
     '/edit/user',
-    response_model=Page[GrantedPermissionModel],
-    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])]
+    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])],
+    response_model=ResponsePage[GrantedPermissionModel],
 )
 async def set_user_permissions(
         uow: UnitOfWorkDep,
@@ -61,7 +63,7 @@ async def set_user_permissions(
 
 @router.get(
     '/get/team',
-    response_model=Page[GrantedPermissionModel],
+    response_model=ResponsePage[GrantedPermissionModel],
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])]
 )
 async def get_team_permissions(uow: UnitOfWorkDep, team: Team = Depends(get_team_by_id)):
@@ -73,12 +75,12 @@ async def get_team_permissions(uow: UnitOfWorkDep, team: Team = Depends(get_team
 
 @router.put(
     '/edit/team',
-    response_model=list[GrantedPermissionModel],
+    response_model=ResponsePage[GrantedPermissionModel],
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])]
 )
 async def set_team_permissions(
         uow: UnitOfWorkDep,
-        permissions: Page[UpdatePermissionModel],
+        permissions: list[UpdatePermissionModel],
         team: Team = Depends(get_team_by_id)
 ):
     await GrantedPermissionService(uow).set_for_team(permissions=permissions, team=team)
