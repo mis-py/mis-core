@@ -63,7 +63,7 @@ async def edit_my_variables(
         prefetch_related=['setting']
     )
 
-    return MisResponse[VariableValueModel](data=variable_with_related)
+    return MisResponse[VariableValueModel](result=variable_with_related)
 
 
 @router.get(
@@ -109,7 +109,7 @@ async def set_default_value(variable_data: list[UpdateVariableModel], app: Modul
 
     # TODO what is it for? -> await misapp.init_settings()
     await VariablesManager.update_variables(app=app)
-    return MisResponse(data=updated_variables)
+    return MisResponse(result=updated_variables)
 
 
 @router.get(
@@ -146,7 +146,7 @@ async def update_user_variable(
         prefetch_related=['setting']
     )
 
-    return MisResponse[VariableValueModel](data=variable_with_related)
+    return MisResponse[VariableValueModel](result=variable_with_related)
 
 
 @router.get(
@@ -180,4 +180,4 @@ async def update_team_variables(
         prefetch_related=['setting']
     )
 
-    return MisResponse[VariableValueModel](data=variable_with_related)
+    return MisResponse[VariableValueModel](result=variable_with_related)
