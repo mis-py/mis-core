@@ -42,7 +42,7 @@ async def get_user_me(
         prefetch_related=['team', 'settings']
     )
 
-    return MisResponse[UserResponse](data=user_with_related)
+    return MisResponse[UserResponse](result=user_with_related)
 
 
 @router.put(
@@ -59,7 +59,7 @@ async def edit_user_me(
     user_with_related = await user_service.get(
         id=user.pk, prefetch_related=['team', 'settings'])
 
-    return MisResponse[UserResponse](data=user_with_related)
+    return MisResponse[UserResponse](result=user_with_related)
 
 
 @router.post(
@@ -80,7 +80,7 @@ async def create_user(uow: UnitOfWorkDep, user_in: UserCreate):
     new_user_with_related = await UserService(uow).get(
         id=new_user.pk, prefetch_related=['team', 'settings'])
 
-    return MisResponse[UserResponse](data=new_user_with_related)
+    return MisResponse[UserResponse](result=new_user_with_related)
 
 
 @router.get(
@@ -95,7 +95,7 @@ async def get_user(
     user_with_related = await UserService(uow).get(
         id=user.pk, prefetch_related=['team', 'settings'])
 
-    return MisResponse[UserResponse](data=user_with_related)
+    return MisResponse[UserResponse](result=user_with_related)
 
 
 @router.put(
@@ -112,7 +112,7 @@ async def edit_user(
     user_with_related = await UserService(uow).get(
         id=user.pk, prefetch_related=['team', 'settings'])
 
-    return MisResponse[UserResponse](data=user_with_related)
+    return MisResponse[UserResponse](result=user_with_related)
 
 
 @router.delete(
@@ -123,4 +123,4 @@ async def edit_user(
 async def delete_user(uow: UnitOfWorkDep, user: User = Depends(get_user_by_id)):
     await UserService(uow).delete(id=user.pk)
 
-    return MisResponse(data={})
+    return MisResponse()

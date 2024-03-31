@@ -92,5 +92,5 @@ class PageResponse(AbstractPage[T], BaseResponse[T]):
 
 
 class MisResponse(BaseResponse[T]):
-    data: Optional[T] = None
+    result: Optional[T] = Field(default={})
 
