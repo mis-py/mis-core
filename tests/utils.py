@@ -30,8 +30,9 @@ def default_check(response):
     assert response.status_code == 200
     assert is_valid_json(response.text)
 
-    json = response.json()
+    response_json = response.json()
 
-    # assert json.status
+    # assert response_json['status']
+    # assert response_json['status_code'] == 200
 
     return True
