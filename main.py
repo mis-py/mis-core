@@ -167,9 +167,9 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content=MisResponse(
-            code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            stastus_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             msg=f"{exc_name}: {exc_str}",
-            data=exc.errors()
+            result=exc.errors()
         ).model_dump(),
     )
 
@@ -182,9 +182,9 @@ async def mis_error_exception_handler(request: Request, exc: MISError):
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content=MisResponse(
-            code=exc.status_code,
+            stastus_code=exc.status_code,
             msg=f"{exc_name}: {exc.message}",
-            data=exc.data,
+            result=exc.data,
         ).model_dump()
     )
 
