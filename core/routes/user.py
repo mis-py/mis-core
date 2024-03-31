@@ -9,7 +9,7 @@ from core.exceptions import NotFound, AlreadyExists
 from core.schemas.user import UserResponse, UserUpdate, UserCreate, UserSelfUpdate
 from core.services.team import TeamService
 from core.services.user import UserService
-from core.utils.schema import MisResponse, ResponsePage
+from core.utils.schema import MisResponse, PageResponse
 
 router = APIRouter()
 
@@ -17,7 +17,7 @@ router = APIRouter()
 @router.get(
     '',
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:users'])],
-    response_model=ResponsePage[UserResponse]
+    response_model=PageResponse[UserResponse]
 )
 async def get_users(
         uow: UnitOfWorkDep,

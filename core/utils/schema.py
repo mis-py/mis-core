@@ -53,7 +53,7 @@ class ResponsePageData(BaseModel, Generic[T]):
     items: Sequence[T]
 
 
-class ResponsePage(AbstractPage[T], BaseResponse[T]):
+class PageResponse(AbstractPage[T], BaseResponse[T]):
     result: ResponsePageData[T]
     __params_type__ = Params
 

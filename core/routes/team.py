@@ -11,7 +11,7 @@ from core import crud
 from core.dependencies import get_team_by_id, get_current_user
 from core.dependencies.misc import UnitOfWorkDep
 from core.schemas.team import TeamResponse, TeamListResponse, TeamCreate, TeamUpdate
-from core.utils.schema import ResponsePage, MisResponse
+from core.utils.schema import PageResponse, MisResponse
 from core.services.team import TeamService
 
 router = APIRouter()
@@ -20,9 +20,9 @@ router = APIRouter()
 @router.get(
     '',
     dependencies=[Depends(get_current_user)],
-    response_model=ResponsePage[TeamListResponse],
+    response_model=PageResponse[TeamListResponse],
 )
-async def get_teams(uow: UnitOfWorkDep) -> ResponsePage[TeamListResponse]:
+async def get_teams(uow: UnitOfWorkDep) -> PageResponse[TeamListResponse]:
     return await TeamService(uow).filter_and_paginate(prefetch_related=['users'])
 
 

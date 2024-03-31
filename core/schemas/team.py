@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 from core.schemas.common import UserModelShort
 from core.schemas.variable import VariableValueModel
+from core.utils.schema import MisModel
 
 
 class TeamCreate(BaseModel):
@@ -19,7 +20,7 @@ class TeamUpdate(BaseModel):
     variables: Optional[list[UpdateVariableModel]] = []
 
 
-class TeamResponse(BaseModel):
+class TeamResponse(MisModel):
     id: int
     name: str
     users: list[UserModelShort] = []

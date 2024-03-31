@@ -4,7 +4,7 @@ from typing import Type, TypeVar, Optional
 from tortoise import Model
 from tortoise.queryset import QuerySet
 from fastapi_pagination import Page
-from core.utils.schema import ResponsePage
+from core.utils.schema import PageResponse
 from fastapi_pagination.ext.tortoise import paginate as tortoise_paginate
 
 
@@ -94,6 +94,6 @@ class TortoiseORMRepository(IRepository):
         """Save model object"""
         await obj.save()
 
-    async def paginate(self, queryset: QuerySet) -> ResponsePage:
+    async def paginate(self, queryset: QuerySet) -> PageResponse:
         """Paginate by fastapi-pagination and return pydantic model"""
         return await tortoise_paginate(queryset)

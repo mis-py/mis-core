@@ -3,7 +3,7 @@ from tortoise.queryset import QuerySet
 
 from core.repositories.base.repository import IRepository, ModelType
 from core.utils.common import exclude_none_values
-from core.utils.schema import ResponsePage
+from core.utils.schema import PageResponse
 
 
 class BaseService:
@@ -34,7 +34,7 @@ class BaseService:
         return await self.repo.filter_queryable(
             prefetch_related=prefetch_related, **filters_without_none)
 
-    async def filter_and_paginate(self, prefetch_related: list[str] = None, **filters) -> ResponsePage:
+    async def filter_and_paginate(self, prefetch_related: list[str] = None, **filters) -> PageResponse:
         queryset = await self.filter_queryable(prefetch_related, **filters)
         return await self.repo.paginate(queryset=queryset)
 
