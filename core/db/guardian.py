@@ -44,7 +44,7 @@ class GuardianAccessGroup(Model):
     users = fields.ManyToManyField(
         "models.User",
         related_name="access_groups",
-        through="mis_user_group_relation"
+        through="mis_guardian_user_group_relation"
     )
 
     class Meta:
