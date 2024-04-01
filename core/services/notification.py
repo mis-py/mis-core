@@ -1,19 +1,50 @@
+from fastapi_pagination import Page
+from fastapi_pagination.bases import AbstractParams
 from tortoise.queryset import QuerySet
 
-from core.db.models import RoutingKey, User
+from core.db.models import User
 from core.crud import user
-from core.crud.notification import subscription
 from core.utils.notification.recipient import Recipient
 
-
-async def subscribe_routing_key(user: User, routing_key: RoutingKey) -> None:
-    await subscription.get_or_create_subscription(
-        user=user, routing_key=routing_key
-    )
+from core.services.base.base_service import BaseService
+from core.services.base.unit_of_work import IUnitOfWork
 
 
-async def unsubscribe_routing_key(user: User, routing_key: RoutingKey) -> None:
-    await subscription.remove(user=user, routing_key=routing_key)
+class RoutingKeyService(BaseService):
+    def __init__(self, uow: IUnitOfWork):
+        super().__init__(uow.routing_key_repo)
+        self.uow = uow
+
+    async def filter_subscribed_and_paginate(self, user_id: int, params: AbstractParams) -> Page:
+        queryset = await self.uow.routing_key_repo.filter_by_user(user_id=user_id)
+        return await self.uow.routing_key_repo.paginate(queryset=queryset, params=params)
+
+
+class RoutingKeySubscriptionService(BaseService):
+    def __init__(self, uow: IUnitOfWork):
+        super().__init__(uow.routing_key_subscription_repo)
+        self.uow = uow
+
+    async def subscribe(self, user_id: int, routing_key_id: int):
+        await self.uow.routing_key_subscription_repo.create(
+            data={"user_id": user_id, "routing_key_id": routing_key_id}
+        )
+
+    async def unsubscribe(self, user_id: int, routing_key_id: int):
+        await self.uow.routing_key_subscription_repo.delete(
+            user_id=user_id, routing_key_id=routing_key_id,
+        )
+
+    async def set_user_subscriptions(self, user: User, routing_key_ids: list[int]):
+        async with self.uow:
+            # remove old subscriptions
+            await self.uow.routing_key_subscription_repo.delete(user_id=user.pk)
+
+            # set new subscriptions
+            await self.uow.routing_key_subscription_repo.create_bulk(
+                user_id=user.pk,
+                routing_key_ids=routing_key_ids,
+            )
 
 
 async def query_users_who_receive_message(routing_key: str, is_force_send: bool, recipient: Recipient) -> QuerySet:

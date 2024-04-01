@@ -5,12 +5,12 @@ from typing import Literal, Optional
 from core.schemas.common import UserModelShort, TeamModelShort
 
 
-class JobSchedule(BaseModel):
+class JobScheduleUpdate(BaseModel):
     interval: int = Body(None, gt=0)
     cron: str | list[str] = Body("", min_length=1)
 
 
-class JobSchema(BaseModel):
+class JobResponse(BaseModel):
     id: str
     name: str
     status: Literal["running", "paused"]
@@ -21,12 +21,12 @@ class JobSchema(BaseModel):
     team: Optional[TeamModelShort]
 
 
-class JobAdd(BaseModel):
+class JobCreate(BaseModel):
     extra: Optional[dict] = None
-    trigger: Optional[JobSchedule] = None
+    trigger: Optional[JobScheduleUpdate] = None
 
 
-class TaskSchema(BaseModel):
+class TaskResponse(BaseModel):
     id: str
     # module: str
     name: str

@@ -19,8 +19,8 @@ async def get_team_by_id(team_id: int):
     return team
 
 
-async def get_app_by_id(app_id: int):
-    app = await crud.module.get(id=app_id)
+async def get_module_by_id(module_id: int):
+    app = await crud.module.get(id=module_id)
     if not app:
         raise NotFound('App not found')
     return app

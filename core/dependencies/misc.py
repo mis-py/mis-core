@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import Request, Depends
+from fastapi_pagination import Params
 
 from config import CoreSettings
 from core.db.models import Module, User
@@ -44,3 +45,4 @@ async def inject_context(
 
 
 UnitOfWorkDep = Annotated[IUnitOfWork, Depends(unit_of_work_factory)]
+PaginateParamsDep = Annotated[Params, Depends()]
