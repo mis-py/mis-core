@@ -1,21 +1,21 @@
 import tortoise.exceptions
 from fastapi import APIRouter, Security, Depends
 from fastapi import Response, Request
+from fastapi_pagination import Page
 from loguru import logger
 
-from core import crud
-from core.crud import module
 from core.db.models import Module
 
 from core.dependencies import get_current_user
-from core.dependencies.path import get_app_by_id, PaginationDep
-from core.schemas.common import AppModel
+from core.dependencies.misc import UnitOfWorkDep, PaginateParamsDep
+from core.dependencies.path import get_module_by_id
+from core.schemas.module import ModuleManifestResponse
+from core.services.module import ModuleUOWService
 
 # from .schema import BundleAppModel
 
 from services.modules.exceptions import LoadModuleError, StartModuleError
 from services.modules.module_service import ModuleService
-from services.modules.module_service.utils import read_module_manifest
 
 router = APIRouter()
 
@@ -23,19 +23,14 @@ router = APIRouter()
 @router.get(
     '',
     dependencies=[Security(get_current_user)],
-    response_model=list[AppModel]
+    response_model=Page[ModuleManifestResponse]
 )
-async def get_modules(pagination: PaginationDep, app_id: int = None):
-    queryset_modules = await crud.module.query_get_multi(**pagination, app_id=app_id)
-    modules = await queryset_modules
-
-    # add module manifests to response
-    for module in modules:
-        if module.name == 'core':  # skip module without manifest
-            continue
-
-        module.manifest = read_module_manifest(module.name)
-    return modules
+async def get_modules(uow: UnitOfWorkDep, paginate_params: PaginateParamsDep, module_id: int = None):
+    paginated_modules = await ModuleUOWService(uow).filter_and_paginate(
+        app_id=module_id, params=paginate_params
+    )
+    modules_with_manifest = await ModuleUOWService(uow).set_matifest_in_response(paginated_modules)
+    return modules_with_manifest
 
 
 # @router.get(
@@ -74,12 +69,12 @@ async def get_modules(pagination: PaginationDep, app_id: int = None):
 #     dependencies=[Security(get_current_active_user)],
 # )
 # async def get_app_file(app_name: str):
-    # try:
-    #     with open(FRONTEND_DIR / app_name / 'index.html') as data:
-    #         return Response(content=data.read(), media_type='text/html')
-    # except FileNotFoundError as error:
-    #     raise CoreError(str(error))
-    # pass
+# try:
+#     with open(FRONTEND_DIR / app_name / 'index.html') as data:
+#         return Response(content=data.read(), media_type='text/html')
+# except FileNotFoundError as error:
+#     raise CoreError(str(error))
+# pass
 
 
 # @router.get(
@@ -87,23 +82,28 @@ async def get_modules(pagination: PaginationDep, app_id: int = None):
 #     dependencies=[Security(get_current_active_user)]
 # )
 # async def get_app_file_path(app_name: str, file: str):
-    # path = FRONTEND_DIR / app_name / file
-    # with open(path) as data:
-    #     media_type, encoding = guess_type(path)
-    #     return Response(content=data.read(), media_type=media_type)
-    # pass
+# path = FRONTEND_DIR / app_name / file
+# with open(path) as data:
+#     media_type, encoding = guess_type(path)
+#     return Response(content=data.read(), media_type=media_type)
+# pass
 
 
 @router.put(
     '/init',
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:modules'])]
 )
-async def init_module(request: Request, app: Module = Depends(get_app_by_id)):
+async def init_module(
+        uow: UnitOfWorkDep,
+        request: Request,
+        module: Module = Depends(get_module_by_id),
+):
+    module_uow_service = ModuleUOWService(uow)
     try:
-        if app.enabled:
-            await ModuleService.stop_module(app)
+        if module.enabled:
+            await ModuleService.stop_module(module.name, module_uow_service)
 
-        await ModuleService.init_module(app.name, request.app)
+        await ModuleService.init_module(module.name, request.app, module_uow_service)
     except ModuleNotFoundError as e:
         logger.exception(e)
         raise LoadModuleError(
@@ -122,8 +122,12 @@ async def init_module(request: Request, app: Module = Depends(get_app_by_id)):
     '/shutdown',
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:modules'])]
 )
-async def shutdown_application(app: Module = Depends(get_app_by_id)):
-    await ModuleService.shutdown_app(app.name)
+async def shutdown_application(
+        uow: UnitOfWorkDep,
+        module: Module = Depends(get_module_by_id),
+):
+    module_uow_service = ModuleUOWService(uow)
+    await ModuleService.shutdown_module(module.name, module_uow_service)
     return Response(status_code=200)
 
 
@@ -131,9 +135,13 @@ async def shutdown_application(app: Module = Depends(get_app_by_id)):
     '/start',
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:modules'])]
 )
-async def start_module(app: Module = Depends(get_app_by_id)):
+async def start_module(
+        uow: UnitOfWorkDep,
+        module: Module = Depends(get_module_by_id),
+):
+    module_uow_service = ModuleUOWService(uow)
     try:
-        await ModuleService.start_module(app.name)
+        await ModuleService.start_module(module.name, module_uow_service)
     except Exception as e:
         logger.exception(e)
         raise StartModuleError(f"Error while starting app. Details: {str(e)}")
@@ -144,10 +152,13 @@ async def start_module(app: Module = Depends(get_app_by_id)):
     '/stop',
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:modules'])]
 )
-async def stop_module(app: Module = Depends(get_app_by_id)):
-    await ModuleService.stop_module(app.name)
+async def stop_module(
+        uow: UnitOfWorkDep,
+        module: Module = Depends(get_module_by_id)
+):
+    module_uow_service = ModuleUOWService(uow)
+    await ModuleService.stop_module(module.name, module_uow_service)
     return True
-
 
 # @router.post(
 #     '/install',

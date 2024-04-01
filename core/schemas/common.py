@@ -26,7 +26,6 @@ class AppModel(PydanticModel):
     id: int
     name: str
     enabled: bool
-    manifest: Optional[ModuleManifest] = None
 
     class Config:
         orig_model = Module

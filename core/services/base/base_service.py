@@ -1,4 +1,5 @@
 from fastapi_pagination import Page
+from fastapi_pagination.bases import AbstractParams
 from pydantic import BaseModel
 from tortoise.queryset import QuerySet
 
@@ -14,6 +15,9 @@ class BaseService:
 
     async def create(self, schema_in: BaseModel) -> ModelType:
         return await self.repo.create(data=schema_in.model_dump())
+
+    async def create_by_kwargs(self, **kwargs) -> ModelType:
+        return await self.repo.create(data=kwargs)
 
     async def update(self, id: int, schema_in: BaseModel) -> ModelType:
         return await self.repo.update(id=id, data=schema_in.model_dump())
@@ -34,7 +38,8 @@ class BaseService:
         return await self.repo.filter_queryable(
             prefetch_related=prefetch_related, **filters_without_none)
 
-    async def filter_and_paginate(self, prefetch_related: list[str] = None, **filters) -> Page:
+    async def filter_and_paginate(
+            self, prefetch_related: list[str] = None, params: AbstractParams = None, **filters
+    ) -> Page:
         queryset = await self.filter_queryable(prefetch_related, **filters)
-        return await self.repo.paginate(queryset=queryset)
-
+        return await self.repo.paginate(queryset=queryset, params=params)
