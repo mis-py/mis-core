@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Security
+from fastapi import APIRouter, Depends, Security, Response
 from fastapi_pagination import Page
 
 from core.db.models import User, Team
@@ -48,8 +48,9 @@ async def get_user_permissions(uow: UnitOfWorkDep, user: User = Depends(get_user
 
 @router.put(
     '/edit/user',
+
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])],
-    response_model=PageResponse[GrantedPermissionResponse],
+    response_model=MisResponse[GrantedPermissionResponse],
 )
 async def set_user_permissions(
         uow: UnitOfWorkDep,
@@ -57,10 +58,14 @@ async def set_user_permissions(
         user: User = Depends(get_user_by_id)
 ):
     await GrantedPermissionService(uow).set_for_user(permissions=permissions, user=user)
-    return await GrantedPermissionService(uow).filter(
+
+    filtered_permissions = await GrantedPermissionService(uow).filter(
         user_id=user.pk,
         prefetch_related=['team', 'user', 'permission__app']
     )
+
+    return MisResponse[GrantedPermissionResponse](result=filtered_permissions)
+
 
 
 @router.get(
@@ -77,8 +82,8 @@ async def get_team_permissions(uow: UnitOfWorkDep, team: Team = Depends(get_team
 
 @router.put(
     '/edit/team',
-    response_model=list[GrantedPermissionResponse],
-    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])]
+    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])],
+    response_model=MisResponse[list[GrantedPermissionResponse]]
 )
 async def set_team_permissions(
         uow: UnitOfWorkDep,
@@ -86,7 +91,10 @@ async def set_team_permissions(
         team: Team = Depends(get_team_by_id)
 ):
     await GrantedPermissionService(uow).set_for_team(permissions=permissions, team=team)
-    return await GrantedPermissionService(uow).filter(
+
+    filtered_permissions = await GrantedPermissionService(uow).filter(
         team_id=team.pk,
         prefetch_related=['team', 'user', 'permission']
     )
+
+    return MisResponse[list[GrantedPermissionResponse]](result=filtered_permissions)
