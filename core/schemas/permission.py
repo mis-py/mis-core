@@ -1,36 +1,30 @@
 from typing import Optional
 from pydantic import BaseModel
-from core.db.models import Permission
-from tortoise.contrib.pydantic import pydantic_model_creator, PydanticModel
 
-from core.db.permission import GrantedPermission
 from core.schemas.common import UserModelShort, TeamModelShort
+from core.schemas.module import ModuleResponse
 
 
-PermissionModel = pydantic_model_creator(
-    Permission,
-    name='PermissionModel',
-    exclude=('app.jobs', 'app.routing_keys', 'granted_permissions'),
-)
-
-
-class GrantedPermissionModel(PydanticModel):
+class PermissionResponse(BaseModel):
     id: int
-    permission: PermissionModel
+    scope: str
+    app: ModuleResponse
+
+
+class GrantedPermissionResponse(BaseModel):
+    id: int
+    permission: PermissionResponse
     user: Optional[UserModelShort]
     team: Optional[TeamModelShort]
 
-    class Config:
-        orig_model = GrantedPermission
 
-
-class ReadPermission(BaseModel):
+class UserPermDetailResponse(BaseModel):
     permission_id: int
     name: str
     scope: str
     app_id: int
 
 
-class UpdatePermissionModel(BaseModel):
+class PermissionUpdate(BaseModel):
     permission_id: int
     granted: bool | None = None

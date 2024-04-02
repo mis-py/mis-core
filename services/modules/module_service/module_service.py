@@ -3,6 +3,8 @@ from loguru import logger
 import os
 
 from core import crud
+from core.services.base.unit_of_work import unit_of_work_factory
+from core.services.module import ModuleUOWService
 from .utils import manifests_sort_by_dependency, import_module, unload_module, read_module_manifest, \
     module_dependency_check
 from ..utils import ModuleTemplate
@@ -68,13 +70,14 @@ class ModuleService:
 
     @classmethod
     async def init(cls, application):
+        module_uow_service = ModuleUOWService(unit_of_work_factory())
         for module_name, module in cls._loaded_modules.items():
             logger.debug(f'[ModuleService] Started init module: {module.name}')
 
-            is_loaded_success = await cls.init_module(application, module)
+            is_loaded_success = await cls.init_module(application, module, module_uow_service)
 
             if is_loaded_success and module.model.enabled:
-                await cls.start_module(module.name)
+                await cls.start_module(module.name, module_uow_service)
                 logger.debug(f'[ModuleService] Module {module.name} started!')
 
             logger.info(f"[ModuleService] Module '{module.name}' init finished!")
@@ -117,16 +120,16 @@ class ModuleService:
         return True
 
     @classmethod
-    async def init_module(cls, application, module: BaseModule):
+    async def init_module(cls, application, module: BaseModule, module_uow_service: ModuleUOWService):
 
-        app_model, is_created = await crud.module.get_or_create(name=module.name)
+        module_model, is_created = await module_uow_service.get_or_create(name=module.name)
 
-        module.model = app_model
+        module.model = module_model
 
         logger.debug(f"[ModuleService] Module '{module.name}' started init components.")
         try:
             for component in module.components:
-                await component.bind(module).init(application, app_model, is_created)
+                await component.bind(module).init(application, module_model, is_created)
                 logger.debug(f'[ModuleService] component {component.__class__.__name__} for module {module.name} init finished')
 
             await module.init()
@@ -141,8 +144,8 @@ class ModuleService:
         return True
 
     @classmethod
-    async def shutdown_app(cls, app_name):
-        app = cls._loaded_modules[app_name]
+    async def shutdown_module(cls, module_name: str, module_uow_service: ModuleUOWService):
+        module = cls._loaded_modules.pop(module_name)
 
         # if app.name == 'core':
         #     return
@@ -150,25 +153,24 @@ class ModuleService:
         #     # await app.delete()
         #     return
 
-        if app.enabled:
-            await cls.stop_module(app)
+        if module.model.enabled:
+            await cls.stop_module(module.name, module_uow_service=module_uow_service)
 
-        module = cls._loaded_modules.pop(app.name)
         for component in module.components:
             await component.shutdown()
-            logger.debug(f'[{app.name}] component {component.__class__.__name__} shutdown')
+            logger.debug(f'[{module.name}] component {component.__class__.__name__} shutdown')
 
         await module.shutdown()
 
         module.initialized = False
 
-        unload_module(app.name)
+        unload_module(module.name)
 
         # await app.delete()
 
     @classmethod
-    async def start_module(cls, app_name):
-        module = cls._loaded_modules[app_name]
+    async def start_module(cls, module_name: str, uow_service: ModuleUOWService):
+        module = cls._loaded_modules[module_name]
         try:
             for component in module.components:
                 await component.start()
@@ -179,25 +181,20 @@ class ModuleService:
             logger.error(f"Module '{module.name}' not started. {error.__class__.__name__}")
             return False
 
-        module.model.enabled = True
-
-        await module.model.save()
-        #
+        await uow_service.set_enabled(module_id=module.model.pk)
         # if app.sender:
         #     await cls._restart_core_consumer()
 
     @classmethod
-    async def stop_module(cls, app_name):
-        module = cls._loaded_modules[app_name]
+    async def stop_module(cls, module_name: str, module_uow_service: ModuleUOWService):
+        module = cls._loaded_modules[module_name]
 
         for component in module.components:
             await component.stop()
             logger.debug(f'[{module.name}] component {component.__class__.__name__} stopped')
         await module.stop()
 
-        module.model.enabled = False
-
-        await module.model.save()
+        await module_uow_service.set_disabled(module_id=module.model.pk)
         # if module.sender:
         #     await cls._restart_core_consumer()
 

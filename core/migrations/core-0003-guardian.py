@@ -35,6 +35,10 @@ steps = [
             "permission_id" INT NOT NULL REFERENCES "mis_guardian_permission" ("id") ON DELETE CASCADE,
             "user_id" INT NOT NULL REFERENCES "mis_users" ("id") ON DELETE CASCADE
         );
+        CREATE TABLE IF NOT EXISTS "mis_guardian_user_group_relation" (
+            "mis_guardian_access_group_id" INT NOT NULL REFERENCES "mis_guardian_access_group" ("id") ON DELETE CASCADE,
+            "user_id" INT NOT NULL REFERENCES "mis_users" ("id") ON DELETE CASCADE
+        );
         """,
         """
         DROP TABLE IF EXISTS "mis_guardian_access_group";
@@ -42,6 +46,7 @@ steps = [
         DROP TABLE IF EXISTS "mis_guardian_permission";
         DROP TABLE IF EXISTS "mis_guardian_group_permission";
         DROP TABLE IF EXISTS "mis_guardian_user_permission";
+        DROP TABLE IF EXISTS "mis_guardian_user_group_relation";
         """
     )
 ]

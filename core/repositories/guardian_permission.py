@@ -3,9 +3,9 @@ from abc import ABC
 from core.repositories.base.repository import TortoiseORMRepository, IRepository
 
 
-class IScheduleJobRepository(IRepository, ABC):
+class IGPermissionRepository(IRepository, ABC):
     pass
 
 
-class ScheduleJobRepository(TortoiseORMRepository, IScheduleJobRepository):
+class GPermissionRepository(TortoiseORMRepository, IGPermissionRepository):
     pass
