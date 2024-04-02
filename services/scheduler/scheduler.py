@@ -103,18 +103,14 @@ class SchedulerService:
     async def pause_job(cls, job_id: str, user) -> None:
         job = cls.get_job(job_id)
         job.pause()
-
-        job_instance = await job.get_scheduled_job(job_id=job_id, user=user)
-        await job.set_job_paused_status(job_instance)
         logger.info(f'[ModuleService]: Pause job {job.name}')
+
+
 
     @classmethod
     async def resume_job(cls, job_id: str, user) -> None:
         job = cls.get_job(job_id)
         job.resume()
-
-        job_instance = await job.get_scheduled_job(job_id=job_id, user=user)
-        await job.set_job_running_status(job_instance)
         logger.info(f'[ModuleService]: Resume job {job.name} (next run= {job.next_run_time})')
 
     @classmethod
@@ -194,9 +190,6 @@ class SchedulerService:
             logger.warning(f'[ModuleService]: Failed add job {task.name}. Job already running for this {task.type}')
             raise AlreadyExists(f"[ModuleService] Conflict id, job already exists for this {task.type}")
 
-        # save it in database
-        team = await user.team if task.type == 'team' else None
-        await job.create_scheduled_job(job_id=job_id, user=user, team=team, extra=extra)
         return job
 
     @classmethod
@@ -204,9 +197,10 @@ class SchedulerService:
         job = cls.get_job(job_id)
         job.remove()
 
-        saved_job = await job.get_scheduled_job(job_id=job_id, user=user)
-        if not saved_job:
-            raise NotFound(f"[ModuleService] Saved job {job_id} not found")
-
-        await job.delete_scheduled_job(job_id=job_id, user=user)
         logger.info(f'[ModuleService]: Removed job {job_id}!')
+
+    @classmethod
+    async def reschedule_job(cls, job_id: str, trigger) -> None:
+        job = cls.get_job(job_id)
+        job.reschedule(trigger=trigger)
+        logger.info(f'[ModuleService]: Reschedule job {job_id}! (next run= {job.next_run_time})')

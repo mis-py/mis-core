@@ -1,11 +1,10 @@
 from fastapi import Depends, APIRouter, Security, Query
 from fastapi_pagination import Page
 
-from core.crud import variables, variable_value
 from core.db.models import Team, User, Module
 from core.dependencies import get_team_by_id, get_user_by_id, get_current_user
 from core.dependencies.misc import UnitOfWorkDep
-from core.dependencies.path import get_app_by_id, PaginationDep
+from core.dependencies.path import get_module_by_id
 from core.exceptions import NotFound, ValidationFailed
 from core.schemas.variable import UpdateVariableModel, VariableValueModel, VariableModel, VariableResponse
 from core.schemas.variable_value import VariableValueResponse
@@ -27,9 +26,10 @@ router = APIRouter()
 )
 async def get_all_variables(
         uow: UnitOfWorkDep,
-        is_global: bool = Query(default=None)
+        is_global: bool = Query(default=None),
+        module_id: int = Query(default=None),
 ):
-    return await VariableService(uow).filter_and_paginate(is_global=is_global)
+    return await VariableService(uow).filter_and_paginate(is_global=is_global, app_id=module_id)
 
 
 @router.get(
@@ -71,9 +71,9 @@ async def edit_my_variables(
     dependencies=[Security(get_current_user, scopes=['core:sudo'])],
     response_model=PageResponse[VariableModel]
 )
-async def get_app_variables(uow: UnitOfWorkDep, app: Module = Depends(get_app_by_id)):
+async def get_app_variables(uow: UnitOfWorkDep, module: Module = Depends(get_module_by_id)):
     return await VariableService(uow).filter_and_paginate(
-        app_id=app.pk,
+        app_id=module.pk,
     )
 
 
@@ -82,11 +82,15 @@ async def get_app_variables(uow: UnitOfWorkDep, app: Module = Depends(get_app_by
     dependencies=[Security(get_current_user, scopes=['core:sudo'])],
     response_model=MisResponse[list[UpdateVariableModel]]
 )
-async def set_default_value(variable_data: list[UpdateVariableModel], app: Module = Depends(get_app_by_id)):
-    module = ModuleService.loaded_modules()[app.name]
+async def set_default_value(
+        uow: UnitOfWorkDep,
+        variables: list[UpdateVariableModel],
+        module_model: Module = Depends(get_module_by_id),
+):
+    module = ModuleService.loaded_modules()[module_model.name]
     updated_variables = list()
-    for variable in variable_data:
-        variable_model = await variables.get(id=variable.setting_id, app=app)
+    for variable in variables:
+        variable_model = await VariableService(uow).get(id=variable.setting_id, app_id=module_model.pk)
         if not variable_model:
             raise NotFound(f"Setting {variable.setting_id} is not bound to the app!")
 
@@ -97,7 +101,10 @@ async def set_default_value(variable_data: list[UpdateVariableModel], app: Modul
                 f"Can't set setting {variable_model.key}. Value is not '{variable_model.type}' type"
             )
 
-        await variables.update(variable_model, {"default_value": converted_value})
+        await VariableService(uow).update_default_value(
+            variable_id=variable_model.id,
+            default_value=converted_value,
+        )
 
         setattr(
             module.app_settings,
@@ -108,7 +115,7 @@ async def set_default_value(variable_data: list[UpdateVariableModel], app: Modul
         updated_variables.append(variable)
 
     # TODO what is it for? -> await misapp.init_settings()
-    await VariablesManager.update_variables(app=app)
+    await VariablesManager.update_variables(app=module)
     return MisResponse(result=updated_variables)
 
 

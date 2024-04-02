@@ -2,8 +2,6 @@ from abc import ABC, abstractmethod
 
 from tortoise.transactions import in_transaction
 
-from core.db.models import User, Team, Variable, VariableValue, RoutingKey, RoutingKeySubscription, ScheduledJob, Module
-from core.db.permission import Permission, GrantedPermission
 from core.repositories.user import IUserRepository, UserRepository
 from core.repositories.team import ITeamRepository, TeamRepository
 from core.repositories.variable import IVariableRepository, VariableRepository
@@ -13,8 +11,32 @@ from core.repositories.granted_permission import IGrantedPermissionRepository, G
 from core.repositories.routing_key import IRoutingKeyRepository, RoutingKeyRepository
 from core.repositories.routing_key_subscription import IRoutingKeySubscriptionRepository, \
     RoutingKeySubscriptionRepository
-from core.repositories.schedule_job import IScheduleJobRepository, ScheduleJobRepository
+from core.repositories.scheduled_job import IScheduledJobRepository, ScheduledJobRepository
 from core.repositories.module import IModuleRepository, ModuleRepository
+from core.repositories.guardian_permission import IGPermissionRepository, GPermissionRepository
+from core.repositories.guardian_content_type import IGContentTypeRepository, GContentTypeRepository
+from core.repositories.guardian_access_group import IGAccessGroupRepository, GAccessGroupRepository
+from core.repositories.guardian_user_permission import IGUserPermissionRepository, GUserPermissionRepository
+from core.repositories.guardian_group_permission import IGGroupPermissionRepository, GGroupPermissionRepository
+
+from core.db.models import (
+    User,
+    Team,
+    Variable,
+    VariableValue,
+    RoutingKey,
+    RoutingKeySubscription,
+    ScheduledJob,
+    Module
+)
+from core.db.guardian import (
+    GuardianPermission,
+    GuardianContentType,
+    GuardianAccessGroup,
+    GuardianUserPermission,
+    GuardianGroupPermission,
+)
+from core.db.permission import Permission, GrantedPermission
 
 
 class IUnitOfWork(ABC):
@@ -26,8 +48,13 @@ class IUnitOfWork(ABC):
     granted_permission_repo: IGrantedPermissionRepository
     routing_key_repo: IRoutingKeyRepository
     routing_key_subscription_repo: IRoutingKeySubscriptionRepository
-    schedule_job_repo: IScheduleJobRepository
+    scheduled_job_repo: IScheduledJobRepository
     module_repo: IModuleRepository
+    g_permission_repo: IGPermissionRepository
+    g_content_type_repo: IGContentTypeRepository
+    g_access_group_repo: IGAccessGroupRepository
+    g_user_permission_repo: IGUserPermissionRepository
+    g_group_permission_repo: IGGroupPermissionRepository
 
     @abstractmethod
     async def __aenter__(self):
@@ -57,8 +84,13 @@ class TortoiseUnitOfWork(IUnitOfWork):
         self.granted_permission_repo = GrantedPermissionRepository(model=GrantedPermission)
         self.routing_key_repo = RoutingKeyRepository(model=RoutingKey)
         self.routing_key_subscription_repo = RoutingKeySubscriptionRepository(model=RoutingKeySubscription)
-        self.schedule_job_repo = ScheduleJobRepository(model=ScheduledJob)
+        self.scheduled_job_repo = ScheduledJobRepository(model=ScheduledJob)
         self.module_repo = ModuleRepository(model=Module)
+        self.g_permission_repo = GPermissionRepository(model=GuardianPermission)
+        self.g_content_type_repo = GContentTypeRepository(model=GuardianContentType)
+        self.g_access_group_repo = GAccessGroupRepository(model=GuardianAccessGroup)
+        self.g_user_permission_repo = GUserPermissionRepository(model=GuardianUserPermission)
+        self.g_group_permission_repo = GGroupPermissionRepository(model=GuardianGroupPermission)
 
     async def __aenter__(self):
         await self._in_transaction.__aenter__()

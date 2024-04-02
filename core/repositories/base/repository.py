@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Type, TypeVar, Optional
 
+from fastapi_pagination.bases import AbstractParams
 from tortoise import Model
 from tortoise.queryset import QuerySet
 from fastapi_pagination import Page
@@ -94,6 +95,6 @@ class TortoiseORMRepository(IRepository):
         """Save model object"""
         await obj.save()
 
-    async def paginate(self, queryset: QuerySet) -> PageResponse:
+    async def paginate(self, queryset: QuerySet, params: AbstractParams = None) -> PageResponse:
         """Paginate by fastapi-pagination and return pydantic model"""
-        return await tortoise_paginate(queryset)
+        return await tortoise_paginate(queryset, params=params)
