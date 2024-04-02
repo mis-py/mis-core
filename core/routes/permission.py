@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Security
+from fastapi import APIRouter, Depends, Security, Response
 from fastapi_pagination import Page
 
 from core.db.models import User, Team
@@ -46,7 +46,6 @@ async def get_user_permissions(uow: UnitOfWorkDep, user: User = Depends(get_user
 
 @router.put(
     '/edit/user',
-    response_model=Page[GrantedPermissionResponse],
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])]
 )
 async def set_user_permissions(
@@ -55,10 +54,7 @@ async def set_user_permissions(
         user: User = Depends(get_user_by_id)
 ):
     await GrantedPermissionService(uow).set_for_user(permissions=permissions, user=user)
-    return await GrantedPermissionService(uow).filter_and_paginate(
-        user_id=user.pk,
-        prefetch_related=['team', 'user', 'permission__app']
-    )
+    return Response(status_code=200)
 
 
 @router.get(
@@ -75,16 +71,12 @@ async def get_team_permissions(uow: UnitOfWorkDep, team: Team = Depends(get_team
 
 @router.put(
     '/edit/team',
-    response_model=list[GrantedPermissionResponse],
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])]
 )
 async def set_team_permissions(
         uow: UnitOfWorkDep,
-        permissions: Page[PermissionUpdate],
+        permissions: list[PermissionUpdate],
         team: Team = Depends(get_team_by_id)
 ):
     await GrantedPermissionService(uow).set_for_team(permissions=permissions, team=team)
-    return await GrantedPermissionService(uow).filter_and_paginate(
-        team_id=team.pk,
-        prefetch_related=['team', 'user', 'permission']
-    )
+    return Response(status_code=200)
