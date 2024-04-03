@@ -4,7 +4,6 @@ from typing import Type, TypeVar, Optional
 from fastapi_pagination.bases import AbstractParams
 from tortoise import Model
 from tortoise.queryset import QuerySet
-from fastapi_pagination import Page
 from core.utils.schema import PageResponse
 from fastapi_pagination.ext.tortoise import paginate as tortoise_paginate
 

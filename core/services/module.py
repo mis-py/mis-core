@@ -2,6 +2,7 @@ from fastapi_pagination import Page
 from core.schemas.module import ModuleManifestResponse
 from core.services.base.base_service import BaseService
 from core.services.base.unit_of_work import IUnitOfWork
+from core.utils.schema import PageResponse
 from services.modules.module_service.utils import read_module_manifest
 
 
@@ -10,8 +11,8 @@ class ModuleUOWService(BaseService):
         super().__init__(repo=uow.module_repo)
         self.uow = uow
 
-    async def set_matifest_in_response(self, paginated_modules: Page[ModuleManifestResponse]):
-        for module in paginated_modules.items:
+    async def set_manifest_in_response(self, paginated_modules: PageResponse[ModuleManifestResponse]):
+        for module in paginated_modules.result.items:
             if module.name == 'core':  # skip module without manifest
                 continue
 

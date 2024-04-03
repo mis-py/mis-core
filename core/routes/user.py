@@ -1,12 +1,11 @@
 from typing import Optional
 
-import loguru
 from fastapi import Security, APIRouter, Depends
 from core.db.models import User
 from core.dependencies import get_user_by_id, get_current_user
 from core.dependencies.misc import UnitOfWorkDep
 from core.exceptions import NotFound, AlreadyExists
-from core.schemas.user import UserResponse, UserUpdate, UserCreate, UserSelfUpdate
+from core.schemas.user import UserResponse, UserUpdate, UserCreate, UserSelfUpdate, UserListResponse
 from core.services.team import TeamService
 from core.services.user import UserService
 from core.utils.schema import MisResponse, PageResponse
@@ -17,7 +16,7 @@ router = APIRouter()
 @router.get(
     '',
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:users'])],
-    response_model=PageResponse[UserResponse]
+    response_model=PageResponse[UserListResponse]
 )
 async def get_users(
         uow: UnitOfWorkDep,

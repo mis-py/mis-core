@@ -35,3 +35,13 @@ class UserResponse(MisModel):
     signed_in: bool
     team: Optional[TeamModelShort]
     settings: list[VariableValueModel] = []
+
+
+class UserListResponse(BaseModel):
+    id: int
+    username: str
+    position: Optional[str]
+    disabled: bool
+    signed_in: bool
+    team: Optional[TeamModelShort]
+    settings: list[VariableValueModel] = []

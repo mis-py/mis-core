@@ -1,12 +1,6 @@
-from typing import Optional
+from fastapi import Depends, APIRouter, Security
 
-from fastapi import Depends, APIRouter, Security, Response, Query
-from fastapi_pagination import Page
-from fastapi_pagination.ext.tortoise import paginate
-from tortoise.transactions import in_transaction
-
-from core.db.models import Team, Variable
-from core import crud
+from core.db.models import Team
 
 from core.dependencies import get_team_by_id, get_current_user
 from core.dependencies.misc import UnitOfWorkDep

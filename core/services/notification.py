@@ -1,11 +1,10 @@
-from fastapi_pagination import Page
 from fastapi_pagination.bases import AbstractParams
 from tortoise.queryset import QuerySet
 
 from core.db.models import User
 from core.crud import user
 from core.utils.notification.recipient import Recipient
-
+from core.utils.schema import PageResponse
 from core.services.base.base_service import BaseService
 from core.services.base.unit_of_work import IUnitOfWork
 
@@ -15,7 +14,7 @@ class RoutingKeyService(BaseService):
         super().__init__(uow.routing_key_repo)
         self.uow = uow
 
-    async def filter_subscribed_and_paginate(self, user_id: int, params: AbstractParams) -> Page:
+    async def filter_subscribed_and_paginate(self, user_id: int, params: AbstractParams) -> PageResponse:
         queryset = await self.uow.routing_key_repo.filter_by_user(user_id=user_id)
         return await self.uow.routing_key_repo.paginate(queryset=queryset, params=params)
 
