@@ -1,32 +1,36 @@
 import pytest
 from fastapi.testclient import TestClient
-import logging
 from main import app
+from services.tortoise_manager import TortoiseManager
 from tortoise import Tortoise
 
-# TODO on test we need override db settings - create database, remove database
+import logging
+
+log = logging.getLogger(__name__)
+
+logging.getLogger('passlib').setLevel(logging.ERROR)
 
 
 @pytest.fixture(scope="session")
-def get_mis_client():
+def get_mis_client(init_database):
+    log.info("Create app client")
+    # maybe rework on full lifespan support for tests?
+    # https://github.com/adriangb/misc/tree/starlette-state-lifespan
     with TestClient(app) as client:
         yield client
+    pass
 
 
-async def init_db(db_url, create_db, schemas):
-    """Initial database connection"""
-    await Tortoise.init(
-        db_url=db_url, modules={"models": ["models"]}, _create_db=create_db
-    )
-    if create_db:
-        print(f"Database created! {db_url = }")
-    if schemas:
-        await Tortoise.generate_schemas()
-        print("Success to generate schemas")
-
-
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 async def init_database():
-    await init_db()
+    log.info("Init Tortoise to cleanup before tests")
+    # Call init() directly to init without create_db flag
+    await Tortoise.init(config=TortoiseManager._tortiose_orm)
+    await TortoiseManager.drop_databases()
+    await TortoiseManager.shutdown()
+
     yield
-    await Tortoise._drop_databases()
+
+    log.info("Cleanup Tortoise after tests")
+    await TortoiseManager.drop_databases()
+
