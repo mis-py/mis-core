@@ -151,24 +151,17 @@ async def analyze(request: Request, call_next):
 
     return await call_next(request)
 
-app.add_middleware(BaseHTTPMiddleware, dispatch=analyze)
-
-app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
-
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     exc_name = exc.__class__.__name__
-    exc_str = f'{exc}'.replace('\n', ' ').replace('   ', ' ')
-
-    logger.error(f"{request.method} {request.scope['path']}: {exc_name} - {exc_str}")
+    logger.error(f"{request.method} {request.scope['path']}: {exc_name} - {exc.errors()}")
     logger.error(f"Body: {exc.body}")
-
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content=MisResponse(
+        content=MisResponse[list](
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            msg=f"{exc_name}: {exc_str}",
+            msg=exc_name,
             result=exc.errors()
         ).model_dump(),
     )
@@ -187,6 +180,29 @@ async def mis_error_exception_handler(request: Request, exc: MISError):
             result=exc.data,
         ).model_dump()
     )
+
+
+async def catch_exceptions_middleware(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as exc:
+        exc_name = exc.__class__.__name__
+
+        logger.error(f"{request.method} {request.scope['path']}: {exc_name} - {exc}")
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=MisResponse[str](
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                msg=exc_name,
+                result="Server error happen. Our devs already fired for that. Anyway see server log for error details."
+            ).model_dump(),
+        )
+
+
+app.middleware('http')(catch_exceptions_middleware)
+app.add_middleware(BaseHTTPMiddleware, dispatch=analyze)
+app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 
 
 @app.get('/')
