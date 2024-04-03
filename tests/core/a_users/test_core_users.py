@@ -2,14 +2,10 @@ import pytest
 import logging
 from tests.utils import default_check, compare_json
 from .core_users_dataset import \
-    positive_create_user_data_set, \
-    negative_create_user_data_set, \
-    positive_get_user_data_set, \
-    negative_get_user_data_set, \
-    positive_edit_user_data_set, \
-    negative_edit_user_data_set, \
-    positive_remove_user_data_set, \
-    negative_remove_user_data_set
+    positive_create_user_data_set, negative_create_user_data_set, \
+    positive_get_user_data_set, negative_get_user_data_set, \
+    positive_edit_user_data_set, negative_edit_user_data_set, \
+    positive_remove_user_data_set, negative_remove_user_data_set
 
 log = logging.getLogger(__name__)
 
