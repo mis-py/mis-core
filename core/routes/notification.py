@@ -1,11 +1,7 @@
-from fastapi import APIRouter, Security, Depends, Response
-from fastapi_pagination import Page
+from fastapi import APIRouter, Security, Depends
 
 from core.db.models import User, RoutingKey
 from core.dependencies.misc import UnitOfWorkDep, PaginateParamsDep
-
-# from core.dependencies import get_current_user
-
 from core.dependencies.path import get_routing_key_by_id
 from core.dependencies.security import get_current_user
 from core.exceptions import AlreadyExists

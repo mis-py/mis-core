@@ -1,6 +1,6 @@
 from loguru import logger
 
-from fastapi import APIRouter, Depends, Security, Response
+from fastapi import APIRouter, Depends, Security
 
 from core.db.models import User
 from core.dependencies import get_current_user
@@ -12,7 +12,7 @@ from services.scheduler import SchedulerService
 
 from core.schemas.task import JobResponse, JobScheduleUpdate, JobCreate
 from core.utils.task import format_trigger, make_trigger
-from core.utils.schema import MisResponse, PageResponse
+from core.utils.schema import MisResponse
 
 router = APIRouter(dependencies=[
     Security(get_current_user, scopes=['core:sudo', 'core:tasks']),

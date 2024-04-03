@@ -47,22 +47,17 @@ async def get_my_variables(
 
 @router.put(
     '/my',
-    response_model=MisResponse[VariableValueModel]
+    response_model=MisResponse
 )
 async def edit_my_variables(
         uow: UnitOfWorkDep,
         variables: list[UpdateVariableModel],
         user: User = Depends(get_current_user)
 ):
-    variable_value_service = VariableValueService(uow)
-    await variable_value_service.set_variables_values(user_id=user.pk, variables=variables)
+    await VariableValueService(uow).set_variables_values(user_id=user.pk, variables=variables)
     await VariablesManager.update_variables(user=user)
-    variable_with_related = await variable_value_service.get(
-        id=user.pk,
-        prefetch_related=['setting']
-    )
 
-    return MisResponse[VariableValueModel](result=variable_with_related)
+    return MisResponse()
 
 
 @router.get(
@@ -136,23 +131,17 @@ async def get_user_variables(
 @router.put(
     '/user',
     dependencies=[Security(get_current_user, scopes=['core:sudo'])],
-    response_model=MisResponse[VariableValueResponse]
+    response_model=MisResponse
 )
 async def update_user_variable(
         uow: UnitOfWorkDep,
         variables: list[UpdateVariableModel],
         user: User = Depends(get_user_by_id),
 ):
-    variable_value_service = VariableValueService(uow)
-    await variable_value_service.set_variables_values(user_id=user.pk, variables=variables)
+    await VariableValueService(uow).set_variables_values(user_id=user.pk, variables=variables)
     await VariablesManager.update_variables(user=user)
 
-    variable_with_related = await variable_value_service.get(
-        id=user.pk,
-        prefetch_related=['setting']
-    )
-
-    return MisResponse[VariableValueModel](result=variable_with_related)
+    return MisResponse()
 
 
 @router.get(
@@ -177,13 +166,7 @@ async def update_team_variables(
         variables: list[UpdateVariableModel],
         team: Team = Depends(get_team_by_id)
 ):
-    variable_value_service = VariableValueService(uow)
-    await variable_value_service.set_variables_values(team_id=team.pk, variables=variables)
+    await VariableValueService(uow).set_variables_values(team_id=team.pk, variables=variables)
     await VariablesManager.update_variables(team=team)
 
-    variable_with_related = await variable_value_service.get(
-        id=team.pk,
-        prefetch_related=['setting']
-    )
-
-    return MisResponse[VariableValueModel](result=variable_with_related)
+    return MisResponse()

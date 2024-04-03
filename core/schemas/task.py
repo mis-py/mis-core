@@ -3,6 +3,7 @@ from fastapi import Body
 from datetime import datetime
 from typing import Literal, Optional
 from core.schemas.common import UserModelShort, TeamModelShort
+from core.utils.schema import MisModel
 
 
 class JobScheduleUpdate(BaseModel):
@@ -10,7 +11,7 @@ class JobScheduleUpdate(BaseModel):
     cron: str | list[str] = Body("", min_length=1)
 
 
-class JobResponse(BaseModel):
+class JobResponse(MisModel):
     id: str
     name: str
     status: Literal["running", "paused"]
@@ -26,7 +27,7 @@ class JobCreate(BaseModel):
     trigger: Optional[JobScheduleUpdate] = None
 
 
-class TaskResponse(BaseModel):
+class TaskResponse(MisModel):
     id: str
     # module: str
     name: str

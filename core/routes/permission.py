@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Depends, Security, Response
-from fastapi_pagination import Page
+from fastapi import APIRouter, Depends, Security
 
 from core.db.models import User, Team
 from core.dependencies.misc import UnitOfWorkDep
@@ -48,9 +47,8 @@ async def get_user_permissions(uow: UnitOfWorkDep, user: User = Depends(get_user
 
 @router.put(
     '/edit/user',
-
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])],
-    response_model=MisResponse[GrantedPermissionResponse],
+    response_model=MisResponse,
 )
 async def set_user_permissions(
         uow: UnitOfWorkDep,
@@ -59,18 +57,13 @@ async def set_user_permissions(
 ):
     await GrantedPermissionService(uow).set_for_user(permissions=permissions, user=user)
 
-    filtered_permissions = await GrantedPermissionService(uow).filter(
-        user_id=user.pk,
-        prefetch_related=['team', 'user', 'permission__app']
-    )
-
-    return MisResponse[GrantedPermissionResponse](result=filtered_permissions)
+    return MisResponse()
 
 
 @router.get(
     '/get/team',
-    response_model=PageResponse[GrantedPermissionResponse],
-    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])]
+    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])],
+    response_model=PageResponse[GrantedPermissionResponse]
 )
 async def get_team_permissions(uow: UnitOfWorkDep, team: Team = Depends(get_team_by_id)):
     return await GrantedPermissionService(uow).filter_and_paginate(
@@ -82,7 +75,7 @@ async def get_team_permissions(uow: UnitOfWorkDep, team: Team = Depends(get_team
 @router.put(
     '/edit/team',
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])],
-    response_model=MisResponse[list[GrantedPermissionResponse]]
+    response_model=MisResponse
 )
 async def set_team_permissions(
         uow: UnitOfWorkDep,
@@ -91,9 +84,4 @@ async def set_team_permissions(
 ):
     await GrantedPermissionService(uow).set_for_team(permissions=permissions, team=team)
 
-    filtered_permissions = await GrantedPermissionService(uow).filter(
-        team_id=team.pk,
-        prefetch_related=['team', 'user', 'permission']
-    )
-
-    return MisResponse[list[GrantedPermissionResponse]](result=filtered_permissions)
+    return MisResponse()

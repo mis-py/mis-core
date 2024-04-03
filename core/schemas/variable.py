@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from tortoise.contrib.pydantic import pydantic_model_creator
 from core.db.models import Variable, VariableValue
+from core.utils.schema import MisModel
 
 
 class VariableCreate(BaseModel):
@@ -34,6 +35,6 @@ VariableValueModel = pydantic_model_creator(
 )
 
 
-class UpdateVariableModel(BaseModel):
+class UpdateVariableModel(MisModel):
     setting_id: int
     new_value: str | bool | None = None
