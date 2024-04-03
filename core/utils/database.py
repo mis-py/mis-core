@@ -25,7 +25,6 @@ async def setup_core():
         await Permission.create(name="Access for 'logs' endpoints", scope="logs", app=core)
         await Permission.create(name="Access for 'tasks' endpoints", scope="tasks", app=core)
         await Permission.create(name="Access for 'consumers' endpoints", scope="consumers", app=core)
-        await Permission.create(name="Access for 'modules' endpoints", scope="modules", app=core)
         await Permission.create(name="Access for 'permissions' endpoints", scope="permissions", app=core)
 
     return core is None
