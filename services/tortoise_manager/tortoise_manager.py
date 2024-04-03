@@ -1,6 +1,6 @@
 from yoyo import get_backend, read_migrations
 from tortoise import Tortoise, connections
-from tortoise.exceptions import DoesNotExist, IntegrityError, ConfigurationError
+from tortoise.exceptions import DoesNotExist, IntegrityError
 from loguru import logger
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -89,11 +89,4 @@ class TortoiseManager:
     @classmethod
     async def shutdown(cls):
         await connections.close_all()
-
-    @classmethod
-    async def drop_databases(cls):
-        try:
-            await Tortoise._drop_databases()
-        except ConfigurationError:
-            logger.warning("[TortoiseManager] Database not initialized")
 
