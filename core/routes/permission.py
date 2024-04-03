@@ -67,7 +67,6 @@ async def set_user_permissions(
     return MisResponse[GrantedPermissionResponse](result=filtered_permissions)
 
 
-
 @router.get(
     '/get/team',
     response_model=PageResponse[GrantedPermissionResponse],
