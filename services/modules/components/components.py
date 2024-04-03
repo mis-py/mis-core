@@ -264,7 +264,8 @@ class Variables(Component):
         pass
 
     async def save_permissions(self, app_model):
-        admin_user = await user.get(username=DEFAULT_ADMIN_USERNAME)
+        # TODO somewhy user not exist here?
+        # admin_user = await user.get(username=DEFAULT_ADMIN_USERNAME)
 
         exist_permission_ids = []
         for scope, description in self.module.permissions.items():
@@ -275,7 +276,7 @@ class Variables(Component):
             )
             logger.debug(f'[Variables] Created permission {scope} for {self.module.name}')
 
-            await admin_user.add_permission(f'{app_model.name}:{scope}')
+            #await admin_user.add_permission(f'{app_model.name}:{scope}')
             exist_permission_ids.append(perm.id)
 
         logger.debug(f'[Variables] Permissions saved for {self.module.name}')

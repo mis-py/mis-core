@@ -92,9 +92,10 @@ class ModuleService:
         Calls stop_module for every enabled app
         :return:
         """
+        module_uow_service = ModuleUOWService(unit_of_work_factory())
         for module_name, module in cls._loaded_modules.items():
             logger.info(f"[ModuleService] Stopping {module.name}")
-            await cls.stop_module(module_name)
+            await cls.stop_module(module_name, module_uow_service)
 
     @classmethod
     async def pre_init_module(cls, application, module: BaseModule):
