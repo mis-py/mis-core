@@ -70,7 +70,7 @@ class VariableValue(Model):
 
 class Module(Model):
     name = fields.CharField(max_length=50, unique=True)
-    enabled = fields.BooleanField(default=True)
+    enabled = fields.BooleanField(default=False)
     permissions: fields.ReverseRelation[Permission]
 
     class PydanticMeta:

@@ -1,5 +1,5 @@
 from core.db.models import Team
-from core.exceptions import ValidationFailed
+from core.exceptions import ValidationFailed, MISError
 from core.schemas.team import TeamCreate, TeamUpdate
 from core.services.base.base_service import BaseService
 from core.services.base.unit_of_work import IUnitOfWork
@@ -66,3 +66,8 @@ class TeamService(BaseService):
         await self.uow.user_repo.update_list(
             update_ids=users_ids,
             data={'team_id': team.pk})  # set new team members
+
+    async def delete(self, **filters) -> None:
+        if 'id' in filters and filters['id'] == 1:
+            raise MISError("Team with id '1' can't be deleted.")
+        await self.repo.delete(**filters)

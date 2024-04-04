@@ -1,5 +1,10 @@
-from core.services import guardian_service
+from loguru import logger
+
+from const import DEFAULT_ADMIN_USERNAME
+from core.services.base.unit_of_work import unit_of_work_factory
+from core.services.guardian_service import GAccessGroupService
 from core.services.guardian import assign_perm, has_perm
+from core.services.user import UserService
 from services.modules.utils import ModuleTemplate
 from services.modules.components import Variables, ModuleLogs, TortoiseModels, EventRoutingKeys
 
@@ -15,11 +20,16 @@ routing_keys = RoutingKeys()
 
 
 async def init(module_instance: ModuleTemplate):
+    uow = unit_of_work_factory()
+
+    guardian_uow_service = GAccessGroupService(uow)
+    user_uow_service = UserService(uow)
+    admin = await user_uow_service.get(username=DEFAULT_ADMIN_USERNAME)
+
     # create access group for module objects
-    group = await guardian_service.create_group(
+    group = await guardian_uow_service.create_with_users(
         name="Dummy group",
-        users_ids=[0],
-        module=module_instance.model
+        users_ids=[admin.id],
     )
 
     # create example object
@@ -33,7 +43,7 @@ async def init(module_instance: ModuleTemplate):
     is_read_perm = await has_perm('read', group, dummy_object_1)
     is_edit_perm = await has_perm('edit', group, dummy_object_1)
     is_delete_perm = await has_perm('delete', group, dummy_object_1)
-    # logger.info(f"{group.name} read={is_read_perm} edit={is_edit_perm} delete={is_delete_perm}")
+    logger.info(f"{group.name} read={is_read_perm} edit={is_edit_perm} delete={is_delete_perm}")
 
 module = ModuleTemplate(
     pre_init_components=[
