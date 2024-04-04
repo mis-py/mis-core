@@ -24,7 +24,8 @@ positive_create_user_data_set = [
                 "settings": []
             }
         }
-    ),(
+    ),
+    (
         {
             "username": "Test2",
             "password": "qwerty",
@@ -47,7 +48,7 @@ positive_create_user_data_set = [
                 "settings": []
             }
         }
-    ),
+    )
 ]
 
 negative_create_user_data_set = [
@@ -324,15 +325,15 @@ negative_remove_user_data_set = [
         }
     ),
     (
-        # admin user TODO dafuck we can remove admin??
+        # admin user remove check
         {
             "user_id": 1,
         },
         {
-            # "msg": "Success",
-            # "result": {},
-            # "status": True,
-            # "status_code": status.HTTP_200_OK
+            "msg": "MISError: User with id '1' can't be deleted.",
+            "result": None,
+            "status": False,
+            "status_code": status.HTTP_400_BAD_REQUEST
         }
     ),
     (
