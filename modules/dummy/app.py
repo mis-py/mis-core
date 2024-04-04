@@ -34,8 +34,8 @@ async def init(module_instance: ModuleTemplate):
 
     # create example object
     dummy_object_1, _ = await DummyModel.get_or_create(dummy_string="Dummy 1")
-    #
-    # # allow access to object for group
+
+    # allow access to object for group
     await assign_perm('read', group, dummy_object_1)
     await assign_perm('edit', group, dummy_object_1)
 
