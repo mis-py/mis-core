@@ -76,11 +76,12 @@ class ModuleService:
 
             is_loaded_success = await cls.init_module(application, module, module_uow_service)
 
+            # by default new module is disabled
             if is_loaded_success and module.model.enabled:
                 await cls.start_module(module.name, module_uow_service)
                 logger.debug(f'[ModuleService] Module {module.name} started!')
 
-            logger.info(f"[ModuleService] Module '{module.name}' init finished!")
+            logger.debug(f"[ModuleService] Module '{module.name}' init finished!")
 
         # need for start consumer for core websocket sender
         # await cls._restart_core_consumer()
