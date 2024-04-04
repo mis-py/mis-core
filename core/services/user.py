@@ -1,6 +1,6 @@
 from core.auth_backend import set_password
 from core.db.models import User
-from core.exceptions import ValidationFailed
+from core.exceptions import ValidationFailed, MISError
 from core.schemas.user import UserCreate, UserUpdate
 from core.services.base.base_service import BaseService
 from core.services.base.unit_of_work import IUnitOfWork
@@ -52,3 +52,8 @@ class UserService(BaseService):
 
     async def update_users_team(self, users_ids: list[int], team_id: int) -> None:
         await self.repo.update_list(update_ids=users_ids, data={'team_id': team_id})
+
+    async def delete(self, **filters) -> None:
+        if 'id' in filters and filters['id'] == 1:
+            raise MISError("User with id '1' can't be deleted.")
+        await self.repo.delete(**filters)

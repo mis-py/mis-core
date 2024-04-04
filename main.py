@@ -6,7 +6,6 @@ from loguru import logger
 from contextlib import asynccontextmanager
 from functools import lru_cache
 # from log import setup_logger
-import json
 
 from fastapi import FastAPI, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -37,7 +36,7 @@ from loaders import (
 )
 from loaders import (
     shutdown_modules, shutdown_eventory, shutdown_scheduler, shutdown_db, shutdown_redis, shutdown_mongo)
-from core.exceptions import MISError, ErrorSchema
+from core.exceptions import MISError
 from core.utils.common import generate_unique_id, custom_log_timezone
 from core.utils.schema import MisResponse
 
@@ -92,10 +91,10 @@ async def lifespan(application: FastAPI):
     await manifest_init_modules(app)
     await pre_init_modules(app)
     await init_db(application)
-    await init_modules(application)
-    await init_migrations()
     await init_core()
     await init_admin_user()
+    await init_modules(application)
+    await init_migrations()
     await init_guardian()
     await init_core_routes(application)
     add_pagination(app)  # required after init routes
@@ -132,24 +131,13 @@ app = FastAPI(
 )
 
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# app.add_middleware(PyInstrumentProfilerMiddleware)
-
-
-async def analyze(request: Request, call_next):
-    headers = dict(request.headers)
-    if request.headers.get('user-agent') == 'testclient':
-        for line in json.dumps(headers, indent=4, ensure_ascii=False).splitlines():
-            logger.debug(line)
-
-    return await call_next(request)
+# async def analyze(request: Request, call_next):
+#     headers = dict(request.headers)
+#     if request.headers.get('user-agent') == 'testclient':
+#         for line in json.dumps(headers, indent=4, ensure_ascii=False).splitlines():
+#             logger.debug(line)
+#
+#     return await call_next(request)
 
 
 @app.exception_handler(RequestValidationError)
@@ -199,9 +187,16 @@ async def catch_exceptions_middleware(request: Request, call_next):
             ).model_dump(),
         )
 
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.middleware('http')(catch_exceptions_middleware)
-app.add_middleware(BaseHTTPMiddleware, dispatch=analyze)
+# app.add_middleware(PyInstrumentProfilerMiddleware)
+# app.add_middleware(BaseHTTPMiddleware, dispatch=analyze)
 app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 
 

@@ -54,7 +54,7 @@ class TortoiseManager:
 
     @classmethod
     async def init(cls, app, generate_schemas, add_exception_handlers):
-        await Tortoise.init(config=cls._tortiose_orm)
+        await Tortoise.init(config=cls._tortiose_orm, _create_db=settings.POSTGRES_CREATE_DB)
 
         # TODO it should run only once on empty database, maybe out of MIS code
         if generate_schemas:

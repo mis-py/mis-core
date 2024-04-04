@@ -76,11 +76,12 @@ class ModuleService:
 
             is_loaded_success = await cls.init_module(application, module, module_uow_service)
 
+            # by default new module is disabled
             if is_loaded_success and module.model.enabled:
                 await cls.start_module(module.name, module_uow_service)
                 logger.debug(f'[ModuleService] Module {module.name} started!')
 
-            logger.info(f"[ModuleService] Module '{module.name}' init finished!")
+            logger.debug(f"[ModuleService] Module '{module.name}' init finished!")
 
         # need for start consumer for core websocket sender
         # await cls._restart_core_consumer()
@@ -92,9 +93,10 @@ class ModuleService:
         Calls stop_module for every enabled app
         :return:
         """
+        module_uow_service = ModuleUOWService(unit_of_work_factory())
         for module_name, module in cls._loaded_modules.items():
             logger.info(f"[ModuleService] Stopping {module.name}")
-            await cls.stop_module(module_name)
+            await cls.stop_module(module_name, module_uow_service)
 
     @classmethod
     async def pre_init_module(cls, application, module: BaseModule):
