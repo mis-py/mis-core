@@ -23,7 +23,7 @@ class TeamResponse(BaseModel):
     id: int
     name: str
     users: list[UserModelShort] = []
-    settings: list[VariableValueModel] = []
+    variables: list[VariableValueModel] = []
     permissions: list[str] = []
 
 

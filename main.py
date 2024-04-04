@@ -91,10 +91,10 @@ async def lifespan(application: FastAPI):
     await manifest_init_modules(app)
     await pre_init_modules(app)
     await init_db(application)
-    await init_modules(application)
-    await init_migrations()
     await init_core()
     await init_admin_user()
+    await init_modules(application)
+    await init_migrations()
     await init_guardian()
     await init_core_routes(application)
     add_pagination(app)  # required after init routes
@@ -142,15 +142,15 @@ app.add_middleware(
 # app.add_middleware(PyInstrumentProfilerMiddleware)
 
 
-async def analyze(request: Request, call_next):
-    headers = dict(request.headers)
-    if request.headers.get('user-agent') == 'testclient':
-        for line in json.dumps(headers, indent=4, ensure_ascii=False).splitlines():
-            logger.debug(line)
+# async def analyze(request: Request, call_next):
+#     headers = dict(request.headers)
+#     if request.headers.get('user-agent') == 'testclient':
+#         for line in json.dumps(headers, indent=4, ensure_ascii=False).splitlines():
+#             logger.debug(line)
+#
+#     return await call_next(request)
 
-    return await call_next(request)
-
-app.add_middleware(BaseHTTPMiddleware, dispatch=analyze)
+# app.add_middleware(BaseHTTPMiddleware, dispatch=analyze)
 
 app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 
@@ -188,6 +188,10 @@ async def mis_error_exception_handler(request: Request, exc: MISError):
         content={"error": error_schema.model_dump()},
         status_code=exc.status_code,
     )
+
+
+# app.add_middleware(BaseHTTPMiddleware, dispatch=analyze)
+app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 
 
 @app.get('/')
