@@ -1,6 +1,6 @@
 from loguru import logger
 
-from fastapi import APIRouter, Depends, Security, Response
+from fastapi import APIRouter, Depends, Security
 
 from core.db.models import User
 from core.dependencies import get_current_user
@@ -12,13 +12,17 @@ from services.scheduler import SchedulerService
 
 from core.schemas.task import JobResponse, JobScheduleUpdate, JobCreate
 from core.utils.task import format_trigger, make_trigger
+from core.utils.schema import MisResponse
 
 router = APIRouter(dependencies=[
     Security(get_current_user, scopes=['core:sudo', 'core:tasks']),
 ])
 
 
-@router.get('/all', response_model=list[JobResponse])
+@router.get(
+    '/all',
+    response_model=MisResponse[list[JobResponse]]
+)
 async def get_jobs(
         uow: UnitOfWorkDep,
         task_id: str = None,
@@ -97,10 +101,14 @@ async def get_jobs(
                 team=saved_job.team,
             )
         )
-    return response
+
+    return MisResponse[list[JobResponse]](result=response)
 
 
-@router.post('/add')
+@router.post(
+    '/add',
+    response_model=MisResponse[JobResponse]
+)
 async def add_job(
         uow: UnitOfWorkDep,
         task_id: str,
@@ -130,7 +138,7 @@ async def add_job(
     job_db_with_related = await ScheduledJobService(uow).get(
         id=job_db.pk, prefetch_related=['app', 'user', 'team'])
 
-    return JobResponse(
+    job_response = JobResponse(
         id=job.id,
         name=job.name,
         next_run_time=job.next_run_time,
@@ -141,8 +149,13 @@ async def add_job(
         team=job_db_with_related.team,
     )
 
+    return MisResponse[JobResponse](result=job_response)
 
-@router.post('/pause')
+
+@router.post(
+    '/pause',
+    response_model=MisResponse
+)
 async def pause_job(
         uow: UnitOfWorkDep,
         job_id: str,
@@ -150,10 +163,14 @@ async def pause_job(
 ):
     await SchedulerService.pause_job(job_id, current_user)
     await ScheduledJobService(uow).set_paused_status(job_id=job_id)
-    return Response(status_code=200)
+
+    return MisResponse()
 
 
-@router.post('/resume')
+@router.post(
+    '/resume',
+    response_model=MisResponse
+)
 async def resume_job(
         uow: UnitOfWorkDep,
         job_id: str,
@@ -161,10 +178,14 @@ async def resume_job(
 ):
     await SchedulerService.resume_job(job_id, current_user)
     await ScheduledJobService(uow).set_running_status(job_id=job_id)
-    return Response(status_code=200)
+
+    return MisResponse()
 
 
-@router.post('/reschedule')
+@router.post(
+    '/reschedule',
+    response_model=MisResponse
+)
 async def reschedule_job(
         uow: UnitOfWorkDep,
         job_id: str,
@@ -178,10 +199,13 @@ async def reschedule_job(
         interval=schedule_in.interval,
         cron=schedule_in.cron,
     )
-    return Response(status_code=200)
+    return MisResponse()
 
 
-@router.delete('/remove')
+@router.delete(
+    '/remove',
+    response_model=MisResponse
+)
 async def remove_job(
         uow: UnitOfWorkDep,
         job_id: str,
@@ -189,4 +213,5 @@ async def remove_job(
 ):
     await SchedulerService.remove_job(job_id, current_user)
     await ScheduledJobService(uow).delete(job_id=job_id, user_id=current_user.pk)
-    return Response(status_code=200)
+
+    return MisResponse()

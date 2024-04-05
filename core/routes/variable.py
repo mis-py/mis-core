@@ -1,5 +1,4 @@
 from fastapi import Depends, APIRouter, Security, Query
-from fastapi_pagination import Page
 
 from core.db.models import Team, User, Module
 from core.dependencies import get_team_by_id, get_user_by_id, get_current_user
@@ -10,6 +9,7 @@ from core.schemas.variable import UpdateVariableModel, VariableValueModel, Varia
 from core.schemas.variable_value import VariableValueResponse
 from core.services.variable import VariableService
 from core.services.variable_value import VariableValueService
+from core.utils.schema import MisResponse, PageResponse
 
 from services.modules.module_service import ModuleService
 from services.variables.variables import VariablesManager
@@ -21,7 +21,7 @@ router = APIRouter()
 @router.get(
     '',
     dependencies=[Security(get_current_user)],
-    response_model=Page[VariableResponse]
+    response_model=PageResponse[VariableResponse]
 )
 async def get_all_variables(
         uow: UnitOfWorkDep,
@@ -33,7 +33,7 @@ async def get_all_variables(
 
 @router.get(
     '/my',
-    response_model=Page[VariableValueResponse]
+    response_model=PageResponse[VariableValueResponse]
 )
 async def get_my_variables(
         uow: UnitOfWorkDep,
@@ -47,6 +47,7 @@ async def get_my_variables(
 
 @router.put(
     '/my',
+    response_model=MisResponse
 )
 async def edit_my_variables(
         uow: UnitOfWorkDep,
@@ -55,13 +56,14 @@ async def edit_my_variables(
 ):
     await VariableValueService(uow).set_variables_values(user_id=user.pk, variables=variables)
     await VariablesManager.update_variables(user=user)
-    return True
+
+    return MisResponse()
 
 
 @router.get(
     '/app',
     dependencies=[Security(get_current_user, scopes=['core:sudo'])],
-    response_model=Page[VariableModel]
+    response_model=PageResponse[VariableModel]
 )
 async def get_app_variables(uow: UnitOfWorkDep, module: Module = Depends(get_module_by_id)):
     return await VariableService(uow).filter_and_paginate(
@@ -72,7 +74,7 @@ async def get_app_variables(uow: UnitOfWorkDep, module: Module = Depends(get_mod
 @router.put(
     '/app',
     dependencies=[Security(get_current_user, scopes=['core:sudo'])],
-    response_model=list[UpdateVariableModel]
+    response_model=MisResponse[list[UpdateVariableModel]]
 )
 async def set_default_value(
         uow: UnitOfWorkDep,
@@ -108,13 +110,13 @@ async def set_default_value(
 
     # TODO what is it for? -> await misapp.init_settings()
     await VariablesManager.update_variables(app=module)
-    return updated_variables
+    return MisResponse(result=updated_variables)
 
 
 @router.get(
     '/user',
-    response_model=Page[VariableValueResponse],
-    dependencies=[Security(get_current_user, scopes=['core:sudo'])]
+    dependencies=[Security(get_current_user, scopes=['core:sudo'])],
+    response_model=PageResponse[VariableValueResponse]
 )
 async def get_user_variables(
         uow: UnitOfWorkDep,
@@ -128,7 +130,8 @@ async def get_user_variables(
 
 @router.put(
     '/user',
-    dependencies=[Security(get_current_user, scopes=['core:sudo'])]
+    dependencies=[Security(get_current_user, scopes=['core:sudo'])],
+    response_model=MisResponse
 )
 async def update_user_variable(
         uow: UnitOfWorkDep,
@@ -137,13 +140,14 @@ async def update_user_variable(
 ):
     await VariableValueService(uow).set_variables_values(user_id=user.pk, variables=variables)
     await VariablesManager.update_variables(user=user)
-    return True
+
+    return MisResponse()
 
 
 @router.get(
     '/team',
-    response_model=Page[VariableValueModel],
-    dependencies=[Security(get_current_user, scopes=['core:sudo'])]
+    dependencies=[Security(get_current_user, scopes=['core:sudo'])],
+    response_model=PageResponse[VariableValueModel]
 )
 async def get_team_variables(uow: UnitOfWorkDep, team: Team = Depends(get_team_by_id)):
     return await VariableValueService(uow).filter_and_paginate(
@@ -155,6 +159,7 @@ async def get_team_variables(uow: UnitOfWorkDep, team: Team = Depends(get_team_b
 @router.put(
     '/team',
     dependencies=[Security(get_current_user, scopes=['core:sudo'])],
+    response_model=MisResponse
 )
 async def update_team_variables(
         uow: UnitOfWorkDep,
@@ -163,4 +168,5 @@ async def update_team_variables(
 ):
     await VariableValueService(uow).set_variables_values(team_id=team.pk, variables=variables)
     await VariablesManager.update_variables(team=team)
-    return True
+
+    return MisResponse()

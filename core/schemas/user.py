@@ -3,6 +3,7 @@ from core.routes.variable import UpdateVariableModel
 from typing import Optional
 from core.schemas.common import TeamModelShort
 from core.schemas.variable import VariableValueModel
+from core.utils.schema import MisModel
 
 
 class UserCreate(BaseModel):
@@ -26,7 +27,7 @@ class UserSelfUpdate(BaseModel):
     username: str = Field(max_length=20, min_length=3)
 
 
-class UserResponse(BaseModel):
+class UserResponse(MisModel):
     id: int
     username: str = Field(max_length=20, min_length=3)
     position: Optional[str]

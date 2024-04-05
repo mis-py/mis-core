@@ -1,7 +1,6 @@
 import tortoise.exceptions
 from fastapi import APIRouter, Security, Depends
-from fastapi import Response, Request
-from fastapi_pagination import Page
+from fastapi import Request
 from loguru import logger
 
 from core.db.models import Module
@@ -11,7 +10,7 @@ from core.dependencies.misc import UnitOfWorkDep, PaginateParamsDep
 from core.dependencies.path import get_module_by_id
 from core.schemas.module import ModuleManifestResponse
 from core.services.module import ModuleUOWService
-
+from core.utils.schema import PageResponse, MisResponse
 # from .schema import BundleAppModel
 
 from services.modules.exceptions import LoadModuleError, StartModuleError
@@ -23,13 +22,13 @@ router = APIRouter()
 @router.get(
     '',
     dependencies=[Security(get_current_user)],
-    response_model=Page[ModuleManifestResponse]
+    response_model=PageResponse[ModuleManifestResponse]
 )
 async def get_modules(uow: UnitOfWorkDep, paginate_params: PaginateParamsDep, module_id: int = None):
     paginated_modules = await ModuleUOWService(uow).filter_and_paginate(
         app_id=module_id, params=paginate_params
     )
-    modules_with_manifest = await ModuleUOWService(uow).set_matifest_in_response(paginated_modules)
+    modules_with_manifest = await ModuleUOWService(uow).set_manifest_in_response(paginated_modules)
     return modules_with_manifest
 
 
@@ -91,7 +90,8 @@ async def get_modules(uow: UnitOfWorkDep, paginate_params: PaginateParamsDep, mo
 
 @router.put(
     '/init',
-    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:modules'])]
+    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:modules'])],
+    response_model=MisResponse
 )
 async def init_module(
         uow: UnitOfWorkDep,
@@ -115,12 +115,13 @@ async def init_module(
         logger.exception(e)
         raise LoadModuleError(f"Error while loading app. Details: {str(e)}")
 
-    return Response(status_code=200)
+    return MisResponse()
 
 
 @router.put(
     '/shutdown',
-    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:modules'])]
+    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:modules'])],
+    response_model=MisResponse()
 )
 async def shutdown_application(
         uow: UnitOfWorkDep,
@@ -128,12 +129,13 @@ async def shutdown_application(
 ):
     module_uow_service = ModuleUOWService(uow)
     await ModuleService.shutdown_module(module.name, module_uow_service)
-    return Response(status_code=200)
+    return MisResponse()
 
 
 @router.put(
     '/start',
-    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:modules'])]
+    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:modules'])],
+    response_model=MisResponse
 )
 async def start_module(
         uow: UnitOfWorkDep,
@@ -145,12 +147,13 @@ async def start_module(
     except Exception as e:
         logger.exception(e)
         raise StartModuleError(f"Error while starting app. Details: {str(e)}")
-    return Response(status_code=200)
+    return MisResponse()
 
 
 @router.put(
     '/stop',
-    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:modules'])]
+    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:modules'])],
+    response_model=MisResponse
 )
 async def stop_module(
         uow: UnitOfWorkDep,
@@ -158,7 +161,7 @@ async def stop_module(
 ):
     module_uow_service = ModuleUOWService(uow)
     await ModuleService.stop_module(module.name, module_uow_service)
-    return True
+    return MisResponse()
 
 # @router.post(
 #     '/install',

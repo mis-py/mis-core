@@ -6,7 +6,6 @@ from loguru import logger
 from contextlib import asynccontextmanager
 from functools import lru_cache
 # from log import setup_logger
-import json
 
 from fastapi import FastAPI, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -37,8 +36,9 @@ from loaders import (
 )
 from loaders import (
     shutdown_modules, shutdown_eventory, shutdown_scheduler, shutdown_db, shutdown_redis, shutdown_mongo)
-from core.exceptions import MISError, ErrorSchema
+from core.exceptions import MISError
 from core.utils.common import generate_unique_id, custom_log_timezone
+from core.utils.schema import MisResponse
 
 logging.getLogger('uvicorn').handlers.clear()
 
@@ -131,17 +131,6 @@ app = FastAPI(
 )
 
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# app.add_middleware(PyInstrumentProfilerMiddleware)
-
-
 # async def analyze(request: Request, call_next):
 #     headers = dict(request.headers)
 #     if request.headers.get('user-agent') == 'testclient':
@@ -150,46 +139,63 @@ app.add_middleware(
 #
 #     return await call_next(request)
 
-# app.add_middleware(BaseHTTPMiddleware, dispatch=analyze)
-
-app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
-
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     exc_name = exc.__class__.__name__
-    exc_str = f'{exc}'.replace('\n', ' ').replace('   ', ' ')
-    logger.warning(f"{request.method} {request.scope['path']}: {exc_name} - {exc_str}")
+    logger.error(f"{request.method} {request.scope['path']}: {exc_name} - {exc.errors()}")
     logger.error(f"Body: {exc.body}")
-    exc_str = f'{exc}'.replace('\n', ' ').replace('   ', ' ')
-    error_schema = ErrorSchema(
-        status=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        type=exc_name,
-        message=exc_str,
-        data=exc.errors(),
-    )
     return JSONResponse(
-        content={"error": error_schema.model_dump()},
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_200_OK,
+        content=MisResponse[list](
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            msg=exc_name,
+            result=exc.errors()
+        ).model_dump(),
     )
 
 
 @app.exception_handler(MISError)
 async def mis_error_exception_handler(request: Request, exc: MISError):
     exc_name = exc.__class__.__name__
-    logger.warning(f"{request.method} {request.scope['path']}: {exc_name} - {exc.message}")
-    error_schema = ErrorSchema(
-        status=exc.status_code,
-        type=exc_name,
-        message=exc.message,
-        data=exc.data,
-    )
+    logger.error(f"{request.method} {request.scope['path']}: {exc_name} - {exc.message}")
+
     return JSONResponse(
-        content={"error": error_schema.model_dump()},
-        status_code=exc.status_code,
+        status_code=status.HTTP_200_OK,
+        content=MisResponse(
+            status_code=exc.status_code,
+            msg=exc_name,
+            result=exc.message,
+        ).model_dump()
     )
 
 
+async def catch_exceptions_middleware(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as exc:
+        exc_name = exc.__class__.__name__
+
+        logger.error(f"{request.method} {request.scope['path']}: {exc_name} - {exc}")
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=MisResponse[str](
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                msg=exc_name,
+                result="Server error happen. Our devs already fired for that. Anyway see server log for error details."
+            ).model_dump(),
+        )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+app.middleware('http')(catch_exceptions_middleware)
+# app.add_middleware(PyInstrumentProfilerMiddleware)
 # app.add_middleware(BaseHTTPMiddleware, dispatch=analyze)
 app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 
