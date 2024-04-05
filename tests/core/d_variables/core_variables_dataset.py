@@ -1,266 +1,435 @@
 from fastapi import status
 
-positive_create_team_data_set = [
+positive_get_variables_dataset = [
+    (
+        {},
+        {
+            "status_code": 200,
+            "msg": "Success",
+            "result": {
+                "total": 3,
+                "current": 1,
+                "size": 50,
+                "pages": 1,
+                "items": [
+                    {
+                        "id": 1,
+                        "key": "TICK_5_SEC",
+                        "default_value": "5",
+                        "is_global": True,
+                        "type": "int"
+                    },
+                    {
+                        "id": 2,
+                        "key": "LOG_LEVEL",
+                        "default_value": "DEBUG",
+                        "is_global": True,
+                        "type": "str"
+                    },
+                    {
+                        "id": 3,
+                        "key": "PRIVATE_SETTING",
+                        "default_value": "very private",
+                        "is_global": False,
+                        "type": "str"
+                    }
+                ]
+            },
+            "status": True
+        }
+    ),
     (
         {
-            "name": "Team1",
-            "permissions": [],
-            "users_ids": [],
-            "variables": []
+            "is_global": True
         },
         {
-            "status": True,
-            "status_code": status.HTTP_200_OK,
+            "status_code": 200,
             "msg": "Success",
             "result": {
-                'id': 2,
-                'name': 'Team1',
-                'permissions': [],
-                'variables': [],
-                'users': []
-            }
+                "total": 2,
+                "current": 1,
+                "size": 50,
+                "pages": 1,
+                "items": [
+                    {
+                        "id": 1,
+                        "key": "TICK_5_SEC",
+                        "default_value": "5",
+                        "is_global": True,
+                        "type": "int"
+                    },
+                    {
+                        "id": 2,
+                        "key": "LOG_LEVEL",
+                        "default_value": "DEBUG",
+                        "is_global": True,
+                        "type": "str"
+                    }
+                ]
+            },
+            "status": True
         }
-    ),(
+    ),
+    (
         {
-            "name": "Team2",
-            "permissions": [],
-            "users_ids": [],
-            "variables": []
+            "is_global": False
         },
         {
-            "status": True,
-            "status_code": status.HTTP_200_OK,
+            "status_code": 200,
             "msg": "Success",
             "result": {
-                'id': 3,
-                'name': 'Team2',
-                'permissions': [],
-                'variables': [],
-                'users': []
-            }
+                "total": 1,
+                "current": 1,
+                "size": 50,
+                "pages": 1,
+                "items": [
+                    {
+                        "id": 3,
+                        "key": "PRIVATE_SETTING",
+                        "default_value": "very private",
+                        "is_global": False,
+                        "type": "str"
+                    }
+                ]
+            },
+            "status": True
+        }
+    ),
+    (
+        # ID 1 is Core
+        {
+            "is_global": True,
+            "module_id": 1,
+        },
+        {
+            "status_code": 200,
+            "msg": "Success",
+            "result": {
+                "total": 0,
+                "current": 1,
+                "size": 50,
+                "pages": 0,
+                "items": []
+            },
+            "status": True
+        }
+    ),
+    (
+        # ID 1 is Core
+        {
+            "is_global": False,
+            "module_id": 1,
+        },
+        {
+            "status_code": 200,
+            "msg": "Success",
+            "result": {
+                "total": 0,
+                "current": 1,
+                "size": 50,
+                "pages": 0,
+                "items": []
+            },
+            "status": True
+        }
+    ),
+    (
+        {
+            "is_global": True,
+            "module_id": 2,
+        },
+        {
+            "status_code": 200,
+            "msg": "Success",
+            "result": {
+                "total": 2,
+                "current": 1,
+                "size": 50,
+                "pages": 1,
+                "items": [
+                    {
+                        "id": 1,
+                        "key": "TICK_5_SEC",
+                        "default_value": "5",
+                        "is_global": True,
+                        "type": "int"
+                    },
+                    {
+                        "id": 2,
+                        "key": "LOG_LEVEL",
+                        "default_value": "DEBUG",
+                        "is_global": True,
+                        "type": "str"
+                    }
+                ]
+            },
+            "status": True
+        }
+    ),
+    (
+        {
+            "is_global": False,
+            "module_id": 2,
+        },
+        {
+            "status_code": 200,
+            "msg": "Success",
+            "result": {
+                "total": 1,
+                "current": 1,
+                "size": 50,
+                "pages": 1,
+                "items": [
+                    {
+                        "id": 3,
+                        "key": "PRIVATE_SETTING",
+                        "default_value": "very private",
+                        "is_global": False,
+                        "type": "str"
+                    }
+                ]
+            },
+            "status": True
+        }
+    ),
+    (
+        # ID 1 is Core
+        {
+            "module_id": 1,
+        },
+        {
+            "status_code": 200,
+            "msg": "Success",
+            "result": {
+                "total": 0,
+                "current": 1,
+                "size": 50,
+                "pages": 0,
+                "items": []
+            },
+            "status": True
+        }
+    ),
+    (
+        {
+            "module_id": 2,
+        },
+        {
+            "status_code": 200,
+            "msg": "Success",
+            "result": {
+                "total": 3,
+                "current": 1,
+                "size": 50,
+                "pages": 1,
+                "items": [
+                    {
+                        "id": 1,
+                        "key": "TICK_5_SEC",
+                        "default_value": "5",
+                        "is_global": True,
+                        "type": "int"
+                    },
+                    {
+                        "id": 2,
+                        "key": "LOG_LEVEL",
+                        "default_value": "DEBUG",
+                        "is_global": True,
+                        "type": "str"
+                    },
+                    {
+                        "id": 3,
+                        "key": "PRIVATE_SETTING",
+                        "default_value": "very private",
+                        "is_global": False,
+                        "type": "str"
+                    }
+                ]
+            },
+            "status": True
         }
     ),
 ]
 
-negative_create_team_data_set = [
+negative_get_variables_dataset = [
     (
-        # in fact it create new team with id...
         {
-            "name": "Team1",
-            "permissions": [],
-            "users_ids": [],
-            "variables": []
+            "module_id": 0,
         },
+        {
+            "status_code": 404,
+            "msg": "NotFound: Module not found",
+            "result": None,
+            "status": False
+        }
+    ),
+]
+
+
+positive_set_app_variables_dataset = [
+    (
+        {
+            "module_id": 1
+        },
+        [
+            {
+                "setting_id": 1,
+                "new_value": "TEST"
+            }
+        ],
         {
             "status": True,
             "status_code": status.HTTP_200_OK,
             "msg": "Success",
             "result": {}
         }
-    )
-]
-
-positive_get_team_data_set = [
+    ),
     (
         {
-            "team_id": 2
+            "module_id": 2
         },
+        [
+            {
+                "setting_id": 1,
+                "new_value": "TEST"
+            }
+        ],
         {
             "status": True,
             "status_code": status.HTTP_200_OK,
             "msg": "Success",
-            "result": {
-                'id': 2,
-                'name': 'Team1',
-                'permissions': [],
-                'variables': [],
-                'users': []
-            }
-        }
-    ),(
-        {
-            "team_id": 3
-        },
-        {
-            "status": True,
-            "status_code": status.HTTP_200_OK,
-            "msg": "Success",
-            "result": {
-                'id': 3,
-                'name': 'Team2',
-                'permissions': [],
-                'variables': [],
-                'users': []
-            }
+            "result": {}
         }
     ),
 ]
 
-negative_get_team_data_set = [
+negative_set_app_variables_dataset = [
     (
         {
-            "team_id": 9999
+            "module_id": 9999
         },
-        {
-            "msg": "NotFound: Team not found",
-            "result": None,
-            "status": False,
-            "status_code": status.HTTP_404_NOT_FOUND
-        }
-    ),(
-        # wrong parameter name
+        {}
+    ),
+    (
         {
             "id": 1234
         },
-        {
-            "msg": "RequestValidationError",
-            "result": [
-                {
-                    "type": "missing",
-                    "loc": ["query", "team_id"],
-                    "msg": "Field required",
-                    "input": None,
-                    "url": "https://errors.pydantic.dev/2.4/v/missing"
-                }
-            ],
-            "status": False,
-            "status_code": status.HTTP_422_UNPROCESSABLE_ENTITY
-        }
+        {}
     ),
-]
-
-positive_edit_team_data_set = [
     (
+        # set variable to wrong module
         {
-            "team_id": 2,
+            "module_id": 1
         },
-        {
-            "name": "Team99",
-            "permissions": [],
-            "users_ids": [],
-            "variables": []
-        },
+        [
+            {
+                "setting_id": 2,
+                "new_value": "TEST"
+            }
+        ],
         {
             "status": True,
             "status_code": status.HTTP_200_OK,
             "msg": "Success",
-            "result": {
-                'id': 2,
-                'name': 'Team99',
-                'permissions': [],
-                'variables': [],
-                'users': []
-            }
+            "result": {}
         }
+    ),
+
+]
+
+positive_get_app_variables_dataset = [
+    (
+        {
+            "module_id": 1
+        },
+        {}
+    ),
+    (
+        {
+            "module_id": 2
+        },
+        {}
     )
 ]
 
-negative_edit_team_data_set = [
-    (
-        # Not exist team
-        {
-            "team_id": 9999,
-
-        },
-        {
-            "name": "Team999",
-            "permissions": [],
-            "users_ids": [],
-            "variables": []
-        },
-        {
-            "status": False,
-            "status_code": status.HTTP_404_NOT_FOUND,
-            "msg": "NotFound: Team not found",
-            "result": None
-        }
-    ),(
-        # Same team name
-        {
-            "team_id": 2,
-        },
-        {
-            "name": "Team2",
-            "permissions": [],
-            "users_ids": [],
-            "variables": []
-        },
-        {
-            "status_code": status.HTTP_200_OK,
-            "msg": "Success",
-            "result": {},
-            "status": True
-        }
-    )
-]
-
-positive_remove_team_data_set = [
+negative_get_app_variables_dataset = [
     (
         {
-            "team_id": 2,
+            "module_id": 9999
         },
+        {}
+    ),
+    (
         {
-          "status_code": status.HTTP_200_OK,
-          "msg": "Success",
-          "result": {},
-          "status": True
-        }
-    ),(
-        {
-            "team_id": 3,
+            "id": 1234
         },
-        {
-          "status_code": status.HTTP_200_OK,
-          "msg": "Success",
-          "result": {},
-          "status": True
-        }
+        {}
     ),
 ]
 
-negative_remove_team_data_set = [
+
+positive_set_user_variables_dataset = [
     (
-        # not exist user
         {
-            "team_id": 9999,
+            "user_id": 1
         },
-        {
-            "msg": "NotFound: Team not found",
-            "result": None,
-            "status": False,
-            "status_code": status.HTTP_404_NOT_FOUND
-        }
+        [
+          {
+            "setting_id": 1,
+            "new_value": "TEST"
+          }
+        ],
+        {}
     ),
-    (
-        # admin user TODO dafuck we can remove superusers team??
-        {
-            "team_id": 1,
-        },
-        {
-            # "msg": "Success",
-            # "result": {},
-            # "status": True,
-            # "status_code": status.HTTP_200_OK
-        }
-    ),
-    (
-        # wrong param name
-        {
-            "team": 2,
-        },
-        {
-            "msg": "RequestValidationError",
-            "result": [
-                {
-                    'input': None,
-                    'loc': ['query', 'team_id'],
-                    'msg': 'Field required',
-                    'type': 'missing',
-                    'url': 'https://errors.pydantic.dev/2.4/v/missing'
-                }
-            ],
-            "status": False,
-            "status_code": status.HTTP_422_UNPROCESSABLE_ENTITY
-        }
-    )
 ]
+
+negative_set_user_variables_dataset = []
+
+positive_get_user_variables_dataset = [
+    (
+        {
+            "user_id": 1
+        },
+        {}
+    ),
+]
+
+negative_get_user_variables_dataset = []
+
+
+positive_set_team_variables_dataset = [
+(
+        {
+            "team_id": 1
+        },
+        [
+          {
+            "setting_id": 1,
+            "new_value": "TEST"
+          }
+        ],
+        {}
+    ),
+]
+
+negative_set_team_variables_dataset = []
+
+positive_get_team_variables_dataset = [
+    (
+        {
+            "team_id": 1
+        },
+        {}
+    ),
+]
+
+negative_get_team_variables_dataset = []
+
+
+get_variables_dataset = positive_get_variables_dataset + negative_get_variables_dataset
+set_app_variables_dataset = positive_set_app_variables_dataset + negative_set_app_variables_dataset
+get_app_variables_dataset = positive_get_app_variables_dataset + negative_get_app_variables_dataset
+set_user_variables_dataset = positive_set_user_variables_dataset + negative_set_user_variables_dataset
+get_user_variables_dataset = positive_get_user_variables_dataset + negative_get_user_variables_dataset
+set_team_variables_dataset = positive_set_team_variables_dataset + negative_set_team_variables_dataset
+get_team_variables_dataset = positive_get_team_variables_dataset + negative_get_team_variables_dataset

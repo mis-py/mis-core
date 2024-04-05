@@ -1,6 +1,10 @@
 from fastapi import status
 
-positive_create_team_data_set = [
+positive_get_teams_dataset = []
+
+negative_get_teams_dataset = []
+
+positive_create_team_dataset = [
     (
         {
             "name": "Team1",
@@ -42,7 +46,7 @@ positive_create_team_data_set = [
     ),
 ]
 
-negative_create_team_data_set = [
+negative_create_team_dataset = [
     # (
     #     # in fact it create new team with id...
     #     {
@@ -60,7 +64,7 @@ negative_create_team_data_set = [
     # )
 ]
 
-positive_get_team_data_set = [
+positive_get_team_dataset = [
     (
         {
             "team_id": 2
@@ -96,7 +100,7 @@ positive_get_team_data_set = [
     ),
 ]
 
-negative_get_team_data_set = [
+negative_get_team_dataset = [
     (
         {
             "team_id": 9999
@@ -129,7 +133,7 @@ negative_get_team_data_set = [
     ),
 ]
 
-positive_edit_team_data_set = [
+positive_edit_team_dataset = [
     (
         {
             "team_id": 2,
@@ -155,7 +159,7 @@ positive_edit_team_data_set = [
     )
 ]
 
-negative_edit_team_data_set = [
+negative_edit_team_dataset = [
     (
         # Not exist team
         {
@@ -195,7 +199,7 @@ negative_edit_team_data_set = [
     # )
 ]
 
-positive_remove_team_data_set = [
+positive_remove_team_dataset = [
     (
         {
             "team_id": 2,
@@ -219,7 +223,7 @@ positive_remove_team_data_set = [
     ),
 ]
 
-negative_remove_team_data_set = [
+negative_remove_team_dataset = [
     (
         # not exist team
         {
@@ -264,3 +268,9 @@ negative_remove_team_data_set = [
         }
     )
 ]
+
+get_teams_dataset = positive_get_teams_dataset + negative_get_teams_dataset
+create_team_dataset = positive_create_team_dataset + negative_create_team_dataset
+get_team_dataset = positive_get_team_dataset + negative_get_team_dataset
+edit_team_dataset = positive_edit_team_dataset + negative_edit_team_dataset
+remove_team_dataset = positive_remove_team_dataset + negative_remove_team_dataset
