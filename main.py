@@ -164,8 +164,8 @@ async def mis_error_exception_handler(request: Request, exc: MISError):
         status_code=status.HTTP_200_OK,
         content=MisResponse(
             status_code=exc.status_code,
-            msg=f"{exc_name}: {exc.message}",
-            result=exc.data,
+            msg=exc_name,
+            result=exc.message,
         ).model_dump()
     )
 
