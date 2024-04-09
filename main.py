@@ -6,8 +6,8 @@ from loguru import logger
 from contextlib import asynccontextmanager
 from functools import lru_cache
 # from log import setup_logger
-import json
 
+import traceback
 from fastapi import FastAPI, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
@@ -83,9 +83,6 @@ async def lifespan(application: FastAPI):
     await init_mongo()
     await init_eventory()
     await init_scheduler()
-
-    # TODO why should we load settings to env??
-    # await init_settings()
 
     await pre_init_db()
     await manifest_init_modules(app)
@@ -185,11 +182,44 @@ async def mis_error_exception_handler(request: Request, exc: MISError):
         data=exc.data,
     )
     return JSONResponse(
-        content={"error": error_schema.model_dump()},
-        status_code=exc.status_code,
+        status_code=status.HTTP_200_OK,
+        content=MisResponse[str](
+            status_code=exc.status_code,
+            msg=exc_name,
+            result=exc.message,
+        ).model_dump()
     )
 
 
+async def catch_exceptions_middleware(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as exc:
+        exc_name = exc.__class__.__name__
+
+        tb = traceback.format_exc()
+
+        logger.error(f"{request.method} {request.scope['path']}: {exc_name} - {exc}")
+        logger.error(tb)
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=MisResponse[str](
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                msg=exc_name,
+                result="Server error happen. Our devs already fired for that. Anyway see server log for error details."
+            ).model_dump(),
+        )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+app.middleware('http')(catch_exceptions_middleware)
+# app.add_middleware(PyInstrumentProfilerMiddleware)
 # app.add_middleware(BaseHTTPMiddleware, dispatch=analyze)
 app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 

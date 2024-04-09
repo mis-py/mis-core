@@ -5,7 +5,7 @@ from fastapi_pagination import Page
 from starlette import status
 
 from core.db.models import User
-from core.dependencies import get_user_by_id, get_current_user
+from core.dependencies import get_user_by_id, get_current_user, get_team_by_id
 from core.dependencies.misc import UnitOfWorkDep
 from core.exceptions import NotFound, AlreadyExists
 from core.schemas.user import UserListResponse, \
@@ -23,7 +23,10 @@ router = APIRouter()
 async def get_users(
         uow: UnitOfWorkDep,
         team_id: Optional[int] = None,
-) -> Page[UserListResponse]:
+):
+    if team_id is not None:
+        await get_team_by_id(team_id)
+
     return await UserService(uow).filter_and_paginate(
         team_id=team_id,
         prefetch_related=['settings', 'team'],
@@ -54,6 +57,7 @@ async def edit_user_me(
              dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:users'])])
 async def create_user(uow: UnitOfWorkDep, user_in: UserCreate):
     user = await UserService(uow).get(username=user_in.username)
+
     if user:
         raise AlreadyExists(f"User with username '{user_in.username}' already exists")
 

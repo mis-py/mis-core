@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 from fastapi import Body
-from datetime import datetime
 from typing import Literal, Optional
-from core.schemas.common import UserModelShort, TeamModelShort
+from core.utils.schema import MisModel
+from core.db.models import ScheduledJob
 
 
 class JobScheduleUpdate(BaseModel):
@@ -10,20 +10,20 @@ class JobScheduleUpdate(BaseModel):
     cron: str | list[str] = Body("", min_length=1)
 
 
-class JobResponse(BaseModel):
-    id: str
+class JobResponse(MisModel):
+    id: int
     name: str
-    status: Literal["running", "paused"]
-    next_run_time: Optional[datetime]
-    trigger: Optional[dict]
-    app: str
-    user: UserModelShort
-    team: Optional[TeamModelShort]
+    status: ScheduledJob.StatusTask
+    app_id: Optional[int]
+    user_id: Optional[int]
+    team_id: Optional[int]
 
 
 class JobCreate(BaseModel):
+    task_id: str
     extra: Optional[dict] = None
     trigger: Optional[JobScheduleUpdate] = None
+    type: Literal["user", "team"]
 
 
 class TaskResponse(BaseModel):

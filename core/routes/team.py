@@ -18,9 +18,10 @@ router = APIRouter()
 
 @router.get(
     '',
-    dependencies=[Depends(get_current_user)]
+    dependencies=[Depends(get_current_user)],
+    response_model=Page[TeamListResponse]
 )
-async def get_teams(uow: UnitOfWorkDep) -> Page[TeamListResponse]:
+async def get_teams(uow: UnitOfWorkDep):
     return await TeamService(uow).filter_and_paginate(prefetch_related=['users'])
 
 

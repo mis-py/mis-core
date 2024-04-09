@@ -1,3 +1,4 @@
+import loguru
 from tortoise.expressions import Q
 
 from .utils import type_convert
@@ -7,9 +8,9 @@ from core.db.models import User, Module, Team, VariableValue, Variable
 
 class VariableSet:
     def __init__(self, user: User = None, app: Module = None, team: Team = None):
-        self._user = user
-        self._app = app
-        self._team = team
+        self._user: User = user
+        self._app: Module = app
+        self._team: Team = team
 
     async def load(self):
         # getting default_value of setting

@@ -1,8 +1,8 @@
 from pydantic import BaseModel, Field
-from core.routes.variable import UpdateVariableModel
 from typing import Optional
 from core.schemas.common import TeamModelShort
-from core.schemas.variable import VariableValueModel
+from core.schemas.variable import UpdateVariable, VariableValueResponse
+from core.utils.schema import MisModel
 
 
 class UserCreate(BaseModel):
@@ -11,7 +11,7 @@ class UserCreate(BaseModel):
     team_id: int = None
     position: Optional[str] = Field(max_length=100)
     permissions: Optional[list[str]] = []
-    variables: Optional[list[UpdateVariableModel]] = []
+    variables: Optional[list[UpdateVariable]] = []
 
 
 class UserUpdate(BaseModel):
@@ -33,7 +33,7 @@ class UserResponse(BaseModel):
     disabled: bool
     signed_in: bool
     team: Optional[TeamModelShort]
-    settings: list[VariableValueModel] = []
+    settings: list[VariableValueResponse] = []
 
 
 class UserListResponse(BaseModel):
@@ -43,4 +43,4 @@ class UserListResponse(BaseModel):
     disabled: bool
     signed_in: bool
     team: Optional[TeamModelShort]
-    settings: list[VariableValueModel] = []
+    settings: list[VariableValueResponse] = []
