@@ -1,6 +1,9 @@
 from fastapi import status
 
-positive_get_variables_dataset = [
+# global only to global
+# local only to local
+
+positive_get_global_variables = [
     (
         {},
         {
@@ -251,39 +254,97 @@ positive_get_variables_dataset = [
     ),
 ]
 
-negative_get_variables_dataset = [
+negative_get_global_variables = [
     (
         {
             "module_id": 0,
         },
         {
             "status_code": 404,
-            "msg": "NotFound: Module not found",
-            "result": None,
+            "msg": "NotFound",
+            "result": "Module not found",
             "status": False
+        }
+    )
+]
+
+positive_get_local_variables = [
+    (
+        {
+            "user_id": 1
+        },
+        {
+            "status_code": 200,
+            "msg": "Success",
+            "result": {
+                "total": 0,
+                "current": 1,
+                "size": 50,
+                "pages": 0,
+                "items": []
+            },
+            "status": True
+        }
+    ),
+    (
+        {
+            "team_id": 1
+        },
+        {
+            "status_code": 200,
+            "msg": "Success",
+            "result": {
+                "total": 0,
+                "current": 1,
+                "size": 50,
+                "pages": 0,
+                "items": []
+            },
+            "status": True
         }
     ),
 ]
 
-
-positive_set_app_variables_dataset = [
+negative_get_local_variables = [
     (
         {
-            "module_id": 1
+            "user_id": 9999
         },
-        [
-            {
-                "setting_id": 1,
-                "new_value": "TEST"
-            }
-        ],
         {
-            "status": True,
-            "status_code": status.HTTP_200_OK,
-            "msg": "Success",
-            "result": {}
+            "status_code": 404,
+            "msg": "NotFound",
+            "result": "User not found",
+            "status": False
         }
     ),
+    (
+        {
+            "team_id": 9999
+        },
+        {
+            "status_code": 404,
+            "msg": "NotFound",
+            "result": "Team not found",
+            "status": False
+        }
+    ),
+    (
+        # TODO that case should rise filter error both used forbidden
+        {
+            "user_id": 9999,
+            "team_id": 9999
+        },
+        {
+            'msg': 'MISError',
+            'result': 'Use only one filter',
+            'status': False,
+            'status_code': 400
+        }
+    )
+]
+
+
+positive_set_global_variables = [
     (
         {
             "module_id": 2
@@ -291,145 +352,198 @@ positive_set_app_variables_dataset = [
         [
             {
                 "setting_id": 1,
-                "new_value": "TEST"
-            }
-        ],
-        {
-            "status": True,
-            "status_code": status.HTTP_200_OK,
-            "msg": "Success",
-            "result": {}
-        }
-    ),
-]
-
-negative_set_app_variables_dataset = [
-    (
-        {
-            "module_id": 9999
-        },
-        {}
-    ),
-    (
-        {
-            "id": 1234
-        },
-        {}
-    ),
-    (
-        # set variable to wrong module
-        {
-            "module_id": 1
-        },
-        [
+                "new_value": 999
+            },
             {
                 "setting_id": 2,
                 "new_value": "TEST"
             }
         ],
         {
-            "status": True,
-            "status_code": status.HTTP_200_OK,
-            "msg": "Success",
-            "result": {}
+            'msg': 'Success',
+            'result': {},
+            'status': True,
+            'status_code': 200
         }
     ),
-
 ]
 
-positive_get_app_variables_dataset = [
+negative_set_global_variables = [
     (
+        # Core is not editable
         {
             "module_id": 1
         },
-        {}
+        [
+            {
+                "setting_id": 1,
+                "new_value": "TEST"
+            }
+        ],
+        {
+            "status": False,
+            "status_code": status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "msg": "ValidationFailed",
+            "result": "Module ID '1' has no editable variables"
+        }
     ),
     (
-        {
-            "module_id": 2
-        },
-        {}
-    )
-]
-
-negative_get_app_variables_dataset = [
-    (
+        # Module not exist
         {
             "module_id": 9999
         },
-        {}
+        [
+            {
+                "setting_id": 1,
+                "new_value": "TEST"
+            }
+        ],
+        {
+            "status_code": 404,
+            "msg": "NotFound",
+            "result": "Module not found",
+            "status": False
+        }
     ),
     (
+        # TODO actually, variables can be updated without module_id ??
         {
             "id": 1234
         },
-        {}
+        [
+            {
+                "setting_id": 1,
+                "new_value": "TEST"
+            }
+        ],
+        {'msg': 'Success', 'result': {}, 'status': True, 'status_code': 200}
+    ),
+    (
+        # Set wrong value type
+        {
+            "module_id": 2
+        },
+        [
+            {
+                "setting_id": 1,
+                "new_value": "TEST"
+            }
+        ],
+        {
+            "status": False,
+            "status_code": 422,
+            "msg": "ValidationFailed",
+            "result": "Can't convert value 'TEST' to 'int' for Variable with ID '1'"
+        }
     ),
 ]
 
-
-positive_set_user_variables_dataset = [
+positive_set_local_variables = [
     (
         {
             "user_id": 1
         },
         [
-          {
-            "setting_id": 1,
-            "new_value": "TEST"
-          }
+            {
+                "setting_id": 3,
+                "new_value": "test"
+            }
         ],
-        {}
+        {'msg': 'Success', 'result': {}, 'status': True, 'status_code': 200}
     ),
-]
-
-negative_set_user_variables_dataset = []
-
-positive_get_user_variables_dataset = [
     (
-        {
-            "user_id": 1
-        },
-        {}
-    ),
-]
-
-negative_get_user_variables_dataset = []
-
-
-positive_set_team_variables_dataset = [
-(
         {
             "team_id": 1
         },
         [
-          {
-            "setting_id": 1,
-            "new_value": "TEST"
-          }
+            {
+                "setting_id": 3,
+                "new_value": "test"
+            }
         ],
-        {}
+        {'msg': 'Success', 'result': {}, 'status': True, 'status_code': 200}
     ),
 ]
 
-negative_set_team_variables_dataset = []
-
-positive_get_team_variables_dataset = [
+negative_set_local_variables = [
     (
         {
-            "team_id": 1
+            "user_id": 1,
         },
-        {}
+        [
+            {
+                "setting_id": 0,
+                "new_value": "TEST"
+            }
+        ],
+        {
+            "status_code": 404,
+            "msg": "NotFound",
+            "result": "VariableValue with ID '0' not exist",
+            "status": False
+        }
     ),
+    (
+        {
+            "user_id": 9999,
+        },
+        [
+            {
+                "setting_id": 1,
+                "new_value": "TEST"
+            }
+        ],
+        {
+            "status_code": 404,
+            "msg": "NotFound",
+            "result": "User not found",
+            "status": False
+        }
+    ),
+    (
+        {
+            "team_id": 1,
+        },
+        [
+            {
+                "setting_id": 0,
+                "new_value": "TEST"
+            }
+        ],
+        {
+            "status_code": 404,
+            "msg": "NotFound",
+            "result": "VariableValue with ID '0' not exist",
+            "status": False
+        }
+    ),
+    (
+        {
+            "team_id": 9999,
+        },
+        [
+            {
+                "setting_id": 1,
+                "new_value": "TEST"
+            }
+        ],
+        {
+            "status_code": 404,
+            "msg": "NotFound",
+            "result": "Team not found",
+            "status": False
+        }
+    ),
+    (
+        {},
+        [],
+        {'msg': 'MISError', 'result': 'Use only one filter', 'status': False, 'status_code': 400}
+    )
 ]
 
-negative_get_team_variables_dataset = []
 
+get_global_variables_dataset = positive_get_global_variables + negative_get_global_variables
+get_local_variables_dataset = positive_get_local_variables + negative_get_local_variables
 
-get_variables_dataset = positive_get_variables_dataset + negative_get_variables_dataset
-set_app_variables_dataset = positive_set_app_variables_dataset + negative_set_app_variables_dataset
-get_app_variables_dataset = positive_get_app_variables_dataset + negative_get_app_variables_dataset
-set_user_variables_dataset = positive_set_user_variables_dataset + negative_set_user_variables_dataset
-get_user_variables_dataset = positive_get_user_variables_dataset + negative_get_user_variables_dataset
-set_team_variables_dataset = positive_set_team_variables_dataset + negative_set_team_variables_dataset
-get_team_variables_dataset = positive_get_team_variables_dataset + negative_get_team_variables_dataset
+set_global_variables_dataset = positive_set_global_variables + negative_set_global_variables
+set_local_variables_dataset = positive_set_local_variables + negative_set_local_variables

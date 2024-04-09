@@ -27,18 +27,26 @@ def compare_json_with_ignore_keys(file_1, file_2, ignored_keys):
     return True
 
 
-def _sorted(json_data):
+def _sorted(json_data, ignore_keys: list = None):
+    def check_key(key):
+        if ignore_keys is None:
+            return True
+
+        if ignore_keys is not None and key in ignore_keys:
+            return False
+        else:
+            return True
+
     if isinstance(json_data, dict):
-        return sorted((k, _sorted(v)) for k, v in json_data.items())
+        return sorted((k, _sorted(v, ignore_keys)) for k, v in json_data.items() if check_key(k))
     if isinstance(json_data, list):
-        return sorted(_sorted(x) for x in json_data)
+        return sorted(_sorted(x, ignore_keys) for x in json_data if check_key(x))
     else:
         return json_data
 
 
-def compare_json(json1, json2):
-
-    return _sorted(json1) == _sorted(json2)
+def compare_json(json1, json2, ignore_keys: list = None):
+    return _sorted(json1, ignore_keys) == _sorted(json2, ignore_keys)
 
 
 # default check for get queries
@@ -48,3 +56,12 @@ def default_check(response):
 
 def pretty_json(json_data):
     return json.dumps(json_data, indent=4)
+
+
+def check_response(response, expected, ignore_keys:list = None):
+    response_json = response.json()
+
+    log.info(pretty_json(response_json))
+    log.info(pretty_json(expected))
+
+    return compare_json(response_json, expected, ignore_keys)

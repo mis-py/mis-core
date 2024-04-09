@@ -89,8 +89,8 @@ negative_get_user_permissions_dataset = [
             "user_id": 9999
         },
         {
-            "msg": "NotFound: User not found",
-            "result": None,
+            "msg": "NotFound",
+            "result": "User not found",
             "status": False,
             "status_code": status.HTTP_404_NOT_FOUND
         }
@@ -153,8 +153,8 @@ negative_edit_user_permissions_dataset = [
         {
             "status": False,
             "status_code": status.HTTP_404_NOT_FOUND,
-            "msg": "NotFound: User not found",
-            "result": None
+            "msg": "NotFound",
+            "result": "User not found"
         }
     ),(
         {
@@ -207,8 +207,8 @@ negative_get_team_permissions_dataset = [
             "team_id": 9999
         },
         {
-            "msg": "NotFound: Team not found",
-            "result": None,
+            "msg": "NotFound",
+            "result": "Team not found",
             "status": False,
             "status_code": status.HTTP_404_NOT_FOUND
         }
@@ -271,8 +271,8 @@ negative_edit_team_permissions_dataset = [
         {
             "status": False,
             "status_code": status.HTTP_404_NOT_FOUND,
-            "msg": "NotFound: Team not found",
-            "result": None
+            "msg": "NotFound",
+            "result": "Team not found"
         }
     ),(
         {
