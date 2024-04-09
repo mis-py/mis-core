@@ -13,12 +13,13 @@ if TYPE_CHECKING:
 @dataclass
 class AppContext:
     """Context data for modules"""
-    module: 'ModuleTemplate'
+    # module: 'ModuleTemplate'
+    app_name: str
     settings: 'VariableSet'
 
-    @property
-    def app_name(self):
-        return self.module.name
+    # @property
+    # def app_name(self):
+    #     return "test" #self.module.name
 
     # async def publish_event(self, obj: Message, routing_key: str):
     #     # import it here due to partial initialized import error

@@ -93,7 +93,7 @@ class ScheduledJob(Model):
     app = fields.ForeignKeyField('models.Module', related_name='jobs')
     user = fields.ForeignKeyField('models.User', related_name='jobs')
     team = fields.ForeignKeyField('models.Team', related_name='jobs', null=True)
-    job_id = fields.CharField(max_length=255, unique=True)
+    job_id = fields.CharField(max_length=255, null=True)
     task_name = fields.CharField(max_length=255)
     status = fields.CharEnumField(enum_type=StatusTask)
     interval = fields.IntField(null=True)

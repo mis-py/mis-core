@@ -1,3 +1,6 @@
+import random
+from typing import Callable
+
 from loguru import logger
 from pytz import utc
 
@@ -14,7 +17,7 @@ from core.db.models import ScheduledJob
 from core.utils.common import validate_task_extra
 from core.crud import job
 
-from .exceptions import NotFound, AlreadyExists, ValidationFailed
+from core.exceptions import NotFound, AlreadyExists, ValidationFailed
 from .utils import Task
 # from core.utils import signature_to_dict
 # from core.db.helpers import StatusTask
@@ -54,6 +57,7 @@ class SchedulerService:
         )
 
         cls._scheduler.start()
+        cls._scheduler.remove_all_jobs()
 
     @classmethod
     async def close(cls):
@@ -69,7 +73,8 @@ class SchedulerService:
     def get_task(cls, task_name: str) -> Task | None:
         if task_name in cls._tasks:
             return cls._tasks[task_name]
-        return None
+        else:
+            raise NotFound(f"Task ID '{task_name}' not exist")
 
     # TODO what it must return?
     @classmethod
@@ -77,10 +82,10 @@ class SchedulerService:
         return cls._tasks
 
     @classmethod
-    def get_job(cls, job_id: str) -> Job:
-        job = cls._scheduler.get_job(job_id)
+    def get_job(cls, job_id: int) -> Job:
+        job = cls._scheduler.get_job(str(job_id))
         if not job:
-            raise NotFound(f"[ModuleService]: Job {job_id} not found")
+            raise NotFound(f"Job ID '{job_id}' not found")
         return job
 
     @classmethod
@@ -92,7 +97,7 @@ class SchedulerService:
         """
         jobs = []
         for job in cls._scheduler.get_jobs():
-            if task_name and task_name not in job.id:
+            if task_name and task_name not in job.name:
                 continue
 
             jobs.append(job)
@@ -100,37 +105,35 @@ class SchedulerService:
         return jobs
 
     @classmethod
-    async def pause_job(cls, job_id: str, user) -> None:
+    async def pause_job(cls, job_id: int) -> None:
         job = cls.get_job(job_id)
         job.pause()
-        logger.info(f'[ModuleService]: Pause job {job.name}')
-
-
+        logger.info(f'[SchedulerService]: Pause job {job.name}')
 
     @classmethod
-    async def resume_job(cls, job_id: str, user) -> None:
+    async def resume_job(cls, job_id: int) -> None:
         job = cls.get_job(job_id)
         job.resume()
-        logger.info(f'[ModuleService]: Resume job {job.name} (next run= {job.next_run_time})')
+        logger.info(f'[SchedulerService]: Resume job {job.name} (next run= {job.next_run_time})')
 
     @classmethod
-    async def create_job_instance(cls, task: Task, job_id: str, trigger, context: AppContext, kwargs, run_at_startup=True):
-        job = cls._scheduler.add_job(
-            task.func,
-            id=job_id,
+    async def create_job_instance(cls, func: Callable, job_id: int, trigger, context: AppContext, kwargs, run_at_startup=True):
+        job_instance = cls._scheduler.add_job(
+            func,
+            id=str(job_id),
             trigger=trigger,
             args=(context, ),
             kwargs=kwargs
         )
 
         if run_at_startup:
-            job.resume()
-            logger.debug(f'[ModuleService] Resume job {job.name}, next run time: {job.next_run_time}')
+            job_instance.resume()
+            logger.debug(f'[SchedulerService] Resume job {job_instance.name}, next run time: {job_instance.next_run_time}')
         else:
-            job.pause()
-            logger.debug(f'[ModuleService] Pause job {job.name}')
+            job_instance.pause()
+            logger.debug(f'[SchedulerService] Pause job {job_instance.name}')
 
-        return job
+        return job_instance
 
     @classmethod
     async def restore_job(cls, saved_job: ScheduledJob, module, run_at_startup) -> Job | None:
@@ -143,64 +146,59 @@ class SchedulerService:
         elif saved_job.cron:
             trigger = OrTrigger([CronTrigger.from_crontab(c) for c in saved_job.cron])
         else:
-            logger.warning(f"[ModuleService] Unknown trigger used in {saved_job.job_id}, using default one.")
+            logger.warning(f"[SchedulerService] Unknown trigger used in {saved_job.job_id}, using default one.")
             trigger = task.trigger
 
         # task not found, seems to be removed but job still exist
         if not task:
-            logger.warning(f"[ModuleService] Task not found! Saved job_id: {saved_job.job_id}")
+            logger.warning(f"[SchedulerService] Task not found! Saved job_id: {saved_job.job_id}")
             return None
 
         context = await module.get_context(user=saved_job.user, team=saved_job.team)
 
         try:
-            job = await cls.create_job_instance(task, saved_job.job_id, trigger, context, saved_job.extra_data, run_at_startup)
-            logger.info(f'[ModuleService]: Restored job {job.name}')
+            job = await cls.create_job_instance(task.func, saved_job.job_id, trigger, context, saved_job.extra_data, run_at_startup)
+            logger.info(f'[SchedulerService]: Restored job {job.name}')
         except (ValueError, ConflictingIdError) as error:
-            logger.error(f'[ModuleService] Error add job: {error}')
-            raise AlreadyExists(f"[ModuleService] Conflict id, job already exists for this {task.type}")
+            logger.error(f'[SchedulerService] Error add job: {error}')
+            raise AlreadyExists(f"Conflict id, job already exists for this {task.type}")
 
         return job
 
     @classmethod
-    async def add_job(cls, task_id: str, user, extra: dict = None, trigger=None) -> Job:
-        task = cls.get_task(task_id)
-        if not task:
-            raise NotFound(f"[ModuleService]: Task '{task_id}' not exist")
+    async def add_job(cls, task_id: str, user, db_id: int, extra: dict = None, trigger=None) -> Job:
+        task: Task = cls.get_task(task_id)
 
         if task.trigger is None and trigger is None:
-            raise ValidationFailed(f"[ModuleService]: Field 'trigger' required for this task!")
+            raise ValidationFailed(f"Argument 'trigger' required for this task!")
 
         if task.extra_typed and extra:
             kwargs = validate_task_extra(extra, task.extra_typed)
         elif task.extra_typed and not extra:
-            raise ValidationFailed(f"[ModuleService]: Need extra params {task.extra_typed}")
+            raise ValidationFailed(f"Argument 'extra_typed' required some extra params {task.extra_typed}")
         else:
             kwargs = None
 
-        obj_id = user.team_id if task.type == 'team' else user.id
-        job_id = task.make_id(app_name=task.module.name, obj_id=obj_id, extra=extra)
-
-        context = await task.module.get_context(user=user, team=user.team)
+        context = await task.module.get_context(user=user, team=await user.team)
 
         try:
-            job = await cls.create_job_instance(task, task_id, trigger, context, kwargs, False)
-            logger.info(f'[ModuleService]: Added job {job.name} (paused)')
+            job = await cls.create_job_instance(task.func, db_id, trigger, context, kwargs, task.autostart)
+            logger.info(f'[SchedulerService]: Added job {job.name} (paused)')
         except ConflictingIdError:
-            logger.warning(f'[ModuleService]: Failed add job {task.name}. Job already running for this {task.type}')
-            raise AlreadyExists(f"[ModuleService] Conflict id, job already exists for this {task.type}")
+            logger.warning(f'[SchedulerService]: Failed add job {task.name}. Job already running for this {task.type}')
+            raise AlreadyExists(f"Conflict id, job already exists for this {task.type}")
 
         return job
 
     @classmethod
-    async def remove_job(cls, job_id: str, user) -> None:
+    async def remove_job(cls, job_id: int) -> None:
         job = cls.get_job(job_id)
         job.remove()
 
-        logger.info(f'[ModuleService]: Removed job {job_id}!')
+        logger.info(f'[SchedulerService]: Removed job {job_id}!')
 
     @classmethod
-    async def reschedule_job(cls, job_id: str, trigger) -> None:
+    async def reschedule_job(cls, job_id: int, trigger) -> None:
         job = cls.get_job(job_id)
         job.reschedule(trigger=trigger)
-        logger.info(f'[ModuleService]: Reschedule job {job_id}! (next run= {job.next_run_time})')
+        logger.info(f'[SchedulerService]: Reschedule job {job_id}! (next run= {job.next_run_time})')

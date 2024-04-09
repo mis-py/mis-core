@@ -21,3 +21,4 @@ class RoutingKeys(BaseModel):
     Events that module can publish and other listeners can read
     """
     DUMMY_EVENT: str = "dummy_event"
+    DUMMY_MANUAL_EVENT: str = "dummy_manual_event"

@@ -69,5 +69,5 @@ class TeamService(BaseService):
 
     async def delete(self, **filters) -> None:
         if 'id' in filters and filters['id'] == 1:
-            raise MISError("Team with id '1' can't be deleted.")
+            raise MISError("Team with id '1' can't be deleted")
         await self.repo.delete(**filters)

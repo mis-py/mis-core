@@ -1,8 +1,7 @@
-from core.routes.variable import UpdateVariableModel
 from pydantic import BaseModel
 from typing import Optional
 from core.schemas.common import UserModelShort
-from core.schemas.variable import VariableValueModel
+from core.schemas.variable import VariableValueResponse
 from core.utils.schema import MisModel
 
 
@@ -10,21 +9,21 @@ class TeamCreate(BaseModel):
     name: str
     permissions: Optional[list[str]] = []
     users_ids: Optional[list[int]] = []
-    variables: Optional[list[UpdateVariableModel]] = []
+    variables: Optional[list[VariableValueResponse]] = []
 
 
 class TeamUpdate(BaseModel):
     name: str
     permissions: Optional[list[str]] = []
     users_ids: Optional[list[int]] = []
-    variables: Optional[list[UpdateVariableModel]] = []
+    variables: Optional[list[VariableValueResponse]] = []
 
 
 class TeamResponse(MisModel):
     id: int
     name: str
     users: list[UserModelShort] = []
-    variables: list[VariableValueModel] = []
+    variables: list[VariableValueResponse] = []
     permissions: list[str] = []
 
 

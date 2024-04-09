@@ -55,5 +55,5 @@ class UserService(BaseService):
 
     async def delete(self, **filters) -> None:
         if 'id' in filters and filters['id'] == 1:
-            raise MISError("User with id '1' can't be deleted.")
+            raise MISError("User with id '1' can't be deleted")
         await self.repo.delete(**filters)
