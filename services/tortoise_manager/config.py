@@ -1,6 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from const import ENV_FILE
-from loguru import logger
 
 
 class TortoiseSettings(BaseSettings):
@@ -9,6 +8,8 @@ class TortoiseSettings(BaseSettings):
     POSTGRES_HOST: str = ""
     POSTGRES_PORT: str = ""
     POSTGRES_DB: str = ""
+
+    POSTGRES_CREATE_DB: bool = False
 
     model_config = SettingsConfigDict(
         env_file=str(ENV_FILE) + '.env',

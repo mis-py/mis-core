@@ -26,7 +26,7 @@ class UserSelfUpdate(BaseModel):
     username: str = Field(max_length=20, min_length=3)
 
 
-class UserResponse(BaseModel):
+class UserResponse(MisModel):
     id: int
     username: str = Field(max_length=20, min_length=3)
     position: Optional[str]

@@ -19,7 +19,7 @@ class TeamUpdate(BaseModel):
     variables: Optional[list[VariableValueResponse]] = []
 
 
-class TeamResponse(BaseModel):
+class TeamResponse(MisModel):
     id: int
     name: str
     users: list[UserModelShort] = []

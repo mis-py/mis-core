@@ -2,13 +2,15 @@ from typing import Optional
 
 from pydantic import BaseModel
 
+from core.utils.schema import MisModel
+
 
 class RoutingKeyUpdate(BaseModel):
     key_verbose: str
     template: str
 
 
-class RoutingKeyResponse(BaseModel):
+class RoutingKeyResponse(MisModel):
     id: Optional[int]
     key: str
     name: str

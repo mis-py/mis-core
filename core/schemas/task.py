@@ -26,7 +26,7 @@ class JobCreate(BaseModel):
     type: Literal["user", "team"]
 
 
-class TaskResponse(BaseModel):
+class TaskResponse(MisModel):
     id: str
     # module: str
     name: str

@@ -40,7 +40,7 @@ async def init_core_routes(app):
     router.include_router(user.router, prefix='/users', tags=['core | users'])
     router.include_router(team.router, prefix='/teams', tags=['core | teams'])
     router.include_router(permission.router, prefix='/permissions', tags=['core | permissions'])
-    router.include_router(variable.router, prefix='/settings', tags=['core | settings'])
+    router.include_router(variable.router, prefix='/variables', tags=['core | variables'])
     # router.include_router(restricted_object.router, prefix='/restricted_objects', tags=['core | restricted_objects'])
     router.include_router(task.router, prefix='/tasks', tags=['core | tasks'])
     router.include_router(job.router, prefix='/jobs', tags=['core | jobs'])

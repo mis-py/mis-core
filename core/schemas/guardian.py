@@ -3,6 +3,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 from core.schemas.common import AppModel
+from core.utils.schema import MisModel
 
 
 class AccessGroupCreate(BaseModel):
@@ -14,7 +15,7 @@ class AccessGroupUpdate(BaseModel):
     name: Optional[str] = None
 
 
-class AccessGroupResponse(BaseModel):
+class AccessGroupResponse(MisModel):
     id: int
     name: str
 
@@ -31,7 +32,7 @@ class PermissionResponse(BaseModel):
     name: str
 
 
-class ObjectPermBase(BaseModel):
+class ObjectPermBase(MisModel):
     """
     Model with base fields for user ang group permission
     """

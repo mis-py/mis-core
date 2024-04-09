@@ -1,5 +1,4 @@
 from fastapi import Depends, APIRouter, Security, Query
-from fastapi_pagination import Page
 
 from core.db.models import Team, User, Module
 from core.dependencies import get_team_by_id, get_user_by_id, get_current_user
@@ -143,6 +142,7 @@ async def get_my_variables(
 
 @router.put(
     '/my',
+    response_model=MisResponse
 )
 async def edit_my_variables(
         uow: UnitOfWorkDep,
