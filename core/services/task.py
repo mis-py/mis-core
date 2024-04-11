@@ -12,7 +12,7 @@ def get_available_tasks(task_id: Optional[str] = None) -> list[TaskResponse]:
         if task_id and task_name != task_id:
             continue
 
-        founded_jobs = SchedulerService.get_jobs(task_name)
+        #founded_jobs = SchedulerService.get_jobs()
 
         res.append(
             TaskResponse(
@@ -20,8 +20,8 @@ def get_available_tasks(task_id: Optional[str] = None) -> list[TaskResponse]:
                 name=task.name,
                 type=task.type,
                 extra_typed=task.extra_typed or {},
-                trigger=format_trigger(task.trigger) or {},
-                is_has_jobs=bool(founded_jobs),
-                is_available_add_job=True,
+                trigger=format_trigger(task.trigger),
+                #is_has_jobs=bool(founded_jobs),
+                #is_available_add_job=True,
             ))
     return res

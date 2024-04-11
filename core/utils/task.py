@@ -24,31 +24,22 @@ def make_string_cron(trigger: CronTrigger):
 def format_trigger(trigger: IntervalTrigger | CronTrigger | OrTrigger | None):
     match trigger:
         case IntervalTrigger():
-            type_trigger = "interval"
-            value = trigger.interval
+            return trigger.interval.seconds
         case CronTrigger():
-            type_trigger = "cron"
-            value = make_string_cron(trigger)
+            return make_string_cron(trigger)
         case OrTrigger():
-            type_trigger = "or_cron"
-            value = [make_string_cron(cron_trigger) for cron_trigger in trigger.triggers]
+            return [make_string_cron(cron_trigger) for cron_trigger in trigger.triggers]
         case _:
             return None
-    return {
-        'type': type_trigger,
-        'value': value,
-    }
 
 
-def make_trigger(input_trigger):
-    try:
-        if input_trigger.interval:
-            return IntervalTrigger(seconds=input_trigger.interval)
-        elif isinstance(input_trigger.cron, str):
-            return CronTrigger.from_crontab(input_trigger.cron)
-        elif isinstance(input_trigger.cron, list):
-            return OrTrigger([CronTrigger.from_crontab(c) for c in input_trigger.cron])
-        else:
-            raise ValidationFailed("Trigger not added")
-    except ValueError as e:
-        raise ValidationFailed(f"Invalid schedule value. {e}")
+def get_trigger(input_trigger: int | str | list[str]):
+    if isinstance(input_trigger, int):
+        return IntervalTrigger(seconds=input_trigger)
+    elif isinstance(input_trigger, str):
+        return CronTrigger.from_crontab(input_trigger)
+    elif isinstance(input_trigger, list):
+        return OrTrigger([CronTrigger.from_crontab(c) for c in input_trigger])
+    else:
+        return None
+

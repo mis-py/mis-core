@@ -4,7 +4,6 @@ from asyncio import Task
 from typing import Callable
 from loguru import logger
 import ujson
-
 from aio_pika import connect_robust, Message
 from aio_pika.abc import AbstractChannel, AbstractIncomingMessage, ExchangeType, AbstractRobustConnection
 from aiormq import DuplicateConsumerTag, AMQPConnectionError
@@ -97,7 +96,7 @@ class Eventory:
     @classmethod
     async def publish(cls, obj, routing_key, app_name):
         message = Message(
-            body=ujson.dumps(obj, ensure_ascii=False).encode('utf-8'),
+            body=ujson.dumps(obj.to_dict(), ensure_ascii=False).encode('utf-8'),
             content_type='application/json',
             content_encoding='utf-8'
         )

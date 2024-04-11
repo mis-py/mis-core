@@ -141,8 +141,12 @@ app = FastAPI(
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     exc_name = exc.__class__.__name__
+    tb = traceback.format_exc()
+
     logger.error(f"{request.method} {request.scope['path']}: {exc_name} - {exc.errors()}")
     logger.error(f"Body: {exc.body}")
+    logger.error(tb)
+
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content=MisResponse[list](
@@ -156,7 +160,11 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.exception_handler(MISError)
 async def mis_error_exception_handler(request: Request, exc: MISError):
     exc_name = exc.__class__.__name__
+
+    tb = traceback.format_exc()
+
     logger.error(f"{request.method} {request.scope['path']}: {exc_name} - {exc.message}")
+    logger.error(tb)
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
