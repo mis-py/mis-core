@@ -25,15 +25,15 @@ class JobTrigger(MisModel):
     #     return value
 
 
-class SchedulerJob(MisModel):
-    id: str
-    name: str
-    func: str
-    # args: tuple|list
-    # kwargs:dict
-    # coalesce:bool
-    trigger: str
-    next_run_time: str
+# class SchedulerJob(MisModel):
+#     id: str
+#     name: str
+#     func: str
+#     # args: tuple|list
+#     # kwargs:dict
+#     # coalesce:bool
+#     trigger: str
+#     next_run_time: str
 
 
 class JobResponse(JobTrigger):

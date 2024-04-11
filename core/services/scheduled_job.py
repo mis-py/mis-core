@@ -40,8 +40,8 @@ class ScheduledJobService(BaseService):
 
         return jobs
 
-    async def get_scheduler_service_jobs(self):
-        return SchedulerService.get_jobs()
+    # async def get_scheduler_service_jobs(self):
+    #     return SchedulerService.get_jobs()
 
     async def create_scheduled_job(
             self,

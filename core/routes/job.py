@@ -10,7 +10,7 @@ from core.dependencies.misc import UnitOfWorkDep
 from core.exceptions import NotFound, MISError
 from core.services.scheduled_job import ScheduledJobService
 
-from core.schemas.task import JobResponse, JobTrigger, JobCreate, SchedulerJob
+from core.schemas.task import JobResponse, JobTrigger, JobCreate #, SchedulerJob
 from core.utils.task import format_trigger
 from core.utils.schema import MisResponse
 
@@ -61,28 +61,28 @@ async def get_jobs(
     return MisResponse[list[JobResponse]](result=response)
 
 
-@router.get(
-    '/get_scheduler_jobs'
-)
-async def get_scheduler_jobs(
-        uow: UnitOfWorkDep,
-
-):
-    jobs = await ScheduledJobService(uow).get_scheduler_service_jobs()
-    new = []
-    for j in jobs:
-        new_j = SchedulerJob(
-            id=j.id,
-            name=j.name,
-            func=str(j.func),
-            # args=j.args,
-            # kwargs=j.kwargs,
-            # coalesce=j.coalesce,
-            trigger=str(j.trigger),
-            next_run_time=str(j.next_run_time),
-        )
-        new.append(new_j)
-    return MisResponse[list[SchedulerJob]](result=new)
+# @router.get(
+#     '/get_scheduler_jobs'
+# )
+# async def get_scheduler_jobs(
+#         uow: UnitOfWorkDep,
+#
+# ):
+#     jobs = await ScheduledJobService(uow).get_scheduler_service_jobs()
+#     new = []
+#     for j in jobs:
+#         new_j = SchedulerJob(
+#             id=j.id,
+#             name=j.name,
+#             func=str(j.func),
+#             # args=j.args,
+#             # kwargs=j.kwargs,
+#             # coalesce=j.coalesce,
+#             trigger=str(j.trigger),
+#             next_run_time=str(j.next_run_time),
+#         )
+#         new.append(new_j)
+#     return MisResponse[list[SchedulerJob]](result=new)
 
 
 @router.post(
