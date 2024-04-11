@@ -1,26 +1,47 @@
 import loguru
 
-from core.db.models import ScheduledJob, User, Team
+from core.db.models import ScheduledJob, User, Team, Module
 from core.exceptions import NotFound, AlreadyExists
-from core.schemas.task import JobCreate, JobScheduleUpdate
+from core.schemas.task import JobCreate, JobTrigger
 from core.services.base.base_service import BaseService
 from core.services.base.unit_of_work import IUnitOfWork
-from core.utils.task import make_trigger
+from core.utils.task import get_trigger
 from services.scheduler import SchedulerService
 
+# TODO CRITICAL - should tasks start if module is disabled?
 
 class ScheduledJobService(BaseService):
     def __init__(self, uow: IUnitOfWork):
         super().__init__(repo=uow.scheduled_job_repo)
         self.uow = uow
 
-    async def get_scheduled_jobs_dict(self) -> dict[str, ScheduledJob]:
-        """
-        Returns all jobs as dict {job_id: job}
-        """
-        scheduled_jobs = await self.filter(prefetch_related=['user', 'team', 'app'])
-        scheduled_jobs_dict = {job.job_id: job for job in scheduled_jobs}
-        return scheduled_jobs_dict
+    async def get_jobs(
+            self,
+            task_name:str = None,
+            user_id:int = None,
+            team_id:int = None,
+            job_id:int = None
+    ) -> list[ScheduledJob]:
+        jobs = list()
+
+        saved_jobs = await self.filter(
+            id=job_id,
+            task_name=task_name,
+            user_id=user_id,
+            team_id=team_id,
+            prefetch_related=['user', 'team', 'app']
+        )
+
+        for job in saved_jobs:
+            if job.status == 'running':
+                # check if running task actually exist
+                scheduled_jobs = SchedulerService.get_job(job.id)
+            jobs.append(job)
+
+        return jobs
+
+    # async def get_scheduler_service_jobs(self):
+    #     return SchedulerService.get_jobs()
 
     async def create_scheduled_job(
             self,
@@ -28,81 +49,99 @@ class ScheduledJobService(BaseService):
             user: User,
             team: Team = None,
     ) -> ScheduledJob:
+        # here can be problem place coz task_name it is module.name + task.name
+        task = SchedulerService.get_task(job_in.task_name)
 
-        if job_in:
-            extra = job_in.extra
-            trigger = make_trigger(job_in.trigger) if job_in.trigger else None
-        else:
-            extra = None
-            trigger = None
-
-        if job_in and job_in.trigger:
-            interval = job_in.trigger.interval
-            cron = job_in.trigger.cron
-        else:
-            interval = None
-            cron = None
-
-        task = SchedulerService.get_task(job_in.task_id)
+        # trigger logic: if specified in request - use trigger in request
+        # otherwise use trigger defined by task
+        # requested trigger serialized in DB as is
+        # task trigger not saved in DB and constructing every time from task, so in DB in will be {"data": None}
+        trigger = get_trigger(job_in.trigger)
+        if not trigger and task.trigger:
+            trigger = task.trigger
 
         module = task.module
         task_name = task.name
 
         if task.single_instance:
-            scheduled_job = await self.uow.scheduled_job_repo.get(task_name=task_name, app=module.model, user=user, team=team)
+            scheduled_job = await self.uow.scheduled_job_repo.get(
+                task_name=task_name, app=module.model, user=user, team=team
+            )
             if scheduled_job:
                 raise AlreadyExists("Scheduled job already exists")
 
-        job_db: ScheduledJob = await self.create_by_kwargs(
-            user=user,
-            team=team,
-            app=module.model,
-            task_name=task_name,
-            status=ScheduledJob.StatusTask.RUNNING if task.autostart else ScheduledJob.StatusTask.PAUSED,
-            extra_data=extra,
-            interval=interval,
-            cron=cron,
-        )
+        async with self.uow:
+            job_db: ScheduledJob = ScheduledJob(
+                user=user,
+                team=team,
+                app=module.model,
+                task_name=task_name,
+                status=ScheduledJob.StatusTask.RUNNING if task.autostart else ScheduledJob.StatusTask.PAUSED,
+                extra_data=job_in.extra,
+                trigger={"data": job_in.trigger}
+            )
+            await self.uow.scheduled_job_repo.save(obj=job_db)
 
-        # TODO check if job created and started, if no - remove from DB?
-        job_instance = await SchedulerService.add_job(
-            task_id=job_in.task_id,
-            db_id=job_db.pk,
-            user=user,
-            extra=extra,
-            trigger=trigger
-        )
+            job_instance = await SchedulerService.add_job(
+                task_id=job_in.task_name,
+                db_id=job_db.pk,
+                user=user,
+                extra=job_in.extra,
+                trigger=trigger
+            )
 
-        job_db.job_id = job_db.pk
-        await job_db.save()
+            return job_db
 
-        return job_db
+    async def update_job_trigger(self, job_id: int, schedule_in: JobTrigger):
+        async with self.uow:
+            job: ScheduledJob = await self.get(id=job_id, prefetch_related=['app'])
+            module: Module = await self.uow.module_repo.get(id=job.app.pk)
 
-    async def update_job_trigger(self, job_id: int, schedule_in: JobScheduleUpdate):
-        await self.uow.scheduled_job_repo.update(
-            job_id=job_id,
-            data={'interval': schedule_in.interval, 'cron': schedule_in.cron}
-        )
+            task = SchedulerService.get_task(f"{module.name}:{job.task_name}")
 
-        trigger = make_trigger(schedule_in)
-        await SchedulerService.reschedule_job(job_id, trigger=trigger)
+            trigger = get_trigger(schedule_in.trigger)
+            if not trigger and task.trigger:
+                trigger = task.trigger
+
+            await SchedulerService.reschedule_job(job_id, trigger=trigger)
+
+            updated_obj = await self.uow.scheduled_job_repo.update(
+                id=job_id,
+                data={'trigger': {"data": schedule_in.trigger}}
+            )
+
+            await updated_obj.save()
+
+            return await self.get(id=job_id, prefetch_related=['user', 'team', 'app'])
 
     async def set_paused_status(self, job_id: int):
-        await self.uow.scheduled_job_repo.update(
-            job_id=job_id,
-            data={'status': ScheduledJob.StatusTask.PAUSED.value}
-        )
+        async with self.uow:
+            await SchedulerService.pause_job(job_id)
 
-        await SchedulerService.pause_job(job_id)
+            updated_obj = await self.uow.scheduled_job_repo.update(
+                id=job_id,
+                data={'status': ScheduledJob.StatusTask.PAUSED.value}
+            )
+
+            await updated_obj.save()
+
+            return await self.uow.scheduled_job_repo.get(id=job_id, prefetch_related=['user', 'team', 'app'])
 
     async def set_running_status(self, job_id: int):
-        await self.uow.scheduled_job_repo.update(
-            job_id=job_id,
-            data={'status': ScheduledJob.StatusTask.RUNNING.value}
-        )
+        async with self.uow:
+            await SchedulerService.resume_job(job_id)
 
-        await SchedulerService.resume_job(job_id)
+            updated_obj = await self.uow.scheduled_job_repo.update(
+                id=job_id,
+                data={'status': ScheduledJob.StatusTask.RUNNING.value}
+            )
+
+            await updated_obj.save()
+
+            return await self.get(id=job_id, prefetch_related=['user', 'team', 'app'])
 
     async def cancel_job(self, job_id: int):
-        await self.uow.scheduled_job_repo.delete(job_id=job_id)
-        await SchedulerService.remove_job(job_id)
+        async with self.uow:
+            await SchedulerService.remove_job(job_id)
+
+            await self.uow.scheduled_job_repo.delete(job_id=job_id)

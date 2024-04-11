@@ -1,4 +1,3 @@
-from fastapi_pagination import Page
 from fastapi_pagination.bases import AbstractParams
 from pydantic import BaseModel
 from tortoise.queryset import QuerySet

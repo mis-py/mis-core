@@ -26,7 +26,7 @@ async def dummy_task(ctx: AppContext):
     )
 
 
-@scheduled_tasks.schedule_task(trigger=None, single_instance=True)
+@scheduled_tasks.schedule_task(trigger=None)
 async def dummy_manual_task(ctx: AppContext, dummy_argument: str):
     logger.debug(
         f"Task is created manually by user with specified trigger "
@@ -38,4 +38,11 @@ async def dummy_manual_task(ctx: AppContext, dummy_argument: str):
         ),
         routing_keys.DUMMY_MANUAL_EVENT,
         ctx.app_name
+    )
+
+
+@scheduled_tasks.schedule_task(trigger=None, single_instance=True)
+async def dummy_single_task(ctx: AppContext):
+    logger.debug(
+        f"Task for single_instance demonstration for {ctx.app_name}"
     )

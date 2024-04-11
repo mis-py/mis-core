@@ -17,7 +17,8 @@ from core.db.models import ScheduledJob
 from core.utils.common import validate_task_extra
 from core.crud import job
 
-from core.exceptions import NotFound, AlreadyExists, ValidationFailed
+from core.exceptions import NotFound, AlreadyExists, ValidationFailed, MISError
+from core.utils.task import get_trigger
 from .utils import Task
 # from core.utils import signature_to_dict
 # from core.db.helpers import StatusTask
@@ -89,20 +90,12 @@ class SchedulerService:
         return job
 
     @classmethod
-    def get_jobs(cls, task_name: str = None) -> list[Job]:
+    def get_jobs(cls) -> list[Job]:
         """
-        Returns list of jobs filtered by task_name if specified
-        :param task_name:
+        Returns list of jobs
         :return:
         """
-        jobs = []
-        for job in cls._scheduler.get_jobs():
-            if task_name and task_name not in job.name:
-                continue
-
-            jobs.append(job)
-
-        return jobs
+        return cls._scheduler.get_jobs()
 
     @classmethod
     async def pause_job(cls, job_id: int) -> None:
@@ -118,6 +111,9 @@ class SchedulerService:
 
     @classmethod
     async def create_job_instance(cls, func: Callable, job_id: int, trigger, context: AppContext, kwargs, run_at_startup=True):
+        if trigger is None:
+            raise MISError(f"Trigger for job '{job_id}' not specified")
+
         job_instance = cls._scheduler.add_job(
             func,
             id=str(job_id),
@@ -141,11 +137,8 @@ class SchedulerService:
         task = cls.get_task(saved_job.task_name)
 
         # use trigger from saved job or get default one
-        if saved_job.interval:
-            trigger = IntervalTrigger(seconds=saved_job.interval)
-        elif saved_job.cron:
-            trigger = OrTrigger([CronTrigger.from_crontab(c) for c in saved_job.cron])
-        else:
+        trigger = get_trigger(saved_job.trigger['data'])
+        if not trigger and task.trigger:
             logger.warning(f"[SchedulerService] Unknown trigger used in {saved_job.job_id}, using default one.")
             trigger = task.trigger
 
@@ -157,7 +150,7 @@ class SchedulerService:
         context = await module.get_context(user=saved_job.user, team=saved_job.team)
 
         try:
-            job = await cls.create_job_instance(task.func, saved_job.job_id, trigger, context, saved_job.extra_data, run_at_startup)
+            job = await cls.create_job_instance(task.func, saved_job.pk, trigger, context, saved_job.extra_data, run_at_startup)
             logger.info(f'[SchedulerService]: Restored job {job.name}')
         except (ValueError, ConflictingIdError) as error:
             logger.error(f'[SchedulerService] Error add job: {error}')
@@ -183,7 +176,7 @@ class SchedulerService:
 
         try:
             job = await cls.create_job_instance(task.func, db_id, trigger, context, kwargs, task.autostart)
-            logger.info(f'[SchedulerService]: Added job {job.name} (paused)')
+            logger.info(f'[SchedulerService]: Added job {job.name} {"running" if task.autostart else "paused"}')
         except ConflictingIdError:
             logger.warning(f'[SchedulerService]: Failed add job {task.name}. Job already running for this {task.type}')
             raise AlreadyExists(f"Conflict id, job already exists for this {task.type}")

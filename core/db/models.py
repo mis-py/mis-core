@@ -100,6 +100,7 @@ class ScheduledJob(Model):
     cron = fields.CharField(max_length=100, null=True)
     or_cron_list = fields.JSONField(null=True)
     extra_data = fields.JSONField(null=True)
+    trigger = fields.JSONField(null=True)
 
     class Meta:
         table = 'mis_scheduled_job'

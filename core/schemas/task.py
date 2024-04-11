@@ -1,17 +1,43 @@
-from pydantic import BaseModel
-from fastapi import Body
+from pydantic import BaseModel, field_validator
+import re
 from typing import Literal, Optional
 from core.utils.schema import MisModel
 from core.db.models import ScheduledJob
 
 
-class JobScheduleUpdate(BaseModel):
-    interval: int = Body(None, gt=0)
-    cron: str | list[str] = Body("", min_length=1)
+class JobTrigger(MisModel):
+    trigger: Optional[int | str | list[str]] = None
+
+    # TODO make it work
+    # @field_validator('trigger')
+    # @classmethod
+    # def check_trigger(cls, value: int | str | list[str]):
+    #     regexp = r"/^(\*|((\*\/)?[1-5]?[0-9])) (\*|((\*\/)?[1-5]?[0-9])) (\*|((\*\/)?(1?[0-9]|2[0-3]))) (\*|((\*\/)?([1-9]|[12][0-9]|3[0-1]))) (\*|((\*\/)?([1-9]|1[0-2]))) (\*|((\*\/)?[0-6]))$/"
+    #     if isinstance(value, int) and value <= 60:
+    #         raise ValueError("Int value must be greater or equal 60")
+    #     if isinstance(value, str) and not re.match(regexp, value):
+    #         raise ValueError(f"Wrong cron expression '{value}'")
+    #     if isinstance(value, list):
+    #         for i, string_item in enumerate(value):
+    #             if isinstance(string_item, str) and not re.match(regexp, string_item):
+    #                 raise ValueError(f"Wrong cron expression '{string_item}' at position {i} of list.")
+    #
+    #     return value
 
 
-class JobResponse(MisModel):
-    id: int
+# class SchedulerJob(MisModel):
+#     id: str
+#     name: str
+#     func: str
+#     # args: tuple|list
+#     # kwargs:dict
+#     # coalesce:bool
+#     trigger: str
+#     next_run_time: str
+
+
+class JobResponse(JobTrigger):
+    job_id: int
     name: str
     status: ScheduledJob.StatusTask
     app_id: Optional[int]
@@ -19,19 +45,17 @@ class JobResponse(MisModel):
     team_id: Optional[int]
 
 
-class JobCreate(BaseModel):
-    task_id: str
+class JobCreate(JobTrigger):
+    task_name: str
     extra: Optional[dict] = None
-    trigger: Optional[JobScheduleUpdate] = None
     type: Literal["user", "team"]
 
 
-class TaskResponse(MisModel):
+class TaskResponse(JobTrigger):
     id: str
-    # module: str
     name: str
     type: Literal["user", "team"]
     extra_typed: Optional[dict]
-    trigger: Optional[dict]
-    is_has_jobs: bool
-    is_available_add_job: bool
+
+    #is_has_jobs: bool
+    #is_available_add_job: bool
