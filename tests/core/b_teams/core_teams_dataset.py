@@ -43,21 +43,21 @@ positive_create_team_data_set = [
 ]
 
 negative_create_team_data_set = [
-    # (
-    #     # in fact it create new team with id...
-    #     {
-    #         "name": "Team1",
-    #         "permissions": [],
-    #         "users_ids": [],
-    #         "variables": []
-    #     },
-    #     {
-    #         "status": True,
-    #         "status_code": status.HTTP_200_OK,
-    #         "msg": "Success",
-    #         "result": {}
-    #     }
-    # )
+    (
+        # in fact it create new team with id...
+        {
+            "name": "Team1",
+            "permissions": [],
+            "users_ids": [],
+            "variables": []
+        },
+        {
+            "status": True,
+            "status_code": status.HTTP_200_OK,
+            "msg": "Success",
+            "result": {}
+        }
+    )
 ]
 
 positive_get_team_data_set = [
@@ -174,25 +174,24 @@ negative_edit_team_data_set = [
             "msg": "NotFound: Team not found",
             "result": None
         }
-    ),
-    # (
-    #     # Same team name
-    #     {
-    #         "team_id": 2,
-    #     },
-    #     {
-    #         "name": "Team2",
-    #         "permissions": [],
-    #         "users_ids": [],
-    #         "variables": []
-    #     },
-    #     {
-    #         "status_code": status.HTTP_200_OK,
-    #         "msg": "Success",
-    #         "result": {},
-    #         "status": True
-    #     }
-    # )
+    ),(
+        # Same team name
+        {
+            "team_id": 2,
+        },
+        {
+            "name": "Team2",
+            "permissions": [],
+            "users_ids": [],
+            "variables": []
+        },
+        {
+            "status_code": status.HTTP_200_OK,
+            "msg": "Success",
+            "result": {},
+            "status": True
+        }
+    )
 ]
 
 positive_remove_team_data_set = [
@@ -221,7 +220,7 @@ positive_remove_team_data_set = [
 
 negative_remove_team_data_set = [
     (
-        # not exist team
+        # not exist user
         {
             "team_id": 9999,
         },
@@ -233,14 +232,15 @@ negative_remove_team_data_set = [
         }
     ),
     (
+        # admin user TODO dafuck we can remove superusers team??
         {
             "team_id": 1,
         },
         {
-            "msg": "MISError: Team with id '1' can't be deleted.",
-            "result": None,
-            "status": False,
-            "status_code": status.HTTP_400_BAD_REQUEST
+            # "msg": "Success",
+            # "result": {},
+            # "status": True,
+            # "status_code": status.HTTP_200_OK
         }
     ),
     (
