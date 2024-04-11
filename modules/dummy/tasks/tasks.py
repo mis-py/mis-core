@@ -12,15 +12,30 @@ routing_keys = RoutingKeys()
 
 
 @scheduled_tasks.schedule_task(seconds=config.TICK_5_SEC, autostart=True)
-async def template_task(ctx: AppContext):
+async def dummy_task(ctx: AppContext):
     logger.debug(
         f"Execute task every {config.TICK_5_SEC} seconds for module {ctx.app_name} "
         f"and sending message to eventory"
     )
     await Eventory.publish(
         Message(
-            body={"setting": ctx.settings.PRIVATE_SETTING},
+            body={"dummy_setting": ctx.settings.PRIVATE_SETTING},
         ),
-        routing_keys.EXAMPLE,
+        routing_keys.DUMMY_EVENT,
+        ctx.app_name
+    )
+
+
+@scheduled_tasks.schedule_task(trigger=None, single_instance=True)
+async def dummy_manual_task(ctx: AppContext, dummy_argument: str):
+    logger.debug(
+        f"Task is created manually by user with specified trigger "
+        f"and sending message '{dummy_argument}' to eventory"
+    )
+    await Eventory.publish(
+        Message(
+            body={"dummy_argument": dummy_argument},
+        ),
+        routing_keys.DUMMY_MANUAL_EVENT,
         ctx.app_name
     )

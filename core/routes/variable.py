@@ -4,36 +4,131 @@ from core.db.models import Team, User, Module
 from core.dependencies import get_team_by_id, get_user_by_id, get_current_user
 from core.dependencies.misc import UnitOfWorkDep
 from core.dependencies.path import get_module_by_id
-from core.exceptions import NotFound, ValidationFailed
-from core.schemas.variable import UpdateVariableModel, VariableValueModel, VariableModel, VariableResponse
-from core.schemas.variable_value import VariableValueResponse
+from core.schemas.variable import VariableResponse, VariableValueResponse
+from core.schemas.variable import UpdateVariable
+
 from core.services.variable import VariableService
 from core.services.variable_value import VariableValueService
 from core.utils.schema import MisResponse, PageResponse
-
-from services.modules.module_service import ModuleService
+from core.exceptions.exceptions import ValidationFailed, MISError
 from services.variables.variables import VariablesManager
-from services.variables.utils import type_convert
+
 
 router = APIRouter()
 
+# Main idea of variables:
+# Every module except Core can provide local and global variables.
+# Global variables acts as default value, used by all local variables.
+# Local variables acts as copy of global variable, that is binded to user or team.
+# Using priority: Local user variable > Local team variable > Global variable
+# Also if variable not set it will take value from upper recursivley.
+
+# With endpoints admins can:
+# view and edit global variables
+# view and edit team local variables
+# view and edit user local variables
+
 
 @router.get(
-    '',
-    dependencies=[Security(get_current_user)],
+    '/global',
+    dependencies=[Security(get_current_user, scopes=['core:sudo'])],
     response_model=PageResponse[VariableResponse]
 )
-async def get_all_variables(
+async def get_global_variables(
         uow: UnitOfWorkDep,
         is_global: bool = Query(default=None),
         module_id: int = Query(default=None),
 ):
-    return await VariableService(uow).filter_and_paginate(is_global=is_global, app_id=module_id)
+    if module_id is not None:
+        await get_module_by_id(module_id)
+
+    return await VariableService(uow).filter_and_paginate(
+        is_global=is_global,
+        app_id=module_id
+    )
+
+
+@router.get(
+    '/local',
+    dependencies=[Security(get_current_user, scopes=['core:sudo'])],
+    response_model=PageResponse[VariableValueResponse],
+    description="Returns all available variables by specified filter criteria"
+)
+async def get_local_variables(
+        uow: UnitOfWorkDep,
+        team_id: int = Query(default=None),
+        user_id: int = Query(default=None),
+):
+    if sum(1 for x in [team_id, user_id] if x) != 1:
+        raise MISError("Use only one filter")
+
+    if team_id is not None:
+        await get_team_by_id(team_id)
+
+    if user_id is not None:
+        await get_user_by_id(user_id)
+
+    return await VariableValueService(uow).filter_and_paginate(
+        team_id=team_id,
+        user_id=user_id,
+        prefetch_related=['setting']
+    )
+
+
+@router.put(
+    '/global',
+    dependencies=[Security(get_current_user, scopes=['core:sudo'])],
+    response_model=MisResponse
+)
+async def set_global_variables(
+        uow: UnitOfWorkDep,
+        variables: list[UpdateVariable],
+        module_id: int = Query(default=None)
+):
+    if module_id is not None:
+        if module_id == 1:
+            raise ValidationFailed(f"Module ID '1' has no editable variables")
+
+        module = await get_module_by_id(module_id)
+
+        await VariableService(uow).set_variables(variables=variables)
+        await VariablesManager.update_variables(app=module)
+
+    return MisResponse()
+
+
+@router.put(
+    '/local',
+    dependencies=[Security(get_current_user, scopes=['core:sudo'])],
+    response_model=MisResponse
+)
+async def set_local_variables(
+        uow: UnitOfWorkDep,
+        variables: list[UpdateVariable],
+        team_id: int = Query(default=None),
+        user_id: int = Query(default=None),
+):
+    if sum(1 for x in [team_id, user_id] if x) != 1:
+        raise MISError("Use only one filter")
+
+    if team_id is not None:
+        team = await get_team_by_id(team_id)
+
+        await VariableValueService(uow).set_variables_values(team_id=team.pk, variables=variables)
+        await VariablesManager.update_variables(team=team)
+
+    if user_id is not None:
+        user = await get_user_by_id(user_id)
+
+        await VariableValueService(uow).set_variables_values(user_id=user.pk, variables=variables)
+        await VariablesManager.update_variables(user=user)
+
+    return MisResponse()
 
 
 @router.get(
     '/my',
-    response_model=PageResponse[VariableValueResponse]
+    response_model=PageResponse[VariableResponse]
 )
 async def get_my_variables(
         uow: UnitOfWorkDep,
@@ -51,122 +146,10 @@ async def get_my_variables(
 )
 async def edit_my_variables(
         uow: UnitOfWorkDep,
-        variables: list[UpdateVariableModel],
+        variables: list[UpdateVariable],
         user: User = Depends(get_current_user)
 ):
     await VariableValueService(uow).set_variables_values(user_id=user.pk, variables=variables)
     await VariablesManager.update_variables(user=user)
-
-    return MisResponse()
-
-
-@router.get(
-    '/app',
-    dependencies=[Security(get_current_user, scopes=['core:sudo'])],
-    response_model=PageResponse[VariableModel]
-)
-async def get_app_variables(uow: UnitOfWorkDep, module: Module = Depends(get_module_by_id)):
-    return await VariableService(uow).filter_and_paginate(
-        app_id=module.pk,
-    )
-
-
-@router.put(
-    '/app',
-    dependencies=[Security(get_current_user, scopes=['core:sudo'])],
-    response_model=MisResponse[list[UpdateVariableModel]]
-)
-async def set_default_value(
-        uow: UnitOfWorkDep,
-        variables: list[UpdateVariableModel],
-        module_model: Module = Depends(get_module_by_id),
-):
-    module = ModuleService.loaded_modules()[module_model.name]
-    updated_variables = list()
-    for variable in variables:
-        variable_model = await VariableService(uow).get(id=variable.setting_id, app_id=module_model.pk)
-        if not variable_model:
-            raise NotFound(f"Setting {variable.setting_id} is not bound to the app!")
-
-        try:
-            converted_value = type_convert(value=variable.new_value, to_type=variable_model.type)
-        except ValueError:
-            raise ValidationFailed(
-                f"Can't set setting {variable_model.key}. Value is not '{variable_model.type}' type"
-            )
-
-        await VariableService(uow).update_default_value(
-            variable_id=variable_model.id,
-            default_value=converted_value,
-        )
-
-        setattr(
-            module.app_settings,
-            variable_model.key,
-            variable.new_value
-        )
-
-        updated_variables.append(variable)
-
-    # TODO what is it for? -> await misapp.init_settings()
-    await VariablesManager.update_variables(app=module)
-    return MisResponse(result=updated_variables)
-
-
-@router.get(
-    '/user',
-    dependencies=[Security(get_current_user, scopes=['core:sudo'])],
-    response_model=PageResponse[VariableValueResponse]
-)
-async def get_user_variables(
-        uow: UnitOfWorkDep,
-        user: User = Depends(get_user_by_id)
-):
-    return await VariableValueService(uow).filter_and_paginate(
-        user_id=user.pk,
-        prefetch_related=['setting']
-    )
-
-
-@router.put(
-    '/user',
-    dependencies=[Security(get_current_user, scopes=['core:sudo'])],
-    response_model=MisResponse
-)
-async def update_user_variable(
-        uow: UnitOfWorkDep,
-        variables: list[UpdateVariableModel],
-        user: User = Depends(get_user_by_id),
-):
-    await VariableValueService(uow).set_variables_values(user_id=user.pk, variables=variables)
-    await VariablesManager.update_variables(user=user)
-
-    return MisResponse()
-
-
-@router.get(
-    '/team',
-    dependencies=[Security(get_current_user, scopes=['core:sudo'])],
-    response_model=PageResponse[VariableValueModel]
-)
-async def get_team_variables(uow: UnitOfWorkDep, team: Team = Depends(get_team_by_id)):
-    return await VariableValueService(uow).filter_and_paginate(
-        team_id=team.pk,
-        prefetch_related=['setting']
-    )
-
-
-@router.put(
-    '/team',
-    dependencies=[Security(get_current_user, scopes=['core:sudo'])],
-    response_model=MisResponse
-)
-async def update_team_variables(
-        uow: UnitOfWorkDep,
-        variables: list[UpdateVariableModel],
-        team: Team = Depends(get_team_by_id)
-):
-    await VariableValueService(uow).set_variables_values(team_id=team.pk, variables=variables)
-    await VariablesManager.update_variables(team=team)
 
     return MisResponse()

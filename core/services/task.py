@@ -5,7 +5,7 @@ from core.utils.task import format_trigger
 from services.scheduler import SchedulerService
 
 
-def get_available_tasks(task_id: Optional[int] = None) -> list[TaskResponse]:
+def get_available_tasks(task_id: Optional[str] = None) -> list[TaskResponse]:
     res = list()
     for task_name, task in SchedulerService.get_tasks().items():
 
@@ -19,8 +19,8 @@ def get_available_tasks(task_id: Optional[int] = None) -> list[TaskResponse]:
                 id=task_name,
                 name=task.name,
                 type=task.type,
-                extra_typed=task.extra_typed or None,
-                trigger=format_trigger(task.trigger),
+                extra_typed=task.extra_typed or {},
+                trigger=format_trigger(task.trigger) or {},
                 is_has_jobs=bool(founded_jobs),
                 is_available_add_job=True,
             ))

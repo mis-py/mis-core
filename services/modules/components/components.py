@@ -1,6 +1,5 @@
 import itertools
 import re
-from asyncio import Task
 from typing import Literal
 
 from apscheduler.triggers.base import BaseTrigger
@@ -115,11 +114,17 @@ class EventManager(Component):
 class ScheduledTasks(Component):
     def __init__(self):
         # list of all declared tasks on init
-        self.tasks: list[Task] = []
+        self._tasks: list[Task] = []
 
-    def schedule_task(self, task_type: Literal['user', 'team'] = 'user', autostart: bool = False,  *args, **kwargs):
+    def schedule_task(
+            self,
+            task_type: Literal['user', 'team'] = 'user',
+            autostart: bool = False,
+            single_instance: bool = False,
+            *args, **kwargs
+    ):
         """
-        Use it as wrapper to schedule tasks
+        Decorator. Used for scheduling tasks.
         :param autostart:
         :param task_type:
         :param args:
@@ -138,12 +143,13 @@ class ScheduledTasks(Component):
         def _wrapper(func):
             extra_typed = signature_to_dict(func)
             extra_typed.pop("ctx", False)
-            self.tasks.append(Task(
+            self._tasks.append(Task(
                 type=task_type,
                 func=func,
                 trigger=trigger,
                 extra_typed=extra_typed,
-                autostart=autostart
+                autostart=autostart,
+                single_instance=single_instance
             ))
             return func
         return _wrapper
@@ -153,9 +159,9 @@ class ScheduledTasks(Component):
 
     async def init(self, application, app_db_model, is_created: bool):
         logger.debug(f"[{self.module.name}] Adding scheduled tasks")
-
-        # register in SchedulerService all declared tasks
-        for task in self.tasks:
+        # register in SchedulerService all declared tasks and provide module for them
+        for task in self._tasks:
+            task.module = self.module
             SchedulerService.add_task(task, self.module)
 
         logger.debug(f"[{self.module.name}] Added scheduled tasks ")

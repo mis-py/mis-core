@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Security
+from fastapi import APIRouter, Security, Query
 
 from core.dependencies import get_current_user
 
@@ -15,7 +15,7 @@ router = APIRouter(dependencies=[
     '',
     response_model=MisResponse[list[TaskResponse]]
 )
-async def get_all_tasks(task_id: str = None):
+async def get_all_tasks(task_id: str = Query(default=None)):
     """
     Return available tasks
     """

@@ -155,5 +155,7 @@ async def shutdown_modules():
 
 
 async def init_settings():
-    await VariablesManager.init()
-    logger.info('Settings loaded!')
+    # why should we load settings to env? it's not secure at all
+    # await VariablesManager.init()
+    # logger.info('Settings loaded!')
+    raise Exception("Do not use me pls")
