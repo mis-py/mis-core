@@ -11,9 +11,12 @@ positive_get_tasks = [
                     "name": "dummy_task",
                     "type": "user",
                     "extra_typed": {},
-                    "trigger": 5,
-                    # "is_has_jobs": False,
-                    # "is_available_add_job": True
+                    "trigger": {
+                        "type": "interval",
+                        "value": "PT5S"
+                    },
+                    "is_has_jobs": False,
+                    "is_available_add_job": True
                 },
                 {
                     "id": "dummy:dummy_manual_task",
@@ -22,18 +25,9 @@ positive_get_tasks = [
                     "extra_typed": {
                         "dummy_argument": "str"
                     },
-                    "trigger": None,
-                    # "is_has_jobs": False,
-                    # "is_available_add_job": True
-                },
-                {
-                    "id": "dummy:dummy_single_task",
-                    "name": "dummy_single_task",
-                    "type": "user",
-                    "extra_typed": {},
-                    "trigger": None,
-                    # "is_has_jobs": False,
-                    # "is_available_add_job": True
+                    "trigger": {},
+                    "is_has_jobs": False,
+                    "is_available_add_job": True
                 }
             ],
             "status": True
@@ -52,9 +46,12 @@ positive_get_tasks = [
                     "name": "dummy_task",
                     "type": "user",
                     "extra_typed": {},
-                    "trigger": 5,
-                    # "is_has_jobs": False,
-                    # "is_available_add_job": True
+                    "trigger": {
+                        "type": "interval",
+                        "value": "PT5S"
+                    },
+                    "is_has_jobs": False,
+                    "is_available_add_job": True
                 }
             ],
             "status": True
@@ -75,9 +72,9 @@ positive_get_tasks = [
                     "extra_typed": {
                         "dummy_argument": "str"
                     },
-                    "trigger": None,
-                    # "is_has_jobs": False,
-                    # "is_available_add_job": True
+                    "trigger": {},
+                    "is_has_jobs": False,
+                    "is_available_add_job": True
                 }
             ],
             "status": True
