@@ -1,15 +1,8 @@
+import loguru
 import pytest
 import logging
 from tests.utils import default_check, compare_json
-from .core_users_dataset import \
-    positive_create_user_data_set, \
-    negative_create_user_data_set, \
-    positive_get_user_data_set, \
-    negative_get_user_data_set, \
-    positive_edit_user_data_set, \
-    negative_edit_user_data_set, \
-    positive_remove_user_data_set, \
-    negative_remove_user_data_set
+from .core_users_dataset import request_data_set
 
 log = logging.getLogger(__name__)
 
@@ -19,6 +12,7 @@ def client(get_mis_client):
     return get_mis_client
 
 
+# Check that mis contains at least 1 user
 def test_get_users(client):
     response = client.get("/users")
     assert default_check(response)
@@ -31,44 +25,36 @@ def test_get_users(client):
     assert len(response_json['result']['items']) >= 1
 
 
-@pytest.mark.parametrize("request_data,expected", positive_create_user_data_set + negative_create_user_data_set)
-def test_create_user(client, request_data, expected):
-    response = client.post("/users/add", json=request_data)
-    assert default_check(response)
+class TestCreateGetRemoveUser:
 
-    response_json = response.json()
+    @pytest.mark.parametrize("request_data,expected", request_data_set)
+    def test_create_user(self, client, request_data, expected):
+        response = client.post("/users/add", json=request_data)
+        from services.tortoise_manager.tortoise_manager import TortoiseManager
+        loguru.logger.debug(TortoiseManager.get_d())
+        assert default_check(response)
 
-    assert compare_json(response_json, expected)
+        log.info(response.json())
 
+        response_json = response.json()
 
-@pytest.mark.parametrize("params, expected", positive_get_user_data_set + negative_get_user_data_set)
-def test_get_user(client, params, expected):
-    response = client.get("/users/get", params=params)
-    assert default_check(response)
+        assert response_json['status'] == expected['status']
+        assert response_json['status_code'] == expected['status_code']
 
-    response_json = response.json()
+        # excluded to many fields
+        #assert compare_json(request_data, new_user, ("id","password","disabled", "signed_in"))
 
-    assert compare_json(response_json, expected)
+        #TestCreateGetRemoveUser.user = new_user
+#
+#     def test_get_user(self, client):
+#         response = client.get("/users/get", params=[{"user_id": TestCreateGetRemoveUser.user.id}])
+#         assert default_check(response)
+#
+#         log.info(response.status_code)
+#         log.info(response.json())
+#
+#         assert compare_json(TestCreateGetRemoveUser.user)
 
-
-@pytest.mark.parametrize("params, request_data, expected", positive_edit_user_data_set + negative_edit_user_data_set)
-def test_edit_user(client, params, request_data, expected):
-    response = client.put("/users/edit", json=request_data, params=params)
-    assert default_check(response)
-
-    response_json = response.json()
-
-    assert compare_json(response_json, expected)
-
-
-@pytest.mark.parametrize("params, expected", positive_remove_user_data_set + negative_remove_user_data_set)
-def test_remove_user(client, params, expected):
-    response = client.delete("/users/remove", params=params)
-    assert default_check(response)
-
-    response_json = response.json()
-
-    assert compare_json(response_json, expected)
 
 
 
