@@ -44,7 +44,3 @@ def compare_json(json1, json2):
 # default check for get queries
 def default_check(response):
     return response.status_code == 200 and is_valid_json(response.text)
-
-
-def pretty_json(json_data):
-    return json.dumps(json_data, indent=4)

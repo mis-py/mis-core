@@ -1,10 +1,6 @@
 from fastapi import status
 
-positive_get_users_dataset = []
-
-negative_get_users_dataset = []
-
-positive_create_user_dataset = [
+positive_create_user_data_set = [
     (
         {
             "username": "Test1",
@@ -55,7 +51,7 @@ positive_create_user_dataset = [
     )
 ]
 
-negative_create_user_dataset = [
+negative_create_user_data_set = [
     (
         {
             "username": "Test",
@@ -91,7 +87,7 @@ negative_create_user_dataset = [
     ),
 ]
 
-positive_get_user_dataset = [
+positive_get_user_data_set = [
     (
         {
             "user_id": 2
@@ -131,7 +127,7 @@ positive_get_user_dataset = [
     ),
 ]
 
-negative_get_user_dataset = [
+negative_get_user_data_set = [
     (
         {
             "user_id": 9999
@@ -164,7 +160,7 @@ negative_get_user_dataset = [
     ),
 ]
 
-positive_edit_user_dataset = [
+positive_edit_user_data_set = [
     (
         # change username and position
         {
@@ -220,7 +216,7 @@ positive_edit_user_dataset = [
     ),
 ]
 
-negative_edit_user_dataset = [
+negative_edit_user_data_set = [
     (
         # Test not exist user edit
         {
@@ -291,7 +287,7 @@ negative_edit_user_dataset = [
     ),
 ]
 
-positive_remove_user_dataset = [
+positive_remove_user_data_set = [
     (
         {
             "user_id": 2,
@@ -315,7 +311,7 @@ positive_remove_user_dataset = [
     ),
 ]
 
-negative_remove_user_dataset = [
+negative_remove_user_data_set = [
     (
         # not exist user
         {
@@ -361,9 +357,3 @@ negative_remove_user_dataset = [
         }
     )
 ]
-
-get_users_dataset = positive_get_users_dataset + negative_get_users_dataset
-create_user_dataset = positive_create_user_dataset + negative_create_user_dataset
-get_user_dataset = positive_get_user_dataset + negative_get_user_dataset
-edit_user_dataset = positive_edit_user_dataset + negative_edit_user_dataset
-remove_user_dataset = positive_remove_user_dataset + negative_remove_user_dataset

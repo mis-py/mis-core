@@ -3,7 +3,7 @@ from fastapi import status
 positive_get_permissions_dataset = [
     (
         {
-            'status_code': status.HTTP_200_OK,
+            'status_code': 200,
             'msg': 'Success',
             'result': {
                 'total': 11, 'current': 1, 'size': 50, 'pages': 1,
@@ -19,7 +19,7 @@ positive_get_permissions_dataset = [
                         {'id': 8, 'scope': 'core:tasks', 'app': {'id': 1, 'name': 'core', 'enabled': True}},
                         {'id': 9, 'scope': 'core:consumers', 'app': {'id': 1, 'name': 'core', 'enabled': True}},
                         {'id': 10, 'scope': 'core:permissions', 'app': {'id': 1, 'name': 'core', 'enabled': True}},
-                        {'id': 11, 'scope': 'dummy:dummy', 'app': {'id': 2, 'name': 'dummy', 'enabled': False}},
+                        {'id': 11, 'scope': 'dummy:dummy', 'app': {'id': 2, 'name': 'dummy', 'enabled': True}},
                     ]
             },
             'status': True
@@ -27,9 +27,7 @@ positive_get_permissions_dataset = [
     ),
 ]
 
-negative_get_permissions_dataset = []
-
-positive_get_user_permissions_dataset = [
+positive_get_user_permissions_data_set = [
     (
         {
             "user_id": 1
@@ -37,53 +35,25 @@ positive_get_user_permissions_dataset = [
         {
             'status_code': status.HTTP_200_OK,
             'msg': 'Success',
-            'result': {
-                'total': 2, 'current': 1, 'size': 50, 'pages': 1,
-                'items': [
-                    {
-                        'id': 1,
-                        'permission': {
+            'result':
+                {
+                    'total': 1, 'current': 1, 'size': 50, 'pages': 1,
+                    'items': [
+                        {
                             'id': 1,
-                            'scope': 'core:sudo',
-                            'app': {
-                                'id': 1,
-                                'name': 'core',
-                                'enabled': True
-                            }
-                        },
-                        'user': {
-                            'id': 1,
-                            'username': 'admin',
-                            'position': None
-                        },
-                        'team': None
-                    },
-                    {
-                        # TODO WHY ID=3?
-                        "id": 3,
-                        "permission": {
-                            "id": 11,
-                            "scope": "dummy:dummy",
-                            "app": {
-                                "id": 2,
-                                "name": "dummy",
-                                "enabled": False
-                            }
-                        },
-                        "user": {
-                            "id": 1,
-                            "username": "admin",
-                            "position": None
-                        },
-                        "team": None
-                    }
-                ]
-            },
+                            'permission': {
+                                'id': 1, 'scope': 'core:sudo', 'app': {'id': 1, 'name': 'core', 'enabled': True}
+                            },
+                            'user': {'id': 1, 'username': 'admin', 'position': None},
+                            'team': None
+                        }
+                    ]
+                },
             'status': True}
     ),
 ]
 
-negative_get_user_permissions_dataset = [
+negative_get_user_permissions_data_set = [
     (
         {
             "user_id": 9999
@@ -117,7 +87,7 @@ negative_get_user_permissions_dataset = [
     ),
 ]
 
-positive_edit_user_permissions_dataset = [
+positive_edit_user_permissions_data_set = [
     (
         {
             "user_id": 1,
@@ -137,7 +107,7 @@ positive_edit_user_permissions_dataset = [
     )
 ]
 
-negative_edit_user_permissions_dataset = [
+negative_edit_user_permissions_data_set = [
     (
         # Not exist team
         {
@@ -175,10 +145,10 @@ negative_edit_user_permissions_dataset = [
     )
 ]
 
-positive_get_team_permissions_dataset = [
+positive_get_team_permissions_data_set = [
     (
         {
-            "team_id": 1
+            "user_id": 1
         },
         {
             'status_code': status.HTTP_200_OK,
@@ -188,12 +158,12 @@ positive_get_team_permissions_dataset = [
                     'total': 1, 'current': 1, 'size': 50, 'pages': 1,
                     'items': [
                         {
-                            'id': 2,
+                            'id': 1,
                             'permission': {
                                 'id': 1, 'scope': 'core:sudo', 'app': {'id': 1, 'name': 'core', 'enabled': True}
                             },
-                            'user': None,
-                            'team': {'id': 1, 'name': 'Superusers'},
+                            'user': {'id': 1, 'username': 'admin', 'position': None},
+                            'team': None
                         }
                     ]
                 },
@@ -201,13 +171,13 @@ positive_get_team_permissions_dataset = [
     ),
 ]
 
-negative_get_team_permissions_dataset = [
+negative_get_team_permissions_data_set = [
     (
         {
-            "team_id": 9999
+            "user_id": 9999
         },
         {
-            "msg": "NotFound: Team not found",
+            "msg": "NotFound: User not found",
             "result": None,
             "status": False,
             "status_code": status.HTTP_404_NOT_FOUND
@@ -223,7 +193,7 @@ negative_get_team_permissions_dataset = [
             "result": [
                 {
                     "type": "missing",
-                    "loc": ["query", "team_id"],
+                    "loc": ["query", "user_id"],
                     "msg": "Field required",
                     "input": None,
                     "url": "https://errors.pydantic.dev/2.4/v/missing"
@@ -235,10 +205,10 @@ negative_get_team_permissions_dataset = [
     ),
 ]
 
-positive_edit_team_permissions_dataset = [
+positive_edit_team_permissions_data_set = [
     (
         {
-            "team_id": 1,
+            "user_id": 1,
         },
         [
             {
@@ -255,11 +225,11 @@ positive_edit_team_permissions_dataset = [
     )
 ]
 
-negative_edit_team_permissions_dataset = [
+negative_edit_team_permissions_data_set = [
     (
         # Not exist team
         {
-            "team_id": 9999,
+            "user_id": 9999,
 
         },
         [
@@ -271,12 +241,12 @@ negative_edit_team_permissions_dataset = [
         {
             "status": False,
             "status_code": status.HTTP_404_NOT_FOUND,
-            "msg": "NotFound: Team not found",
+            "msg": "NotFound: User not found",
             "result": None
         }
     ),(
         {
-            "team_id": 1,
+            "user_id": 1,
         },
         [
             {
@@ -292,9 +262,3 @@ negative_edit_team_permissions_dataset = [
         }
     )
 ]
-
-get_permissions_dataset = positive_get_permissions_dataset + negative_get_permissions_dataset
-get_user_permissions_dataset = positive_get_user_permissions_dataset + negative_get_user_permissions_dataset
-edit_user_permissions_dataset = positive_edit_user_permissions_dataset + negative_edit_user_permissions_dataset
-get_team_permissions_dataset = positive_get_team_permissions_dataset + negative_get_team_permissions_dataset
-edit_team_permissions_dataset = positive_edit_team_permissions_dataset + negative_edit_team_permissions_dataset
