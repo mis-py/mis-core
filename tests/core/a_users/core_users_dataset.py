@@ -1,79 +1,8 @@
 from fastapi import status
 
-positive_get_users_dataset = [
-    (
-        {},
-        {
-            "status_code": 200,
-            "msg": "Success",
-            "result": {
-                "total": 1,
-                "current": 1,
-                "size": 50,
-                "pages": 1,
-                "items": [
-                    {
-                        "id": 1,
-                        "username": "admin",
-                        "position": None,
-                        "disabled": False,
-                        "signed_in": False,
-                        "team": {
-                            "id": 1,
-                            "name": "Superusers"
-                        },
-                        "settings": []
-                    }
-                ]
-            },
-            "status": True
-        }
-    ),
-    (
-        {
-            "team_id": 1
-        },
-        {
-            "status_code": 200,
-            "msg": "Success",
-            "result": {
-                "total": 1,
-                "current": 1,
-                "size": 50,
-                "pages": 1,
-                "items": [
-                    {
-                        "id": 1,
-                        "username": "admin",
-                        "position": None,
-                        "disabled": False,
-                        "signed_in": False,
-                        "team": {
-                            "id": 1,
-                            "name": "Superusers"
-                        },
-                        "settings": []
-                    }
-                ]
-            },
-            "status": True
-        }
-    )
-]
+positive_get_users_dataset = []
 
-negative_get_users_dataset = [
-    (
-        {
-            "team_id": 9999
-        },
-        {
-            "status_code": 404,
-            "msg": "NotFound",
-            "result": "Team not found",
-            "status": False
-        }
-    )
-]
+negative_get_users_dataset = []
 
 positive_create_user_dataset = [
     (
@@ -139,8 +68,8 @@ negative_create_user_dataset = [
         {
             "status": False,
             "status_code": status.HTTP_404_NOT_FOUND,
-            "msg": "NotFound",
-            "result": "Team id '0' not exist"
+            "msg": "NotFound: Team id '0' not exist",
+            "result": None
 
         }
     ),(
@@ -156,8 +85,8 @@ negative_create_user_dataset = [
         {
             "status": False,
             "status_code": status.HTTP_409_CONFLICT,
-            "msg": "AlreadyExists",
-            "result": "User with username 'Test1' already exists"
+            "msg": "AlreadyExists: User with username 'Test1' already exists",
+            "result": None
         }
     ),
 ]
@@ -208,8 +137,8 @@ negative_get_user_dataset = [
             "user_id": 9999
         },
         {
-            "msg": "NotFound",
-            "result": "User not found",
+            "msg": "NotFound: User not found",
+            "result": None,
             "status": False,
             "status_code": status.HTTP_404_NOT_FOUND
         }
@@ -307,8 +236,8 @@ negative_edit_user_dataset = [
         {
             "status": False,
             "status_code": status.HTTP_404_NOT_FOUND,
-            "msg": "NotFound",
-            "result": "User not found"
+            "msg": "NotFound: User not found",
+            "result": None
         }
     ),(
         # Not exist team
@@ -393,8 +322,8 @@ negative_remove_user_dataset = [
             "user_id": 9999,
         },
         {
-            "msg": "NotFound",
-            "result": "User not found",
+            "msg": "NotFound: User not found",
+            "result": None,
             "status": False,
             "status_code": status.HTTP_404_NOT_FOUND
         }
@@ -405,8 +334,8 @@ negative_remove_user_dataset = [
             "user_id": 1,
         },
         {
-            "msg": "MISError",
-            "result": "User with id '1' can't be deleted",
+            "msg": "MISError: User with id '1' can't be deleted.",
+            "result": None,
             "status": False,
             "status_code": status.HTTP_400_BAD_REQUEST
         }

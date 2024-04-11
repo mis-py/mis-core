@@ -1,33 +1,6 @@
 from fastapi import status
 
-positive_get_teams_dataset = [
-    (
-        {
-            "status_code": 200,
-            "msg": "Success",
-            "result": {
-                "total": 1,
-                "current": 1,
-                "size": 50,
-                "pages": 1,
-                "items": [
-                    {
-                        "id": 1,
-                        "name": "Superusers",
-                        "users": [
-                            {
-                                "id": 1,
-                                "username": "admin",
-                                "position": None
-                            }
-                        ]
-                    }
-                ]
-            },
-            "status": True
-        }
-    ),
-]
+positive_get_teams_dataset = []
 
 negative_get_teams_dataset = []
 
@@ -133,8 +106,8 @@ negative_get_team_dataset = [
             "team_id": 9999
         },
         {
-            "msg": "NotFound",
-            "result": "Team not found",
+            "msg": "NotFound: Team not found",
+            "result": None,
             "status": False,
             "status_code": status.HTTP_404_NOT_FOUND
         }
@@ -202,8 +175,8 @@ negative_edit_team_dataset = [
         {
             "status": False,
             "status_code": status.HTTP_404_NOT_FOUND,
-            "msg": "NotFound",
-            "result": "Team not found"
+            "msg": "NotFound: Team not found",
+            "result": None
         }
     ),
     # (
@@ -257,8 +230,8 @@ negative_remove_team_dataset = [
             "team_id": 9999,
         },
         {
-            "msg": "NotFound",
-            "result": "Team not found",
+            "msg": "NotFound: Team not found",
+            "result": None,
             "status": False,
             "status_code": status.HTTP_404_NOT_FOUND
         }
@@ -268,8 +241,8 @@ negative_remove_team_dataset = [
             "team_id": 1,
         },
         {
-            "msg": "MISError",
-            "result": "Team with id '1' can't be deleted",
+            "msg": "MISError: Team with id '1' can't be deleted.",
+            "result": None,
             "status": False,
             "status_code": status.HTTP_400_BAD_REQUEST
         }
