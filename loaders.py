@@ -134,13 +134,13 @@ async def shutdown_mongo():
     logger.info('MongoService shutdown')
 
 
-async def manifest_init_modules(app):
-    await ModuleService.manifest_init(app)
+async def manifest_init_modules():
+    await ModuleService.manifest_init()
     logger.success('Modules manifest initialized')
 
 
-async def pre_init_modules(app):
-    await ModuleService.pre_init(app)
+async def pre_init_modules():
+    await ModuleService.pre_init()
     logger.success('Modules pre initialized')
 
 
@@ -159,3 +159,8 @@ async def init_settings():
     # await VariablesManager.init()
     # logger.info('Settings loaded!')
     raise Exception("Do not use me pls")
+
+
+async def init_modules_root_model():
+    await ModuleService.init_modules_root_model()
+    logger.success('Modules root model initialized')
