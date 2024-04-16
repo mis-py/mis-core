@@ -15,7 +15,8 @@ settings = CoreSettings()
 async def setup_core():
     core = await Module.get_or_none(name='core')
     if core is None:
-        core = await Module.create(name='core', enabled=True)
+        # Create core app as enabled and already running
+        core = await Module.create(name='core', enabled=True, state=Module.AppState.RUNNING)
         await Permission.create(name='Superuser permissions', scope='sudo', app=core)
         await Permission.create(name="Access for 'users' endpoints", scope="users", app=core)
         await Permission.create(name="Access for 'teams' endpoints", scope="teams", app=core)
