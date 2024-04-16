@@ -1,13 +1,13 @@
 from typing import Annotated
 
 from fastapi import Request, Depends
-from fastapi_pagination import Params
 
 from config import CoreSettings
 from core.db.models import Module, User
 from core.dependencies import get_current_user
 from core.exceptions import NotFound
 from core.services.base.unit_of_work import IUnitOfWork, unit_of_work_factory
+from core.utils.schema import Params
 
 settings = CoreSettings()
 

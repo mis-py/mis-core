@@ -8,5 +8,6 @@
   "dependencies": [],
   "permissions": {
     "dummy": "Just for demonstration"
-  }
+  },
+  "auth_disabled": false
 }

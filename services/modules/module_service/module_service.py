@@ -2,15 +2,14 @@ import types
 from loguru import logger
 import os
 
-from core import crud
+from core.db.models import Module
+from core.exceptions import MISError
 from core.services.base.unit_of_work import unit_of_work_factory
 from core.services.module import ModuleUOWService
 from .utils import manifests_sort_by_dependency, import_module, unload_module, read_module_manifest, \
     module_dependency_check
-from ..utils import ModuleTemplate
+from ..utils import GenericModule
 from ..utils.BaseModule import BaseModule
-# from .exceptions import ModuleError
-# from core.db import App
 from const import MODULES_DIR, MODULES_DIR_NAME
 from ..utils.manifest import ModuleManifest
 
@@ -22,18 +21,33 @@ from ..utils.manifest import ModuleManifest
 
 class ModuleService:
     _modules_manifests: dict[str, ModuleManifest] = {}
-    _loaded_modules: dict[str, ModuleTemplate] = {}
+    _loaded_modules: dict[str, GenericModule] = {}
 
     # _core_consumer: Optional[Consumer]
 
     @classmethod
-    def loaded_modules(cls):
-        # MappingProxyType will allow to access members of dict but restrict their modifying
+    def loaded_modules(cls) -> types.MappingProxyType:
+        """
+        MappingProxyType will allow to access members of dict but restrict their modifying
+        """
         return types.MappingProxyType(cls._loaded_modules)
 
     @classmethod
-    async def manifest_init(cls, application):
-        # collect manifest.json files from each module in modules directory
+    def _get_module(cls, module_name: str) -> GenericModule:
+        if module_name == 'core':
+            raise MISError("Operations on 'core' module not allowed from 'module_service'")
+
+        if module_name not in cls._loaded_modules:
+            raise MISError(f"Module '{module_name}' not registered in 'module_service'")
+
+        return cls._loaded_modules[module_name]
+
+    @classmethod
+    async def manifest_init(cls) -> None:
+        """
+        Method called by system loader!
+        Collect manifest.json files from each module in modules directory
+        """
         manifests = {}
         for module in os.listdir(MODULES_DIR):
             if "__" in module:
@@ -58,30 +72,46 @@ class ModuleService:
             cls._modules_manifests[manifest.name] = manifest
 
     @classmethod
-    async def pre_init(cls, application):
-        # import modules by sorted manifests and run pre init for each module
+    async def pre_init(cls):
+        """
+        Method called by system loader!
+        Import modules by sorted manifests and run pre init for each module
+        """
         for manifest in cls._modules_manifests.values():
-            module = import_module(manifest.name, MODULES_DIR_NAME)
-            module.module.set_manifest(manifest)
+            package = import_module(manifest.name, MODULES_DIR_NAME)
+            module = package.module
+            module.set_manifest(manifest)
 
-            logger.debug(f'[ModuleService] Started pre init module: {manifest.name}')
-            await cls.pre_init_module(application, module.module)
-            logger.debug(f"[ModuleService] Module '{manifest.name}' pre init finished!")
+            logger.debug(f'[ModuleService] Module: {module.name} pre_init started!')
+            await module.pre_init()
+            cls._loaded_modules[module.name] = module
+            logger.debug(f"[ModuleService] Module: '{module.name}' pre_init finished!")
+
+    @classmethod
+    async def init_modules_root_model(cls):
+        """
+        Method called by system loader!
+        Creates DB model instance and bind it to module instance and module components
+        """
+        module_uow_service = ModuleUOWService(unit_of_work_factory())
+        for module_name, module in cls._loaded_modules.items():
+            module_model, is_created = await module_uow_service.get_or_create(name=module_name)
+            logger.debug(f"[ModuleService] Module: {module.name} DB instance received")
+            await module.bind_model(module_model, is_created)
+            logger.debug(f"[ModuleService] Module: {module.name} DB instance binded")
 
     @classmethod
     async def init(cls, application):
+        """
+        Method called by system loader!
+        Run module init and start if module is enabled
+        """
         module_uow_service = ModuleUOWService(unit_of_work_factory())
         for module_name, module in cls._loaded_modules.items():
-            logger.debug(f'[ModuleService] Started init module: {module.name}')
-
-            is_loaded_success = await cls.init_module(application, module, module_uow_service)
-
-            # by default new module is disabled
-            if is_loaded_success and module.model.enabled:
+            if module.is_enabled():
+                await cls.init_module(application, module.name, module_uow_service)
+                logger.debug(f'[ModuleService] Module: {module.name} auto-start is enabled starting...')
                 await cls.start_module(module.name, module_uow_service)
-                logger.debug(f'[ModuleService] Module {module.name} started!')
-
-            logger.debug(f"[ModuleService] Module '{module.name}' init finished!")
 
         # need for start consumer for core websocket sender
         # await cls._restart_core_consumer()
@@ -89,116 +119,81 @@ class ModuleService:
     @classmethod
     async def shutdown(cls):
         """
+        Method called by system loader!
         Executes when application shutdowns.
-        Calls stop_module for every enabled app
-        :return:
+        Calls stop_module for every enabled app if enabled and then shutdown
         """
         module_uow_service = ModuleUOWService(unit_of_work_factory())
-        for module_name, module in cls._loaded_modules.items():
-            logger.info(f"[ModuleService] Stopping {module.name}")
-            await cls.stop_module(module_name, module_uow_service)
+        for module_name, module in cls._loaded_modules.copy().items():
+            if module.is_enabled() and module.get_state() == Module.AppState.RUNNING:
+                await cls.stop_module(module_name, module_uow_service)
+            await cls.shutdown_module(module_name, module_uow_service)
 
     @classmethod
-    async def pre_init_module(cls, application, module: BaseModule):
-        if not module:
-            logger.error(f"[ModuleService] Module '{module.name}' not loaded. Module not found or raised exception")
-            return False
+    async def init_module(cls, application, module_name: str, module_uow_service: ModuleUOWService) -> GenericModule:
 
-        logger.debug(f"[ModuleService] Module '{module.name}' started pre_init components.")
+        # except ModuleNotFoundError as e:
+        #     logger.exception(e)
+        #     raise LoadModuleError(
+        #         "App name is wrong, or app is not loaded into 'modules' directory")
+        #
+        # except tortoise.exceptions.ConfigurationError as e:
+        # raise LoadModuleError(
+        #     f"Loaded app have wrong configuration. Details: {' '.join(e.args)}")
+        #
+        # except Exception as e:
+        # logger.exception(e)
+        # raise LoadModuleError(f"Error while loading app. Details: {str(e)}")
 
-        try:
-            for component in module.pre_init_components:
-                await component.bind(module).pre_init()
-                logger.debug(f'[ModuleService] component {component.__class__.__name__} for module {module.name} pre init finished')
+        module = cls._get_module(module_name)
+        logger.debug(f'[ModuleService] Module: {module_name} init started!')
 
-            await module.pre_init()
+        init_result = await module.init(application)
+        logger.debug(f'[ModuleService] Module: {module_name} init finished!')
 
-        except Exception as error:
-            logger.exception(error)
-            logger.error(f"[ModuleService] Module '{module.name}' component not loaded. {error.__class__.__name__}")
-            return False
-
-        cls._loaded_modules[module.name] = module
-        return True
-
-    @classmethod
-    async def init_module(cls, application, module: BaseModule, module_uow_service: ModuleUOWService):
-
-        module_model, is_created = await module_uow_service.get_or_create(name=module.name)
-
-        module.model = module_model
-
-        logger.debug(f"[ModuleService] Module '{module.name}' started init components.")
-        try:
-            for component in module.components:
-                await component.bind(module).init(application, module_model, is_created)
-                logger.debug(f'[ModuleService] component {component.__class__.__name__} for module {module.name} init finished')
-
-            await module.init()
-
-        except Exception as error:
-            logger.exception(error)
-            logger.error(f"[ModuleService] Module '{module.name}' not loaded. {error.__class__.__name__}")
-            return False
-
-        module.initialized = True
-
-        return True
+        return module
 
     @classmethod
-    async def shutdown_module(cls, module_name: str, module_uow_service: ModuleUOWService):
-        module = cls._loaded_modules.pop(module_name)
+    async def start_module(cls, module_name: str, uow_service: ModuleUOWService) -> GenericModule:
+        module = cls._get_module(module_name)
 
-        # if app.name == 'core':
-        #     return
-        # elif app.name not in cls._loaded_modules:
-        #     # await app.delete()
-        #     return
+        await module.start()
 
-        if module.model.enabled:
-            await cls.stop_module(module.name, module_uow_service=module_uow_service)
+        new_model = await uow_service.set_enabled(module_id=module.get_id())
+        # rebind new model to module after update
+        await module.bind_model(new_model, False)
 
-        for component in module.components:
-            await component.shutdown()
-            logger.debug(f'[{module.name}] component {component.__class__.__name__} shutdown')
+        logger.debug(f'[ModuleService] Module: {module.name} started!')
 
-        await module.shutdown()
-
-        module.initialized = False
-
-        unload_module(module.name)
-
-        # await app.delete()
-
-    @classmethod
-    async def start_module(cls, module_name: str, uow_service: ModuleUOWService):
-        module = cls._loaded_modules[module_name]
-        try:
-            for component in module.components:
-                await component.start()
-                logger.debug(f'[{module.name}] component {component.__class__.__name__} started')
-            await module.start()
-        except Exception as error:
-            logger.exception(error)
-            logger.error(f"Module '{module.name}' not started. {error.__class__.__name__}")
-            return False
-
-        await uow_service.set_enabled(module_id=module.model.pk)
         # if app.sender:
         #     await cls._restart_core_consumer()
 
-    @classmethod
-    async def stop_module(cls, module_name: str, module_uow_service: ModuleUOWService):
-        module = cls._loaded_modules[module_name]
+        return module
 
-        for component in module.components:
-            await component.stop()
-            logger.debug(f'[{module.name}] component {component.__class__.__name__} stopped')
+    @classmethod
+    async def stop_module(cls, module_name: str, module_uow_service: ModuleUOWService) -> GenericModule:
+        module = cls._get_module(module_name)
+
         await module.stop()
 
-        await module_uow_service.set_disabled(module_id=module.model.pk)
+        new_model = await module_uow_service.set_disabled(module_id=module.get_id())
+        # rebind new model to module after update
+        await module.bind_model(new_model, False)
+
+        logger.debug(f"[ModuleService] Module: {module.name} stopped")
+
         # if module.sender:
         #     await cls._restart_core_consumer()
+
+        return module
+
+    @classmethod
+    async def shutdown_module(cls, module_name: str, module_uow_service: ModuleUOWService):
+        module = cls._get_module(module_name)
+        await module.shutdown()
+        unload_module(module.name)
+        del cls._loaded_modules[module_name]
+        logger.debug(f"[ModuleService] Module: {module.name} shutdown complete")
 
     # @classmethod
     # async def _restart_core_consumer(cls):
