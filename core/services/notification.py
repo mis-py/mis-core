@@ -1,12 +1,12 @@
 from fastapi_pagination.bases import AbstractParams
 from tortoise.queryset import QuerySet
 
-from core.db.models import User
 from core.crud import user
 from core.utils.notification.recipient import Recipient
 from core.utils.schema import PageResponse
 from core.services.base.base_service import BaseService
 from core.services.base.unit_of_work import IUnitOfWork
+from core.exceptions import AlreadyExists, NotFound
 
 
 class RoutingKeyService(BaseService):
@@ -25,25 +25,34 @@ class RoutingKeySubscriptionService(BaseService):
         self.uow = uow
 
     async def subscribe(self, user_id: int, routing_key_id: int):
-        await self.uow.routing_key_subscription_repo.create(
+        subscription = await self.get(user_id=user_id, routing_key_id=routing_key_id)
+        if subscription is not None:
+            raise AlreadyExists("Already subscribed")
+
+        return await self.uow.routing_key_subscription_repo.create(
             data={"user_id": user_id, "routing_key_id": routing_key_id}
         )
 
     async def unsubscribe(self, user_id: int, routing_key_id: int):
+        subscription = await self.get(user_id=user_id, routing_key_id=routing_key_id)
+        if subscription is not None:
+            raise NotFound("Not subscribed")
+
         await self.uow.routing_key_subscription_repo.delete(
             user_id=user_id, routing_key_id=routing_key_id,
         )
 
-    async def set_user_subscriptions(self, user: User, routing_key_ids: list[int]):
-        async with self.uow:
-            # remove old subscriptions
-            await self.uow.routing_key_subscription_repo.delete(user_id=user.pk)
-
-            # set new subscriptions
-            await self.uow.routing_key_subscription_repo.create_bulk(
-                user_id=user.pk,
-                routing_key_ids=routing_key_ids,
-            )
+    # method delete all - set all new
+    # async def set_user_subscriptions(self, user_id: int, routing_key_ids: list[int]):
+    #     async with self.uow:
+    #         # remove old subscriptions
+    #         await self.uow.routing_key_subscription_repo.delete(user_id=user_id)
+    #
+    #         # set new subscriptions
+    #         return await self.uow.routing_key_subscription_repo.create_bulk(
+    #             user_id=user_id,
+    #             routing_key_ids=routing_key_ids,
+    #         )
 
 
 async def query_users_who_receive_message(routing_key: str, is_force_send: bool, recipient: Recipient) -> QuerySet:

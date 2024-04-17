@@ -14,7 +14,7 @@ from config import CoreSettings
 from core.routes import variable, auth, websocket, notification, team, \
     module, user, task, job, permission, guardian
 
-from core.utils.database import setup_core, setup_admin_user, setup_guardian
+from core.utils.core_setup import setup_core, setup_admin_user, setup_guardian
 # from modules.core.websockets.actions import Action, send_log_to_subscribers, send_notification_to_subscribers
 # from modules.core.websockets.manager import WSManager, ws_manager
 # from fastapi.openapi.docs import get_swagger_ui_html
