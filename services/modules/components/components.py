@@ -40,7 +40,7 @@ core_settings = CoreSettings()
 class TortoiseModels(Component):
 
     async def pre_init(self):
-        logger.debug(f"[{self.module.name}] Pre-Initialising models")
+        logger.debug(f"[{self.module.name}] Initialising models")
 
         await TortoiseManager.add_models(self.module.name, [f'modules.{self.module.name}.db.models'])
         await TortoiseManager.add_migrations(str(MODULES_DIR / self.module.name / "migrations"))
@@ -107,7 +107,7 @@ class EventManager(Component):
         await Eventory.remove_channel(self.module.name)
 
     async def shutdown(self):
-        # await self.stop()
+        await self.stop()
         self.consumers.clear()
 
 
@@ -237,7 +237,7 @@ class APIRoutes(Component):
         await self.regen_openapi()
 
     async def shutdown(self):
-        pass
+        await self.stop()
 
     async def regen_openapi(self):
         self.application.openapi_schema = None

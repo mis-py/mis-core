@@ -19,28 +19,17 @@ class ModuleUOWService(BaseService):
             module.manifest = read_module_manifest(module.name)
         return paginated_modules
 
-    def get_manifest(self, module_name):
-        return read_module_manifest(module_name)
-
     async def set_enabled(self, module_id: int):
-        updated_obj = await self.uow.module_repo.update(
+        await self.uow.module_repo.update(
             id=module_id,
             data={'enabled': True},
         )
 
-        await updated_obj.save()
-
-        return await self.uow.module_repo.get(id=module_id)
-
     async def set_disabled(self, module_id: int):
-        updated_obj = await self.uow.module_repo.update(
+        await self.uow.module_repo.update(
             id=module_id,
             data={'enabled': False},
         )
-
-        await updated_obj.save()
-
-        return await self.uow.module_repo.get(id=module_id)
 
     async def get_or_create(self, name: str):
         return await self.uow.module_repo.get_or_create_by_name(name=name)

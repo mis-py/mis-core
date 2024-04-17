@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from services.modules.utils import GenericModule
+    from services.modules.utils import ModuleTemplate
     from services.variables.variable_set import VariableSet
 
 

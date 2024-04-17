@@ -22,5 +22,4 @@ class ModuleManifest(BaseModel):
     category: str
     permissions: dict = Field(default_factory=dict)
     dependencies: list[ModuleDependency] = Field(default_factory=list)
-    auth_disabled: bool
     extra: dict = Field(default_factory=dict)

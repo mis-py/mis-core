@@ -1,8 +1,6 @@
 from typing import Optional
 
 from pydantic import BaseModel
-
-from core.db.models import Module
 from core.schemas.common import AppModel
 from services.modules.utils.manifest import ModuleManifest
 
@@ -21,7 +19,6 @@ class ModuleManifestResponse(BaseModel):
     id: int
     name: str
     enabled: bool
-    state: Module.AppState
     manifest: Optional[ModuleManifest] = None
 
 
@@ -29,4 +26,3 @@ class ModuleResponse(BaseModel):
     id: int
     name: str
     enabled: bool
-    state: Module.AppState

@@ -34,7 +34,6 @@ from loaders import (
     init_mongo,
     init_guardian,
     manifest_init_modules,
-    init_modules_root_model
 )
 from loaders import (
     shutdown_modules, shutdown_eventory, shutdown_scheduler, shutdown_db, shutdown_redis, shutdown_mongo)
@@ -87,15 +86,14 @@ async def lifespan(application: FastAPI):
     await init_scheduler()
 
     await pre_init_db()
-    await manifest_init_modules()
-    await pre_init_modules()
+    await manifest_init_modules(app)
+    await pre_init_modules(app)
     await init_db(application)
-    await init_migrations()
     await init_core()
     await init_admin_user()
-    await init_modules_root_model()
-    await init_guardian()
     await init_modules(application)
+    await init_migrations()
+    await init_guardian()
     await init_core_routes(application)
     add_pagination(app)  # required after init routes
 

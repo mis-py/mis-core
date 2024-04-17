@@ -24,5 +24,4 @@ TODO introduce redis to dummy  https://github.com/redis/redis-py
 TODO introduce or verify proper logging to dummy  https://github.com/Delgan/loguru
 TODO finish rename settings to variables
 TODO implement clickhouse  https://clickhouse.com/docs/en/intro
-TODO rework or verify restricted_objects logic  https://stackoverflow.com/questions/11891606/row-level-permissions-in-django
 TODO scopes.py replace hardcode strings with class
