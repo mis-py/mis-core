@@ -1,4 +1,4 @@
 from .BaseModule import BaseModule
-from .Module import ModuleTemplate
+from .Module import GenericModule
 
 

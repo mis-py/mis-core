@@ -4,7 +4,7 @@ from typing import Callable, Literal
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 
-from services.modules.utils import ModuleTemplate
+from services.modules.utils import GenericModule
 
 
 @dataclass
@@ -14,7 +14,7 @@ class Task:
     extra_typed: dict
     trigger: IntervalTrigger | CronTrigger | None
     # module: BaseModule = None
-    module: ModuleTemplate = None
+    module: GenericModule = None
     autostart: bool = False
     single_instance: bool = False
 

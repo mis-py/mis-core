@@ -69,9 +69,18 @@ class VariableValue(Model):
 
 
 class Module(Model):
+    class AppState(str, Enum):
+        PRE_INITIALIZED = 'pre_initialized'  # initial state
+        INITIALIZED = 'initialized'  # after init
+        RUNNING = 'running'  # after start
+        STOPPED = 'stopped'  # after stop
+        SHUTDOWN = 'shutdown'  # after shutdown
+        ERROR = 'error'  # if any error in module occurred
+
     name = fields.CharField(max_length=50, unique=True)
     enabled = fields.BooleanField(default=False)
     permissions: fields.ReverseRelation[Permission]
+    state = fields.CharEnumField(enum_type=AppState, default=AppState.PRE_INITIALIZED)
 
     class PydanticMeta:
         exclude = ('permissions', 'settings')
