@@ -12,7 +12,7 @@ from core.utils.notification.utils import routing_key_to_dict
 from core.utils.schema import MisResponse, PageResponse
 from services.redis import RedisService
 
-from core.crud.notification import routing_key, subscription
+from core.crud.notification import routing_key
 
 router = APIRouter()
 
