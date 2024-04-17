@@ -107,6 +107,8 @@ class BaseModule:
         for component in self.components:
             component.bind(self)
 
+        await self._set_state(Module.AppState.PRE_INITIALIZED)
+
         return True
 
     async def init(self, application) -> bool:
@@ -133,23 +135,6 @@ class BaseModule:
             await self._set_state(Module.AppState.ERROR)
 
         return False
-
-    async def shutdown(self) -> bool:
-        if self._model.state == Module.AppState.ERROR:
-            raise MISError("Can not shutdown module that is in 'ERROR' state")
-        if self._model.state not in [Module.AppState.STOPPED, Module.AppState.INITIALIZED, Module.AppState.PRE_INITIALIZED]:
-            raise MISError("Can not shutdown module that not in ['STOPPED', 'INITIALIZED', 'PRE_INITIALIZED'] state")
-
-        for component in self.components:
-            await component.shutdown()
-            logger.debug(f'[{self.name}] component {component.__class__.__name__} shutdown finished')
-
-        if self.shutdown_event:
-            await self.shutdown_event(self)
-
-        await self._set_state(Module.AppState.SHUTDOWN)
-
-        return True
 
     async def start(self) -> bool:
         if self._model.state == Module.AppState.ERROR:
@@ -192,6 +177,23 @@ class BaseModule:
             await self.stop_event(self)
 
         await self._set_state(Module.AppState.STOPPED)
+
+        return True
+
+    async def shutdown(self) -> bool:
+        if self._model.state == Module.AppState.ERROR:
+            raise MISError("Can not shutdown module that is in 'ERROR' state")
+        if self._model.state not in [Module.AppState.STOPPED, Module.AppState.INITIALIZED, Module.AppState.PRE_INITIALIZED]:
+            raise MISError("Can not shutdown module that not in ['STOPPED', 'INITIALIZED', 'PRE_INITIALIZED'] state")
+
+        for component in self.components:
+            await component.shutdown()
+            logger.debug(f'[{self.name}] component {component.__class__.__name__} shutdown finished')
+
+        if self.shutdown_event:
+            await self.shutdown_event(self)
+
+        await self._set_state(Module.AppState.SHUTDOWN)
 
         return True
 

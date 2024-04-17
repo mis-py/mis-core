@@ -89,7 +89,7 @@ async def lifespan(application: FastAPI):
     await pre_init_db()
     await manifest_init_modules()
     await pre_init_modules()
-    await init_db(application, generate_schemas=False)
+    await init_db(application)
     await init_migrations()
     await init_core()
     await init_admin_user()
