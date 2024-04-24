@@ -3,6 +3,7 @@ from tortoise import Tortoise
 from const import DEFAULT_ADMIN_USERNAME
 from core import crud
 from config import CoreSettings
+from core.db.mixin import GuardianMixin
 from core.db.models import Module, User, Team
 from core.db.permission import Permission
 from core.utils.common import camel_to_spaces
@@ -49,6 +50,8 @@ async def setup_guardian():
 
     default_perms_map = ('read', 'edit', 'delete')
 
+    models_using_guardian_mixin = GuardianMixin.get_all_subclasses()
+
     for app, models in Tortoise.apps.items():
         if app == 'models':
             module_name = 'core'
@@ -57,6 +60,9 @@ async def setup_guardian():
         module = await Module.get(name=module_name)
 
         for model_name, model in models.items():
+            if model not in models_using_guardian_mixin:
+                continue
+
             content_type, _ = await crud.guardian_content_type.get_or_create(
                 module=module,
                 model=model_name,
