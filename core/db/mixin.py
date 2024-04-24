@@ -92,3 +92,14 @@ class TeamPermissionsMixin(PermissionsMixin):
             query = query.select_related('permission')
             return [p.permission.scope for p in await query]
         return query
+
+
+class GuardianMixin:
+    """Mixin for use in models for access control"""
+
+    @classmethod
+    def get_all_subclasses(cls):
+        subclasses = []
+        for subclass in cls.__subclasses__():
+            subclasses.append(subclass)
+        return subclasses
