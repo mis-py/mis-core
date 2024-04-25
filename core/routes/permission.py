@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, Security
 
 from core.db.models import User, Team
-from core.dependencies.misc import UnitOfWorkDep
+from core.dependencies.uow import UnitOfWorkDep
 from core.schemas.permission import GrantedPermissionResponse, PermissionResponse, PermissionUpdate
-from core.dependencies import get_user_by_id, get_team_by_id, get_current_user
+from core.dependencies.path import get_user_by_id, get_team_by_id
+from core.dependencies.security import get_current_user
 from core.services.granted_permission import GrantedPermissionService
 from core.services.permission import PermissionService
 from core.utils.schema import PageResponse, MisResponse

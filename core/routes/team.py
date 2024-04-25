@@ -2,8 +2,9 @@ from fastapi import Depends, APIRouter, Security
 
 from core.db.models import Team
 
-from core.dependencies import get_team_by_id, get_current_user
-from core.dependencies.misc import UnitOfWorkDep
+from core.dependencies.path import get_team_by_id
+from core.dependencies.security import get_current_user
+from core.dependencies.uow import UnitOfWorkDep
 from core.schemas.team import TeamResponse, TeamListResponse, TeamCreate, TeamUpdate
 from core.utils.schema import PageResponse, MisResponse
 from core.services.team import TeamService

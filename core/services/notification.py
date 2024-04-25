@@ -1,8 +1,5 @@
 from fastapi_pagination.bases import AbstractParams
-from tortoise.queryset import QuerySet
 
-from core.crud import user
-from core.utils.notification.recipient import Recipient
 from core.utils.schema import PageResponse
 from core.services.base.base_service import BaseService
 from core.services.base.unit_of_work import IUnitOfWork
@@ -17,6 +14,22 @@ class RoutingKeyService(BaseService):
     async def filter_subscribed_and_paginate(self, user_id: int, params: AbstractParams) -> PageResponse:
         queryset = await self.uow.routing_key_repo.filter_by_user(user_id=user_id)
         return await self.uow.routing_key_repo.paginate(queryset=queryset, params=params)
+
+    async def recreate(self, module_id, key: str, name: str):
+        async with self.uow:
+            # delete for remove user subscription relations
+            await self.uow.routing_key_repo.delete(key=key)
+            await self.uow.routing_key_repo.create(data={
+                'app_id': module_id,
+                'key': key,
+                'name': name,
+            })
+
+    async def delete_unused(self, module_id: int, exist_keys: list[str]):
+        return await self.uow.routing_key_repo.delete_unused(
+            module_id=module_id,
+            exist_keys=exist_keys,
+        )
 
 
 class RoutingKeySubscriptionService(BaseService):
@@ -54,22 +67,3 @@ class RoutingKeySubscriptionService(BaseService):
     #             routing_key_ids=routing_key_ids,
     #         )
 
-
-async def query_users_who_receive_message(routing_key: str, is_force_send: bool, recipient: Recipient) -> QuerySet:
-    if not recipient and not is_force_send:
-        return await user.query_get_by_subscription(routing_key)
-
-    if is_force_send and not recipient:
-        return await user.query_get_all()
-
-    if recipient.type == Recipient.Type.USER:
-        query = await user.query_get_multi(id=recipient.user_id)
-    elif recipient.type == Recipient.Type.TEAM:
-        query = await user.query_get_multi(team_id=recipient.team_id)
-    else:
-        raise Exception(f'Recipient type {recipient.type} not exist or not implement')
-
-    if is_force_send and recipient:
-        return query
-
-    return await user.query_get_by_subscription(query=query, routing_key=routing_key)

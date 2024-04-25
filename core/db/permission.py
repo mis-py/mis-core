@@ -17,16 +17,6 @@ class Permission(Model):
     scope = fields.CharField(max_length=30, unique=True)
     app = fields.ForeignKeyField('models.Module', related_name='permissions')
 
-    @classmethod
-    def create(cls, using_db=None, **kwargs):
-        scope, app = kwargs.get('scope'), kwargs.get('app')
-        app_scope = cls.make_app_scope(app_name=app.name, scope=scope)
-        return super().create(using_db, name=kwargs.get('name'), scope=app_scope, app=app)
-
-    @staticmethod
-    def make_app_scope(app_name: str, scope: str):
-        return f"{app_name}:{scope}"
-
     class Meta:
         table = 'mis_permissions'
 

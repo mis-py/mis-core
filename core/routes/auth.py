@@ -4,8 +4,8 @@ from fastapi import Depends, APIRouter
 from fastapi.security import OAuth2PasswordRequestForm
 
 from core.db.models import User
-from core.dependencies import get_current_user
-from core.dependencies.misc import UnitOfWorkDep
+from core.dependencies.security import get_current_user
+from core.dependencies.uow import UnitOfWorkDep
 
 from core.schemas.auth import AccessToken, ChangePasswordData
 from core.services.auth import AuthService

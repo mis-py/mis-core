@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Security, Query
 
-from core.dependencies import get_current_user
+from core.dependencies.security import get_current_user
 
 from core.schemas.task import TaskResponse
 from core.services.task import get_available_tasks

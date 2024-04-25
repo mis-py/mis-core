@@ -1,4 +1,6 @@
 from fastapi_pagination import Page
+
+from core.db.models import Module
 from core.schemas.module import ModuleManifestResponse
 from core.services.base.base_service import BaseService
 from core.services.base.unit_of_work import IUnitOfWork
@@ -44,3 +46,11 @@ class ModuleUOWService(BaseService):
 
     async def get_or_create(self, name: str):
         return await self.uow.module_repo.get_or_create_by_name(name=name)
+
+    async def create_core(self, name: str):
+        """Create core app as enabled and already running"""
+        await self.uow.module_repo.create(data={
+            'name': name,
+            'enabled': True,
+            'state': Module.AppState.RUNNING,
+        })
