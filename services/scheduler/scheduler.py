@@ -15,7 +15,6 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from core.db.models import ScheduledJob
 from core.utils.common import validate_task_extra
-from core.crud import job
 
 from core.exceptions import NotFound, AlreadyExists, ValidationFailed, MISError
 from core.utils.task import get_trigger

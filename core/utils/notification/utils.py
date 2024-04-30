@@ -6,7 +6,8 @@ from loguru import logger
 from services.eventory import CustomIncomingMessage
 from services.redis import RedisService
 from .message import Message, IncomingProcessedMessage
-from core.services.notification import query_users_who_receive_message
+from ...services.base.unit_of_work import unit_of_work_factory
+from ...services.user import UserService
 
 
 async def eventory_message_handler(eventory_message: CustomIncomingMessage, senders: list, redis: RedisService):
@@ -18,12 +19,12 @@ async def eventory_message_handler(eventory_message: CustomIncomingMessage, send
     app_name, routing_key = eventory_message.routing_key.split(':', 1)
     routing_key_cache = await get_or_set_routing_key_cache(redis.cache, routing_key)
 
-    query_users = await query_users_who_receive_message(
+    uow = unit_of_work_factory()
+    users = await UserService(uow).users_who_receive_message(
         routing_key=routing_key,
         is_force_send=message.is_force_send,
         recipient=message.recipient,
     )
-    users = await query_users
 
     if not users:
         # what message by the way?

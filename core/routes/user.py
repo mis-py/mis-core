@@ -2,8 +2,9 @@ from typing import Optional
 
 from fastapi import Security, APIRouter, Depends
 from core.db.models import User
-from core.dependencies import get_user_by_id, get_current_user, get_team_by_id
-from core.dependencies.misc import UnitOfWorkDep
+from core.dependencies.path import get_user_by_id, get_team_by_id
+from core.dependencies.security import get_current_user
+from core.dependencies.uow import UnitOfWorkDep
 from core.exceptions import NotFound, AlreadyExists
 from core.schemas.user import UserResponse, UserUpdate, UserCreate, UserSelfUpdate, UserListResponse
 from core.services.team import TeamService
@@ -23,7 +24,7 @@ async def get_users(
         team_id: Optional[int] = None,
 ):
     if team_id is not None:
-        await get_team_by_id(team_id)
+        await get_team_by_id(uow=uow, team_id=team_id)
 
     return await UserService(uow).filter_and_paginate(
         team_id=team_id,

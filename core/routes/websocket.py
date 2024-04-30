@@ -5,7 +5,7 @@ from loguru import logger
 from fastapi import WebSocket, APIRouter, WebSocketDisconnect
 from fastapi.params import Depends
 
-from core.auth_backend import ws_user_core_sudo
+from core.dependencies.security import ws_user_core_sudo
 from services.ws_manager import WSManager
 
 router = APIRouter()

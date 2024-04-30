@@ -5,8 +5,9 @@ from loguru import logger
 
 from core.db.models import Module
 
-from core.dependencies import get_current_user
-from core.dependencies.misc import UnitOfWorkDep, PaginateParamsDep
+from core.dependencies.security import get_current_user
+from core.dependencies.misc import  PaginateParamsDep
+from core.dependencies.uow import UnitOfWorkDep
 from core.dependencies.path import get_module_by_id
 from core.schemas.module import ModuleManifestResponse
 from core.services.module import ModuleUOWService
@@ -26,7 +27,7 @@ router = APIRouter()
 )
 async def get_modules(uow: UnitOfWorkDep, paginate_params: PaginateParamsDep, module_id: int = None):
     if module_id:
-        await get_module_by_id(module_id)
+        await get_module_by_id(uow=uow, module_id=module_id)
 
     paginated_modules = await ModuleUOWService(uow).filter_and_paginate(
         id=module_id, params=paginate_params

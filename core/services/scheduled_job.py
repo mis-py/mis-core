@@ -151,3 +151,10 @@ class ScheduledJobService(BaseService):
             await SchedulerService.remove_job(job_id)
 
             await self.uow.scheduled_job_repo.delete(id=job_id)
+
+    async def filter_by_module(self, module_name: str):
+        return await self.uow.scheduled_job_repo.filter_by_module(
+            module_name=module_name,
+            prefetch_related=['user', 'team', 'app'],
+        )
+

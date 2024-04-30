@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, Security, Query
 
 from core.db.models import User, Team
-from core.dependencies.misc import UnitOfWorkDep
 from core.exceptions import MISError
+from core.dependencies.uow import UnitOfWorkDep
 from core.schemas.permission import GrantedPermissionResponse, PermissionResponse, PermissionUpdate
-from core.dependencies import get_user_by_id, get_team_by_id, get_current_user
+from core.dependencies.path import get_user_by_id, get_team_by_id
+from core.dependencies.security import get_current_user
 from core.services.granted_permission import GrantedPermissionService
 from core.services.permission import PermissionService
 from core.utils.schema import PageResponse, MisResponse
@@ -50,7 +51,7 @@ async def get_granted_permissions(
         raise MISError("Use only one filter")
 
     if user_id is not None:
-        user = await get_user_by_id(user_id)
+        user = await get_user_by_id(uow=uow, user_id=user_id)
 
         return await GrantedPermissionService(uow).filter_and_paginate(
             user_id=user.pk,
@@ -58,7 +59,7 @@ async def get_granted_permissions(
         )
 
     if team_id is not None:
-        team = await get_team_by_id(team_id)
+        team = await get_team_by_id(uow=uow, team_id=team_id)
 
         return await GrantedPermissionService(uow).filter_and_paginate(
             team_id=team.pk,
@@ -81,11 +82,11 @@ async def set_granted_permissions(
         raise MISError("Use only one filter")
 
     if user_id is not None:
-        user = await get_user_by_id(user_id)
+        user = await get_user_by_id(uow=uow, user_id=user_id)
         await GrantedPermissionService(uow).set_for_user(permissions=permissions, user=user)
 
     if team_id is not None:
-        team = await get_team_by_id(team_id)
+        team = await get_team_by_id(uow=uow, team_id=team_id)
         await GrantedPermissionService(uow).set_for_team(permissions=permissions, team=team)
 
     return MisResponse()

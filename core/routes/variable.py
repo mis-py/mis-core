@@ -1,8 +1,9 @@
 from fastapi import Depends, APIRouter, Security, Query
 
 from core.db.models import Team, User, Module
-from core.dependencies import get_team_by_id, get_user_by_id, get_current_user
-from core.dependencies.misc import UnitOfWorkDep
+from core.dependencies.security import get_current_user
+from core.dependencies.path import get_team_by_id, get_user_by_id
+from core.dependencies.uow import UnitOfWorkDep
 from core.dependencies.path import get_module_by_id
 from core.schemas.variable import VariableResponse, VariableValueResponse
 from core.schemas.variable import UpdateVariable
@@ -40,7 +41,7 @@ async def get_global_variables(
         module_id: int = Query(default=None),
 ):
     if module_id is not None:
-        await get_module_by_id(module_id)
+        await get_module_by_id(uow=uow, module_id=module_id)
 
     return await VariableService(uow).filter_and_paginate(
         # is_global=is_global,
@@ -60,10 +61,10 @@ async def get_local_variables(
         user_id: int = Query(default=None),
 ):
     if team_id is not None:
-        await get_team_by_id(team_id)
+        await get_team_by_id(uow=uow, team_id=team_id)
 
     if user_id is not None:
-        await get_user_by_id(user_id)
+        await get_user_by_id(uow, user_id=user_id)
 
     return await VariableValueService(uow).filter_and_paginate(
         team_id=team_id,
@@ -86,7 +87,7 @@ async def set_global_variables(
         if module_id == 1:
             raise ValidationFailed(f"Module ID '1' has no editable variables")
 
-        module = await get_module_by_id(module_id)
+        module = await get_module_by_id(uow, module_id=module_id)
 
         await VariableService(uow).set_variables(variables=variables)
         await VariablesManager.update_variables(app=module)
@@ -109,13 +110,13 @@ async def set_local_variables(
         raise MISError("Use only one filter")
 
     if team_id is not None:
-        team = await get_team_by_id(team_id)
+        team = await get_team_by_id(uow=uow, team_id=team_id)
 
         await VariableValueService(uow).set_variables_values(team_id=team.pk, variables=variables)
         await VariablesManager.update_variables(team=team)
 
     if user_id is not None:
-        user = await get_user_by_id(user_id)
+        user = await get_user_by_id(uow=uow, user_id=user_id)
 
         await VariableValueService(uow).set_variables_values(user_id=user.pk, variables=variables)
         await VariablesManager.update_variables(user=user)

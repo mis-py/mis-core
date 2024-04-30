@@ -1,11 +1,13 @@
 from tortoise import Tortoise
 
 from const import DEFAULT_ADMIN_USERNAME
-from core import crud
 from config import CoreSettings
+from core.db.guardian import GuardianPermission, GuardianContentType
 from core.db.mixin import GuardianMixin
 from core.db.models import Module, User, Team
-from core.db.permission import Permission
+from core.services.base.unit_of_work import unit_of_work_factory
+from core.services.module import ModuleUOWService
+from core.services.permission import PermissionService
 from core.utils.common import camel_to_spaces
 from core.utils.security import get_password_hash
 
@@ -14,20 +16,23 @@ settings = CoreSettings()
 
 
 async def setup_core():
-    core = await Module.get_or_none(name='core')
+    uow = unit_of_work_factory()
+
+    core = await ModuleUOWService(uow).get(name='core')
     if core is None:
         # Create core app as enabled and already running
-        core = await Module.create(name='core', enabled=True, state=Module.AppState.RUNNING)
-        await Permission.create(name='Superuser permissions', scope='sudo', app=core)
-        await Permission.create(name="Access for 'users' endpoints", scope="users", app=core)
-        await Permission.create(name="Access for 'teams' endpoints", scope="teams", app=core)
-        await Permission.create(name="Access for 'modules' endpoints", scope="modules", app=core)
-        await Permission.create(name="Access for 'groups' endpoints", scope="groups", app=core)
-        await Permission.create(name="Access for 'notifications' endpoints", scope="notifications", app=core)
-        await Permission.create(name="Access for 'logs' endpoints", scope="logs", app=core)
-        await Permission.create(name="Access for 'tasks' endpoints", scope="tasks", app=core)
-        await Permission.create(name="Access for 'consumers' endpoints", scope="consumers", app=core)
-        await Permission.create(name="Access for 'permissions' endpoints", scope="permissions", app=core)
+        core = await ModuleUOWService(uow).create_core(name='core')
+
+        await PermissionService(uow).create_with_scope(name='Superuser permissions', scope='sudo', module=core)
+        await PermissionService(uow).create_with_scope(name="Access for 'users' endpoints", scope="users", module=core)
+        await PermissionService(uow).create_with_scope(name="Access for 'teams' endpoints", scope="teams", module=core)
+        await PermissionService(uow).create_with_scope(name="Access for 'modules' endpoints", scope="modules", module=core)
+        await PermissionService(uow).create_with_scope(name="Access for 'groups' endpoints", scope="groups", module=core)
+        await PermissionService(uow).create_with_scope(name="Access for 'notifications' endpoints", scope="notifications", module=core)
+        await PermissionService(uow).create_with_scope(name="Access for 'logs' endpoints", scope="logs", module=core)
+        await PermissionService(uow).create_with_scope(name="Access for 'tasks' endpoints", scope="tasks", module=core)
+        await PermissionService(uow).create_with_scope(name="Access for 'consumers' endpoints", scope="consumers", module=core)
+        await PermissionService(uow).create_with_scope(name="Access for 'permissions' endpoints", scope="permissions", module=core)
 
     return core is None
 
@@ -63,14 +68,14 @@ async def setup_guardian():
             if model not in models_using_guardian_mixin:
                 continue
 
-            content_type, _ = await crud.guardian_content_type.get_or_create(
+            content_type, _ = await GuardianContentType.get_or_create(
                 module=module,
                 model=model_name,
             )
             model_name_spaces = camel_to_spaces(model_name)
 
             for code_perm_name in default_perms_map:
-                await crud.guardian_permissions.get_or_create(
+                await GuardianPermission.get_or_create(
                     code_name=code_perm_name,
                     name=f"Can {code_perm_name} {model_name_spaces}",
                     content_type=content_type,

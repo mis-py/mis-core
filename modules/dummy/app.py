@@ -2,8 +2,7 @@ from loguru import logger
 
 from const import DEFAULT_ADMIN_USERNAME
 from core.services.base.unit_of_work import unit_of_work_factory
-from core.services.guardian_service import GAccessGroupService
-from core.services.guardian import assign_perm, has_perm
+from core.services.guardian_service import GAccessGroupService, GuardianService
 from core.services.user import UserService
 from services.modules.utils import GenericModule
 from services.modules.components import Variables, ModuleLogs, TortoiseModels, EventRoutingKeys
@@ -36,13 +35,13 @@ async def init(module_instance: GenericModule):
     dummy_object_1, _ = await DummyModel.get_or_create(dummy_string="Dummy 1")
 
     # allow access to object for group
-    await assign_perm('read', group, dummy_object_1)
-    await assign_perm('edit', group, dummy_object_1)
+    await GuardianService(uow).assign_perm('read', group, dummy_object_1)
+    await GuardianService(uow).assign_perm('edit', group, dummy_object_1)
 
     # check group access on object
-    is_read_perm = await has_perm('read', group, dummy_object_1)
-    is_edit_perm = await has_perm('edit', group, dummy_object_1)
-    is_delete_perm = await has_perm('delete', group, dummy_object_1)
+    is_read_perm = await GuardianService(uow).has_perm('read', group, dummy_object_1)
+    is_edit_perm = await GuardianService(uow).has_perm('edit', group, dummy_object_1)
+    is_delete_perm = await GuardianService(uow).has_perm('delete', group, dummy_object_1)
     logger.info(f"{group.name} read={is_read_perm} edit={is_edit_perm} delete={is_delete_perm}")
 
 module = GenericModule(

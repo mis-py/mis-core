@@ -1,10 +1,15 @@
 from fastapi.security import OAuth2PasswordRequestForm
+from jose import jwt, ExpiredSignatureError, JWTError
 
+from config import CoreSettings
 from core.auth_backend import create_access_token
-from core.exceptions import AuthError, ValidationFailed
+from core.db.models import User
+from core.exceptions import AuthError, ValidationFailed, TokenError
 from core.schemas.auth import AccessToken
 from core.services.base.unit_of_work import IUnitOfWork
 from core.utils.security import verify_password, get_password_hash
+
+settings = CoreSettings()
 
 
 class AuthService:
@@ -51,3 +56,23 @@ class AuthService:
             hashed_password=get_password_hash(new_password),
         )
         return True
+
+    @staticmethod
+    async def username_form_token(token: str) -> str:
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            username: str = payload.get("sub")
+            if username is None:
+                raise TokenError("Invalid token payload")
+        except ExpiredSignatureError:
+            raise TokenError("Token is expired")
+        except JWTError:
+            raise TokenError("Could not validate credentials")
+        return username
+
+    async def get_user_from_token(self, token: str) -> User:
+        username = await self.username_form_token(token)
+        user = await self.uow.user_repo.get(username=username)
+        if not user:
+            raise TokenError("User was deleted")
+        return user
