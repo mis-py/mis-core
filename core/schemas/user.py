@@ -6,20 +6,20 @@ from core.utils.schema import MisModel
 
 
 class UserCreate(BaseModel):
-    username: str
+    username: str = Field(max_length=20, min_length=3)
     password: str
-    team_id: int = None
-    position: Optional[str] = Field(max_length=100)
-    permissions: Optional[list[str]] = []
-    variables: Optional[list[UpdateVariable]] = []
+    team_id: Optional[int] = None
+    position: Optional[str] = Field(None, max_length=100)
+    # permissions: Optional[list[str]] = []
+    # variables: Optional[list[UpdateVariable]] = []
 
 
 class UserUpdate(BaseModel):
     username: Optional[str] = Field(max_length=20, min_length=3)
     team_id: int = None
-    new_password: str = ''
+    password: str = ''
     disabled: bool = None
-    position: Optional[str] = Field(max_length=100)
+    position: Optional[str] = Field(None, max_length=100)
 
 
 class UserSelfUpdate(BaseModel):
@@ -28,12 +28,11 @@ class UserSelfUpdate(BaseModel):
 
 class UserResponse(MisModel):
     id: int
-    username: str = Field(max_length=20, min_length=3)
+    username: str
     position: Optional[str]
     disabled: bool
-    signed_in: bool
     team: Optional[TeamModelShort]
-    settings: list[VariableValueResponse] = []
+    # variables: list[VariableValueResponse] = []
 
 
 class UserListResponse(BaseModel):
@@ -41,6 +40,5 @@ class UserListResponse(BaseModel):
     username: str
     position: Optional[str]
     disabled: bool
-    signed_in: bool
     team: Optional[TeamModelShort]
-    settings: list[VariableValueResponse] = []
+    # variables: list[VariableValueResponse] = []

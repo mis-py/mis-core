@@ -150,7 +150,7 @@ negative_add_job = [
         {
             "status_code": 404,
             "msg": "NotFound",
-            "result": "Task ID 'dummy:dummy_task_not_exist' not exist",
+            "result": "Task 'dummy:dummy_task_not_exist' not exist",
             "status": False
         }
     ),

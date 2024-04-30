@@ -11,6 +11,8 @@ class User(Model, UserPermissionsMixin):
     hashed_password = fields.CharField(max_length=200)
 
     disabled = fields.BooleanField(default=False)
+
+    # DEPRECATED - remove it
     signed_in = fields.BooleanField(default=False)
 
     team = fields.ForeignKeyField('models.Team', related_name='users', on_delete=fields.SET_NULL, null=True)

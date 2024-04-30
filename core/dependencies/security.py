@@ -23,11 +23,16 @@ async def get_current_user(
         token: str = Depends(oauth2_scheme),
 ):
     if not settings.AUTHORIZATION_ENABLED:
-        return await UserService(uow).get(id=1)
+        # TODO replace it from config param
+        return await UserService(uow).get(username='admin')
 
     if token:
         user = await AuthService(uow).get_user_from_token(token=token)
         await check_user_perm(user, security_scopes.scopes)
+
+        if user.disabled:
+            raise AuthError('User disabled')
+
         return user
 
     host = ipaddress.ip_address(x_real_ip or request.client.host)

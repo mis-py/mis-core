@@ -22,32 +22,13 @@ class UserService(BaseService):
             )
             set_password(new_user, user_in.password)
             await self.uow.user_repo.save(obj=new_user)
-            await new_user.set_permissions(user_in.permissions)
 
-            for setting in user_in.variables:
-                variable = await self.uow.variable_repo.get(id=setting.setting_id)
-                try:
-                    type_convert(value=setting.new_value, to_type=variable.type)
-                except ValueError:
-                    raise ValidationFailed(
-                        f"Can't set setting {variable.key}. Value is not '{variable.type}' type",
-                    )
-
-                if variable.is_global:
-                    raise ValidationFailed(
-                        f"Can't set global setting {variable.key} as local setting for user",
-                    )
-
-                await self.uow.variable_value_repo.update_or_create(
-                    variable_id=variable.pk,
-                    value=setting.new_value,
-                    user_id=new_user.pk,
-                )
         return new_user
 
     async def update_with_password(self, user: User, schema_in: UserUpdate) -> User:
+        # TODO restrict admin(1) editing for .username, .disabled, .team properties
         user = await self.uow.user_repo.update(pk=user.pk, data=schema_in.model_dump(exclude_unset=True))
-        set_password(user, schema_in.new_password)
+        set_password(user, schema_in.password)
         await self.uow.user_repo.save(obj=user)
         return user
 

@@ -1,5 +1,6 @@
 from typing import Optional
 
+import loguru
 from fastapi import Security, APIRouter, Depends
 from core.db.models import User
 from core.dependencies.path import get_user_by_id, get_team_by_id
@@ -71,14 +72,16 @@ async def edit_user_me(
     response_model=MisResponse[UserResponse]
 )
 async def create_user(uow: UnitOfWorkDep, user_in: UserCreate):
+    # TODO rewrite it on dependency test
     user = await UserService(uow).get(username=user_in.username)
 
     if user:
         raise AlreadyExists(f"User with username '{user_in.username}' already exists")
-
-    team = await TeamService(uow).get(id=user_in.team_id)
-    if not team:
-        raise NotFound(f"Team id '{user_in.team_id}' not exist")
+    # # TODO here as well
+    if user_in.team_id is not None:
+        team = await TeamService(uow).get(id=user_in.team_id)
+        if not team:
+            raise NotFound(f"Team id '{user_in.team_id}' not exist")
 
     new_user = await UserService(uow).create_with_pass(user_in)
     new_user_with_related = await UserService(uow).get(
