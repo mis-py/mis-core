@@ -17,12 +17,10 @@ positive_get_users_dataset = [
                         "username": "admin",
                         "position": None,
                         "disabled": False,
-                        "signed_in": False,
                         "team": {
                             "id": 1,
                             "name": "Superusers"
-                        },
-                        "settings": []
+                        }
                     }
                 ]
             },
@@ -47,12 +45,10 @@ positive_get_users_dataset = [
                         "username": "admin",
                         "position": None,
                         "disabled": False,
-                        "signed_in": False,
                         "team": {
                             "id": 1,
                             "name": "Superusers"
-                        },
-                        "settings": []
+                        }
                     }
                 ]
             },
@@ -81,9 +77,7 @@ positive_create_user_dataset = [
             "username": "Test1",
             "password": "qwerty",
             "team_id": 1,
-            "settings": [],
             "position": "TEST USER",
-            "permissions": []
         },
         {
             "status": True,
@@ -94,20 +88,16 @@ positive_create_user_dataset = [
                 "username": "Test1",
                 "position": "TEST USER",
                 "disabled": False,
-                "signed_in": False,
-                "team": {"id": 1, "name": "Superusers"},
-                "settings": []
+                "team": {"id": 1, "name": "Superusers"}
             }
         }
     ),
+    # test without team_id
     (
         {
             "username": "Test2",
             "password": "qwerty",
-            "team_id": 1,
-            "settings": [],
             "position": "TEST USER 2",
-            "permissions": []
         },
         {
             "status": True,
@@ -118,9 +108,7 @@ positive_create_user_dataset = [
                 "username": "Test2",
                 "position": "TEST USER 2",
                 "disabled": False,
-                "signed_in": False,
-                "team": {"id": 1, "name": "Superusers"},
-                "settings": []
+                "team": None,
             }
         }
     )
@@ -132,9 +120,7 @@ negative_create_user_dataset = [
             "username": "Test",
             "password": "qwerty",
             "team_id": 0,
-            "settings": [],
             "position": "TEST USER",
-            "permissions": []
         },
         {
             "status": False,
@@ -149,9 +135,7 @@ negative_create_user_dataset = [
             "username": "Test1",
             "password": "qwerty",
             "team_id": 1,
-            "settings": [],
             "position": "TEST USER",
-            "permissions": []
         },
         {
             "status": False,
@@ -176,9 +160,7 @@ positive_get_user_dataset = [
                 "username": "Test1",
                 "position": "TEST USER",
                 "disabled": False,
-                "signed_in": False,
                 "team": {"id": 1, "name": "Superusers"},
-                "settings": []
             }
         }
     ),(
@@ -194,9 +176,7 @@ positive_get_user_dataset = [
                 "username": "Test2",
                 "position": "TEST USER 2",
                 "disabled": False,
-                "signed_in": False,
-                "team": {"id": 1, "name": "Superusers"},
-                "settings": []
+                "team": None,
             }
         }
     ),
@@ -244,7 +224,7 @@ positive_edit_user_dataset = [
         {
             "username": "test999",
             "team_id": 1,
-            "new_password": "",
+            "password": "",
             "disabled": False,
             "position": "TEST USER 999"
         },
@@ -257,9 +237,7 @@ positive_edit_user_dataset = [
                 "username": "test999",
                 "position": "TEST USER 999",
                 "disabled": False,
-                "signed_in": False,
                 "team": {"id": 1, "name": "Superusers"},
-                "settings": []
             }
         }
     ),(
@@ -270,7 +248,7 @@ positive_edit_user_dataset = [
         {
             "username": "Test2",
             "team_id": 1,
-            "new_password": "ytrewq",
+            "password": "ytrewq",
             "disabled": False,
             "position": "TEST USER 2"
         },
@@ -283,9 +261,7 @@ positive_edit_user_dataset = [
                 "username": "Test2",
                 "position": "TEST USER 2",
                 "disabled": False,
-                "signed_in": False,
                 "team": {"id": 1, "name": "Superusers"},
-                "settings": []
             }
         }
     ),
@@ -329,7 +305,7 @@ negative_edit_user_dataset = [
             "status": False
         }
     ),(
-        # Username and position field missing
+        # Username and position(not required) field missing
         {
             "user_id": 3,
         },
@@ -345,13 +321,6 @@ negative_edit_user_dataset = [
                 {
                     'type': 'missing',
                     'loc': ['body', 'username'],
-                    'msg': 'Field required',
-                    'input': {'team_id': 1, 'new_password': '', 'disabled': False},
-                    'url': 'https://errors.pydantic.dev/2.4/v/missing'
-                },
-                {
-                    'type': 'missing',
-                    'loc': ['body', 'position'],
                     'msg': 'Field required',
                     'input': {'team_id': 1, 'new_password': '', 'disabled': False},
                     'url': 'https://errors.pydantic.dev/2.4/v/missing'

@@ -25,6 +25,12 @@ class ModuleManifestResponse(BaseModel):
     manifest: Optional[ModuleManifest] = None
 
 
+class ModuleShortResponse(BaseModel):
+    id: int
+    name: str
+    enabled: bool
+
+
 class ModuleResponse(BaseModel):
     id: int
     name: str

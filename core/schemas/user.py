@@ -31,7 +31,6 @@ class UserResponse(MisModel):
     username: str
     position: Optional[str]
     disabled: bool
-    # signed_in: bool
     team: Optional[TeamModelShort]
     # variables: list[VariableValueResponse] = []
 
@@ -41,6 +40,5 @@ class UserListResponse(BaseModel):
     username: str
     position: Optional[str]
     disabled: bool
-    # signed_in: bool
     team: Optional[TeamModelShort]
     # variables: list[VariableValueResponse] = []

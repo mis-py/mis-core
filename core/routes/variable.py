@@ -37,7 +37,7 @@ router = APIRouter()
 )
 async def get_global_variables(
         uow: UnitOfWorkDep,
-        is_global: bool = Query(default=None),
+        # is_global: bool = Query(default=None),
         module_id: int = Query(default=None),
 ):
     if module_id is not None:
@@ -60,11 +60,14 @@ async def get_local_variables(
         team_id: int = Query(default=None),
         user_id: int = Query(default=None),
 ):
+    if sum(1 for x in [team_id, user_id] if x) != 1:
+        raise MISError("Use only one filter")
+
     if team_id is not None:
         await get_team_by_id(uow=uow, team_id=team_id)
 
     if user_id is not None:
-        await get_user_by_id(uow, user_id=user_id)
+        await get_user_by_id(uow=uow, user_id=user_id)
 
     return await VariableValueService(uow).filter_and_paginate(
         team_id=team_id,

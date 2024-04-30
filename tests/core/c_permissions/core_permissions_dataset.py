@@ -19,7 +19,7 @@ positive_get_permissions_dataset = [
                         {'id': 8, 'scope': 'core:tasks', 'app': {'id': 1, 'name': 'core', 'enabled': True}},
                         {'id': 9, 'scope': 'core:consumers', 'app': {'id': 1, 'name': 'core', 'enabled': True}},
                         {'id': 10, 'scope': 'core:permissions', 'app': {'id': 1, 'name': 'core', 'enabled': True}},
-                        {'id': 11, 'scope': 'dummy:dummy', 'app': {'id': 2, 'name': 'dummy', 'enabled': False}},
+                        {"id": 11, "scope": "dummy:dummy", "app": {"id": 2, "name": "dummy", "enabled": True}}
                     ]
             },
             'status': True
@@ -29,7 +29,7 @@ positive_get_permissions_dataset = [
 
 negative_get_permissions_dataset = []
 
-positive_get_user_permissions_dataset = [
+positive_get_granted_permissions_dataset = [
     (
         {
             "user_id": 1
@@ -59,7 +59,6 @@ positive_get_user_permissions_dataset = [
                         'team': None
                     },
                     {
-                        # TODO WHY ID=3?
                         "id": 3,
                         "permission": {
                             "id": 11,
@@ -67,7 +66,7 @@ positive_get_user_permissions_dataset = [
                             "app": {
                                 "id": 2,
                                 "name": "dummy",
-                                "enabled": False
+                                "enabled": True
                             }
                         },
                         "user": {
@@ -81,9 +80,32 @@ positive_get_user_permissions_dataset = [
             },
             'status': True}
     ),
+    (
+        {
+            "team_id": 1
+        },
+        {
+            'status_code': status.HTTP_200_OK,
+            'msg': 'Success',
+            'result':
+                {
+                    'total': 1, 'current': 1, 'size': 50, 'pages': 1,
+                    'items': [
+                        {
+                            'id': 2,
+                            'permission': {
+                                'id': 1, 'scope': 'core:sudo', 'app': {'id': 1, 'name': 'core', 'enabled': True}
+                            },
+                            'user': None,
+                            'team': {'id': 1, 'name': 'Superusers'},
+                        }
+                    ]
+                },
+            'status': True}
+    )
 ]
 
-negative_get_user_permissions_dataset = [
+negative_get_granted_permissions_dataset = [
     (
         {
             "user_id": 9999
@@ -101,23 +123,26 @@ negative_get_user_permissions_dataset = [
             "id": 1234
         },
         {
-            "msg": "RequestValidationError",
-            "result": [
-                {
-                    "type": "missing",
-                    "loc": ["query", "user_id"],
-                    "msg": "Field required",
-                    "input": None,
-                    "url": "https://errors.pydantic.dev/2.4/v/missing"
-                }
-            ],
-            "status": False,
-            "status_code": status.HTTP_422_UNPROCESSABLE_ENTITY
+            "status_code": 400,
+            "msg": "MISError",
+            "result": "Use only one filter",
+            "status": False
         }
     ),
+    (
+        {
+            "team_id": 9999
+        },
+        {
+            "msg": "NotFound",
+            "result": "Team not found",
+            "status": False,
+            "status_code": status.HTTP_404_NOT_FOUND
+        }
+    )
 ]
 
-positive_edit_user_permissions_dataset = [
+positive_edit_granted_permissions_dataset = [
     (
         {
             "user_id": 1,
@@ -134,10 +159,27 @@ positive_edit_user_permissions_dataset = [
             "msg": "Success",
             "result": {}
         }
+    ),
+(
+        {
+            "team_id": 1,
+        },
+        [
+            {
+                "permission_id": 11,
+                "granted": True
+            }
+        ],
+        {
+            "status": True,
+            "status_code": status.HTTP_200_OK,
+            "msg": "Success",
+            "result": {}
+        }
     )
 ]
 
-negative_edit_user_permissions_dataset = [
+negative_edit_granted_permissions_dataset = [
     (
         # Not exist team
         {
@@ -172,91 +214,7 @@ negative_edit_user_permissions_dataset = [
             "msg": "Success",
             "result": {}
         }
-    )
-]
-
-positive_get_team_permissions_dataset = [
-    (
-        {
-            "team_id": 1
-        },
-        {
-            'status_code': status.HTTP_200_OK,
-            'msg': 'Success',
-            'result':
-                {
-                    'total': 1, 'current': 1, 'size': 50, 'pages': 1,
-                    'items': [
-                        {
-                            'id': 2,
-                            'permission': {
-                                'id': 1, 'scope': 'core:sudo', 'app': {'id': 1, 'name': 'core', 'enabled': True}
-                            },
-                            'user': None,
-                            'team': {'id': 1, 'name': 'Superusers'},
-                        }
-                    ]
-                },
-            'status': True}
-    ),
-]
-
-negative_get_team_permissions_dataset = [
-    (
-        {
-            "team_id": 9999
-        },
-        {
-            "msg": "NotFound",
-            "result": "Team not found",
-            "status": False,
-            "status_code": status.HTTP_404_NOT_FOUND
-        }
-    ),
-    (
-        # wrong parameter name
-        {
-            "id": 1234
-        },
-        {
-            "msg": "RequestValidationError",
-            "result": [
-                {
-                    "type": "missing",
-                    "loc": ["query", "team_id"],
-                    "msg": "Field required",
-                    "input": None,
-                    "url": "https://errors.pydantic.dev/2.4/v/missing"
-                }
-            ],
-            "status": False,
-            "status_code": status.HTTP_422_UNPROCESSABLE_ENTITY
-        }
-    ),
-]
-
-positive_edit_team_permissions_dataset = [
-    (
-        {
-            "team_id": 1,
-        },
-        [
-            {
-                "permission_id": 11,
-                "granted": True
-            }
-        ],
-        {
-            "status": True,
-            "status_code": status.HTTP_200_OK,
-            "msg": "Success",
-            "result": {}
-        }
-    )
-]
-
-negative_edit_team_permissions_dataset = [
-    (
+    ),(
         # Not exist team
         {
             "team_id": 9999,
@@ -294,7 +252,5 @@ negative_edit_team_permissions_dataset = [
 ]
 
 get_permissions_dataset = positive_get_permissions_dataset + negative_get_permissions_dataset
-get_user_permissions_dataset = positive_get_user_permissions_dataset + negative_get_user_permissions_dataset
-edit_user_permissions_dataset = positive_edit_user_permissions_dataset + negative_edit_user_permissions_dataset
-get_team_permissions_dataset = positive_get_team_permissions_dataset + negative_get_team_permissions_dataset
-edit_team_permissions_dataset = positive_edit_team_permissions_dataset + negative_edit_team_permissions_dataset
+get_granted_permissions_dataset = positive_get_granted_permissions_dataset + negative_get_granted_permissions_dataset
+edit_granted_permissions_dataset = positive_edit_granted_permissions_dataset + negative_edit_granted_permissions_dataset

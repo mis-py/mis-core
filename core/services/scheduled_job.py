@@ -49,7 +49,7 @@ class ScheduledJobService(BaseService):
             user: User,
             team: Team = None,
     ) -> ScheduledJob:
-        [module_name, task_name] = job_in.task_id.split(':', 1)
+        [module_name, task_name] = job_in.task_name.split(':', 1)
 
         if not module_name or not task_name:
             raise MISError("Wrong task string specified for creating job. Must be in format 'module_name:task_name'")

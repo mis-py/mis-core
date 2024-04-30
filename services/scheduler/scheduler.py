@@ -74,7 +74,7 @@ class SchedulerService:
         if f"{module_name}:{task_name}" in cls._tasks:
             return cls._tasks[f"{module_name}:{task_name}"]
         else:
-            raise NotFound(f"Task ID '{task_name}' not exist")
+            raise NotFound(f"Task '{module_name}:{task_name}' not exist")
 
     # TODO what it must return?
     @classmethod

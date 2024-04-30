@@ -18,7 +18,7 @@ async def get_user_by_id(uow: UnitOfWorkDep, user_id: int):
 
 
 async def get_team_by_id(uow: UnitOfWorkDep, team_id: int):
-    team = await TeamService(uow).get(id=team_id)
+    team = await TeamService(uow).get(id=team_id, prefetch_related=['users'])
     if not team:
         raise NotFound('Team not found')
     return team

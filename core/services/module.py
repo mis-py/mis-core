@@ -49,7 +49,7 @@ class ModuleUOWService(BaseService):
 
     async def create_core(self, name: str):
         """Create core app as enabled and already running"""
-        await self.uow.module_repo.create(data={
+        return await self.uow.module_repo.create(data={
             'name': name,
             'enabled': True,
             'state': Module.AppState.RUNNING,

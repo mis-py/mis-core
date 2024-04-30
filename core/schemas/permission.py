@@ -2,13 +2,13 @@ from typing import Optional
 from pydantic import BaseModel
 
 from core.schemas.common import UserModelShort, TeamModelShort
-from core.schemas.module import ModuleResponse
+from core.schemas.module import ModuleShortResponse
 
 
 class PermissionResponse(BaseModel):
     id: int
     scope: str
-    app: ModuleResponse
+    app: ModuleShortResponse
 
 
 class GrantedPermissionResponse(BaseModel):
