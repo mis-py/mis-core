@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Security, Depends
 
 from core.db.guardian import GuardianAccessGroup
-from core.dependencies import get_current_user
-from core.dependencies.guardian import get_group_by_id
-from core.dependencies.misc import UnitOfWorkDep, PaginateParamsDep
+from core.dependencies.security import get_current_user
+from core.dependencies.path import get_group_by_id
+from core.dependencies.misc import PaginateParamsDep
+from core.dependencies.uow import UnitOfWorkDep
 from core.schemas.guardian import AccessGroupResponse, ContentTypeResponse, PermissionResponse, \
     UserPermDetailResponse, GroupPermDetailResponse, AccessGroupCreate, AccessGroupUpdate, \
     UserPermCreate, GroupPermCreate, UserPermResponse, GroupPermResponse

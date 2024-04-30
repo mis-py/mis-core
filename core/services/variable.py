@@ -33,3 +33,38 @@ class VariableService(BaseService):
             raise ValidationFailed(
                 f"Can't convert value '{variable.new_value}' to '{variable_obj.type}' for Variable with ID '{variable.setting_id}'",
             )
+
+    async def get_or_create(
+            self,
+            module_id: int,
+            key: str,
+            default_value: str | int | float,
+            is_global: bool,
+            type: str
+    ):
+        return await self.uow.variable_repo.get_or_create(
+            module_id=module_id,
+            key=key,
+            default_value=default_value,
+            is_global=is_global,
+            type=type,
+        )
+    async def update_params(self, variable: Variable, default_value, is_global: bool, type: str):
+        """Update params if old params not equal old params"""
+        if (variable.default_value != default_value
+                or variable.is_global != is_global
+                or variable.type != type):
+            await self.uow.variable_repo.update(
+                id=variable.pk,
+                data={
+                    'default_value': default_value,
+                    'is_global': is_global,
+                    'type': type,
+                },
+            )
+        return variable
+
+    async def delete_unused(self, module_id: int, exist_keys: list[str]) -> int:
+        """Remove unused variables for app"""
+        return await self.uow.variable_repo.delete_unused(module_id=module_id, exist_keys=exist_keys)
+

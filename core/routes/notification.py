@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Security, Depends
 
 from core.db.models import User, RoutingKey
-from core.dependencies.misc import UnitOfWorkDep, PaginateParamsDep
+from core.dependencies.misc import PaginateParamsDep
+from core.dependencies.uow import UnitOfWorkDep
 from core.dependencies.path import get_routing_key_by_id
 from core.dependencies.security import get_current_user
+from core.repositories.routing_key import RoutingKeyRepository
 from core.services.notification import RoutingKeySubscriptionService, \
     RoutingKeyService
 from core.schemas.notification import RoutingKeyResponse, RoutingKeyUpdate
@@ -11,7 +13,6 @@ from core.utils.notification.utils import routing_key_to_dict
 from core.utils.schema import MisResponse, PageResponse
 from services.redis import RedisService
 
-from core.crud.notification import routing_key
 
 router = APIRouter()
 
@@ -91,8 +92,12 @@ async def remove_my_subscribe(
     dependencies=[Security(get_current_user, scopes=['core:sudo'])],
     response_model=MisResponse[RoutingKeyResponse]
 )
-async def edit_notification(data: RoutingKeyUpdate, rk: RoutingKey = Depends(get_routing_key_by_id)):
-    await routing_key.update(rk, data)
+async def edit_notification(
+        uow: UnitOfWorkDep,
+        data: RoutingKeyUpdate,
+        rk: RoutingKey = Depends(get_routing_key_by_id),
+):
+    await RoutingKeyRepository(uow).update(id=rk.pk, data=data.model_dump())
 
     # set/update value in cache
     await RedisService.cache.set_json(

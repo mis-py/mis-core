@@ -5,8 +5,8 @@ from loguru import logger
 from fastapi import APIRouter, Depends, Security
 
 from core.db.models import User
-from core.dependencies import get_current_user
-from core.dependencies.misc import UnitOfWorkDep
+from core.dependencies.security import get_current_user
+from core.dependencies.uow import UnitOfWorkDep
 from core.exceptions import NotFound, MISError
 from core.services.scheduled_job import ScheduledJobService
 

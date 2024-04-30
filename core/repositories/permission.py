@@ -1,11 +1,14 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 
 from core.repositories.base.repository import TortoiseORMRepository, IRepository
 
 
 class IPermissionRepository(IRepository, ABC):
-    pass
+    @abstractmethod
+    async def delete_unused(self, **kwargs):
+        raise NotImplementedError
 
 
 class PermissionRepository(TortoiseORMRepository, IPermissionRepository):
-    pass
+    async def delete_unused(self, module_id: int, exist_ids: list[int]):
+        return await self.model.filter(app_id=module_id).exclude(id__in=exist_ids).delete()

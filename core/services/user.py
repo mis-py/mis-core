@@ -1,9 +1,10 @@
 from core.auth_backend import set_password
 from core.db.models import User
-from core.exceptions import ValidationFailed, MISError
+from core.exceptions import ValidationFailed, MISError, TokenError
 from core.schemas.user import UserCreate, UserUpdate
 from core.services.base.base_service import BaseService
 from core.services.base.unit_of_work import IUnitOfWork
+from core.utils.notification.recipient import Recipient
 from services.variables.utils import type_convert
 
 
@@ -57,3 +58,27 @@ class UserService(BaseService):
         if 'id' in filters and filters['id'] == 1:
             raise MISError("User with id '1' can't be deleted")
         await self.repo.delete(**filters)
+
+    async def users_who_receive_message(
+            self,
+            routing_key: str,
+            is_force_send: bool,
+            recipient: Recipient,
+    ):
+        if not recipient and not is_force_send:
+            return await self.uow.user_repo.filter_by_subscription(routing_key=routing_key)
+
+        if is_force_send and not recipient:
+            return await self.uow.user_repo.filter()
+
+        if recipient.type == Recipient.Type.USER:
+            query = await self.uow.user_repo.filter_queryable(id=recipient.user_id)
+        elif recipient.type == Recipient.Type.TEAM:
+            query = await self.uow.user_repo.filter_queryable(team_id=recipient.team_id)
+        else:
+            raise Exception(f'Recipient type {recipient.type} not exist or not implement')
+
+        if is_force_send and recipient:
+            return await query
+
+        return await self.uow.user_repo.filter_by_subscription(routing_key=routing_key, query=query)

@@ -15,7 +15,6 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from core.db.models import ScheduledJob
 from core.utils.common import validate_task_extra
-from core.crud import job
 
 from core.exceptions import NotFound, AlreadyExists, ValidationFailed, MISError
 from core.utils.task import get_trigger
@@ -134,7 +133,7 @@ class SchedulerService:
     @classmethod
     async def restore_job(cls, saved_job: ScheduledJob, module, run_at_startup) -> Job | None:
         # get declared task from saved job
-        task = cls.get_task(saved_job.task_name)
+        task = cls.get_task(f"{module.name}:{saved_job.task_name}")
 
         # use trigger from saved job or get default one
         trigger = get_trigger(saved_job.trigger['data'])
