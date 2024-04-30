@@ -107,13 +107,11 @@ class BaseModule:
         for component in self.components:
             component.bind(self)
 
-        await self._set_state(Module.AppState.PRE_INITIALIZED)
-
         return True
 
-    async def init(self, application) -> bool:
-        if self._model.state != Module.AppState.PRE_INITIALIZED:
-            raise MISError("Can not init module that is not in 'PRE_INITIALIZED' state")
+    async def init(self, application, from_system=False) -> bool:
+        if not from_system and self._model.state not in [Module.AppState.SHUTDOWN, Module.AppState.PRE_INITIALIZED, Module.AppState.ERROR]:
+            raise MISError("Can not init module that is not in 'SHUTDOWN' or 'PRE_INITIALIZED' or 'ERROR' state")
 
         try:
             for component in self.components:
@@ -124,7 +122,9 @@ class BaseModule:
             if self.init_event:
                 await self.init_event(self)
 
-            await self._set_state(Module.AppState.INITIALIZED)
+            # not change state if it is system call
+            if not from_system:
+                await self._set_state(Module.AppState.INITIALIZED)
 
             return True
 
@@ -136,11 +136,11 @@ class BaseModule:
 
         return False
 
-    async def start(self) -> bool:
+    async def start(self, from_system=False) -> bool:
         if self._model.state == Module.AppState.ERROR:
             raise MISError("Can not start module that is in 'ERROR' state")
-        if self._model.state != Module.AppState.INITIALIZED:
-            raise MISError("Can not start module that not in 'INITIALIZED' state ")
+        if not from_system and self._model.state not in [Module.AppState.STOPPED, Module.AppState.INITIALIZED]:
+            raise MISError("Can not start module that not in 'STOPPED' or 'INITIALIZED' state ")
 
         try:
             for component in self.components:
@@ -151,7 +151,9 @@ class BaseModule:
             if self.start_event:
                 await self.start_event(self)
 
-            await self._set_state(Module.AppState.RUNNING)
+            # not change state if it is system call
+            if not from_system:
+                await self._set_state(Module.AppState.RUNNING)
 
             return True
 
@@ -163,10 +165,10 @@ class BaseModule:
 
         return False
 
-    async def stop(self) -> bool:
+    async def stop(self, from_system=False) -> bool:
         if self._model.state == Module.AppState.ERROR:
             raise MISError("Can not stop module that is in 'ERROR' state")
-        if self._model.state != Module.AppState.RUNNING:
+        if not from_system and self._model.state != Module.AppState.RUNNING:
             raise MISError("Can not stop module that not in 'RUNNING' state ")
 
         for component in self.components:
@@ -176,15 +178,17 @@ class BaseModule:
         if self.stop_event:
             await self.stop_event(self)
 
-        await self._set_state(Module.AppState.STOPPED)
+        # not change state if it is system call
+        if not from_system:
+            await self._set_state(Module.AppState.STOPPED)
 
         return True
 
-    async def shutdown(self) -> bool:
+    async def shutdown(self, from_system=False) -> bool:
         if self._model.state == Module.AppState.ERROR:
             raise MISError("Can not shutdown module that is in 'ERROR' state")
-        if self._model.state not in [Module.AppState.STOPPED, Module.AppState.INITIALIZED, Module.AppState.PRE_INITIALIZED]:
-            raise MISError("Can not shutdown module that not in ['STOPPED', 'INITIALIZED', 'PRE_INITIALIZED'] state")
+        if not from_system and self._model.state not in [Module.AppState.STOPPED, Module.AppState.INITIALIZED, Module.AppState.PRE_INITIALIZED]:
+            raise MISError("Can not shutdown module that not in 'STOPPED', 'INITIALIZED', 'PRE_INITIALIZED' state")
 
         for component in self.components:
             await component.shutdown()
@@ -193,7 +197,9 @@ class BaseModule:
         if self.shutdown_event:
             await self.shutdown_event(self)
 
-        await self._set_state(Module.AppState.SHUTDOWN)
+        # not change state if it is system call
+        if not from_system:
+            await self._set_state(Module.AppState.SHUTDOWN)
 
         return True
 

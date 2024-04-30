@@ -162,7 +162,7 @@ class ScheduledTasks(Component):
         # register in SchedulerService all declared tasks and provide module for them
         for task in self._tasks:
             task.module = self.module
-            SchedulerService.add_task(task, self.module)
+            SchedulerService.add_task(task, self.module.name)
 
         logger.debug(f"[{self.module.name}] Added scheduled tasks ")
 

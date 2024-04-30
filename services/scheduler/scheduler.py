@@ -65,15 +65,15 @@ class SchedulerService:
         cls._scheduler.shutdown()
 
     @classmethod
-    def add_task(cls, task: Task, module):
-        if f"{module.name}:{task.name}" in cls._tasks:
-            logger.warning(f"[ModuleService] Task already registered: {module.name}:{task.name}")
-        cls._tasks[f"{module.name}:{task.name}"] = task
+    def add_task(cls, task: Task, module_name: str):
+        if f"{module_name}:{task.name}" in cls._tasks:
+            logger.warning(f"[ModuleService] Task already registered: {module_name}:{task.name}")
+        cls._tasks[f"{module_name}:{task.name}"] = task
 
     @classmethod
-    def get_task(cls, task_name: str) -> Task | None:
-        if task_name in cls._tasks:
-            return cls._tasks[task_name]
+    def get_task(cls, task_name: str, module_name: str) -> Task | None:
+        if f"{module_name}:{task_name}" in cls._tasks:
+            return cls._tasks[f"{module_name}:{task_name}"]
         else:
             raise NotFound(f"Task ID '{task_name}' not exist")
 
@@ -134,7 +134,7 @@ class SchedulerService:
     @classmethod
     async def restore_job(cls, saved_job: ScheduledJob, module, run_at_startup) -> Job | None:
         # get declared task from saved job
-        task = cls.get_task(saved_job.task_name)
+        task = cls.get_task(saved_job.task_name, module.name)
 
         # use trigger from saved job or get default one
         trigger = get_trigger(saved_job.trigger['data'])
@@ -159,8 +159,8 @@ class SchedulerService:
         return job
 
     @classmethod
-    async def add_job(cls, task_id: str, user, db_id: int, extra: dict = None, trigger=None) -> Job:
-        task: Task = cls.get_task(task_id)
+    async def add_job(cls, task_name: str, module_name:str, user, db_id: int, extra: dict = None, trigger=None) -> Job:
+        task: Task = cls.get_task(task_name, module_name)
 
         if task.trigger is None and trigger is None:
             raise ValidationFailed(f"Argument 'trigger' required for this task!")

@@ -18,11 +18,15 @@ async def get_current_user(
         token: str = Depends(oauth2_scheme)
 ):
     if not settings.AUTHORIZATION_ENABLED:
-        return await crud.user.get(id=1)
+        return await crud.user.get(username='admin')
 
     if token:
         user = await user_form_token(token)
         await check_user_perm(user, security_scopes.scopes)
+
+        if user.disabled:
+            raise AuthError('User disabled')
+
         return user
 
     host = ipaddress.ip_address(x_real_ip or request.client.host)

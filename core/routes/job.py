@@ -176,7 +176,7 @@ async def reschedule_job(
 
     job_response = JobResponse(
         job_id=job_db.pk,
-        name=job_db.task_name,
+        name=job_db.task_id,
         status=job_db.status,
         app_id=job_db.app.pk,
         user_id=job_db.user.pk if job_db.user else None,

@@ -30,7 +30,7 @@ router = APIRouter()
 
 
 @router.get(
-    '/global',
+    '/',
     dependencies=[Security(get_current_user, scopes=['core:sudo'])],
     response_model=PageResponse[VariableResponse]
 )
@@ -43,13 +43,13 @@ async def get_global_variables(
         await get_module_by_id(module_id)
 
     return await VariableService(uow).filter_and_paginate(
-        is_global=is_global,
+        # is_global=is_global,
         app_id=module_id
     )
 
 
 @router.get(
-    '/local',
+    '/values',
     dependencies=[Security(get_current_user, scopes=['core:sudo'])],
     response_model=PageResponse[VariableValueResponse],
     description="Returns all available variables by specified filter criteria"
@@ -59,9 +59,6 @@ async def get_local_variables(
         team_id: int = Query(default=None),
         user_id: int = Query(default=None),
 ):
-    if sum(1 for x in [team_id, user_id] if x) != 1:
-        raise MISError("Use only one filter")
-
     if team_id is not None:
         await get_team_by_id(team_id)
 
@@ -76,7 +73,7 @@ async def get_local_variables(
 
 
 @router.put(
-    '/global',
+    '/',
     dependencies=[Security(get_current_user, scopes=['core:sudo'])],
     response_model=MisResponse
 )
@@ -98,7 +95,7 @@ async def set_global_variables(
 
 
 @router.put(
-    '/local',
+    '/values',
     dependencies=[Security(get_current_user, scopes=['core:sudo'])],
     response_model=MisResponse
 )

@@ -75,9 +75,10 @@ async def create_user(uow: UnitOfWorkDep, user_in: UserCreate):
     if user:
         raise AlreadyExists(f"User with username '{user_in.username}' already exists")
 
-    team = await TeamService(uow).get(id=user_in.team_id)
-    if not team:
-        raise NotFound(f"Team id '{user_in.team_id}' not exist")
+    if user_in.team_id:
+        team = await TeamService(uow).get(id=user_in.team_id)
+        if not team:
+            raise NotFound(f"Team id '{user_in.team_id}' not exist")
 
     new_user = await UserService(uow).create_with_pass(user_in)
     new_user_with_related = await UserService(uow).get(

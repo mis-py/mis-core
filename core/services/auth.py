@@ -14,8 +14,11 @@ class AuthService:
     async def authenticate(self, form_data: OAuth2PasswordRequestForm) -> AccessToken:
         user = await self.uow.user_repo.get(username=form_data.username)
 
-        if not user or not verify_password(form_data.password, user.hashed_password):
-            raise AuthError("Incorrect username or password")
+        if not user:
+            raise AuthError("Incorrect username")
+
+        if not verify_password(form_data.password, user.hashed_password):
+            raise AuthError("Incorrect password")
 
         # set status signed_in True
         await self.uow.user_repo.update(id=user.pk, data={'signed_in': True})

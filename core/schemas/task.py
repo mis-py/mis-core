@@ -46,7 +46,7 @@ class JobResponse(JobTrigger):
 
 
 class JobCreate(JobTrigger):
-    task_name: str
+    task_id: str
     extra: Optional[dict] = None
     type: Literal["user", "team"]
 

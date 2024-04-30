@@ -18,5 +18,5 @@ class VariableValueResponse(MisModel):
     id: int
     value: str
     setting_id: int
-    team_id: int
-    user_id: int
+    # team_id: int
+    # user_id: int

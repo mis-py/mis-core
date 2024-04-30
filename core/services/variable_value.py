@@ -49,6 +49,6 @@ class VariableValueService(BaseService):
 
         if variable_obj.is_global:
             raise ValidationFailed(
-                f"Can't set global VariableValue with ID '{variable.pk}' as local setting for user",
+                f"Can't set global VariableValue with ID '{variable.setting_id}' as local setting for user",
             )
 

@@ -1,7 +1,7 @@
 import loguru
 
 from core.db.models import ScheduledJob, User, Team, Module
-from core.exceptions import NotFound, AlreadyExists
+from core.exceptions import NotFound, AlreadyExists, MISError
 from core.schemas.task import JobCreate, JobTrigger
 from core.services.base.base_service import BaseService
 from core.services.base.unit_of_work import IUnitOfWork
@@ -49,8 +49,13 @@ class ScheduledJobService(BaseService):
             user: User,
             team: Team = None,
     ) -> ScheduledJob:
-        # here can be problem place coz task_name it is module.name + task.name
-        task = SchedulerService.get_task(job_in.task_name)
+        [module_name, task_name] = job_in.task_id.split(':', 1)
+
+        if not module_name or not task_name:
+            raise MISError("Wrong task string specified for creating job. Must be in format 'module_name:task_name'")
+
+        task = SchedulerService.get_task(task_name, module_name)
+
 
         # trigger logic: if specified in request - use trigger in request
         # otherwise use trigger defined by task
@@ -65,7 +70,7 @@ class ScheduledJobService(BaseService):
 
         if task.single_instance:
             scheduled_job = await self.uow.scheduled_job_repo.get(
-                task_name=task_name, app=module.model, user=user, team=team
+                task_name=task_name, app=module._model, user=user, team=team
             )
             if scheduled_job:
                 raise AlreadyExists("Scheduled job already exists")
@@ -74,7 +79,7 @@ class ScheduledJobService(BaseService):
             job_db: ScheduledJob = ScheduledJob(
                 user=user,
                 team=team,
-                app=module.model,
+                app=module._model,
                 task_name=task_name,
                 status=ScheduledJob.StatusTask.RUNNING if task.autostart else ScheduledJob.StatusTask.PAUSED,
                 extra_data=job_in.extra,
@@ -83,7 +88,8 @@ class ScheduledJobService(BaseService):
             await self.uow.scheduled_job_repo.save(obj=job_db)
 
             job_instance = await SchedulerService.add_job(
-                task_id=job_in.task_name,
+                task_name=task_name,
+                module_name=module_name,
                 db_id=job_db.pk,
                 user=user,
                 extra=job_in.extra,
@@ -97,7 +103,7 @@ class ScheduledJobService(BaseService):
             job: ScheduledJob = await self.get(id=job_id, prefetch_related=['app'])
             module: Module = await self.uow.module_repo.get(id=job.app.pk)
 
-            task = SchedulerService.get_task(f"{module.name}:{job.task_name}")
+            task = SchedulerService.get_task(job.task_name, module.name)
 
             trigger = get_trigger(schedule_in.trigger)
             if not trigger and task.trigger:
@@ -144,4 +150,4 @@ class ScheduledJobService(BaseService):
         async with self.uow:
             await SchedulerService.remove_job(job_id)
 
-            await self.uow.scheduled_job_repo.delete(job_id=job_id)
+            await self.uow.scheduled_job_repo.delete(id=job_id)

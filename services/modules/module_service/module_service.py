@@ -96,6 +96,8 @@ class ModuleService:
         module_uow_service = ModuleUOWService(unit_of_work_factory())
         for module_name, module in cls._loaded_modules.items():
             module_model, is_created = await module_uow_service.get_or_create(name=module_name)
+            if is_created:
+                module_model.state = Module.AppState.PRE_INITIALIZED
             logger.debug(f"[ModuleService] Module: {module.name} DB instance received")
             await module.bind_model(module_model, is_created)
             logger.debug(f"[ModuleService] Module: {module.name} DB instance binded")
@@ -109,9 +111,13 @@ class ModuleService:
         module_uow_service = ModuleUOWService(unit_of_work_factory())
         for module_name, module in cls._loaded_modules.items():
             if module.is_enabled():
-                await cls.init_module(application, module.name, module_uow_service)
-                logger.debug(f'[ModuleService] Module: {module.name} auto-start is enabled starting...')
-                await cls.start_module(module.name, module_uow_service)
+                try:
+                    await cls.init_module(application, module.name, module_uow_service, from_system=True)
+                    logger.debug(f'[ModuleService] Module: {module.name} auto-start is enabled starting...')
+                    await cls.start_module(module.name, module_uow_service, from_system=True)
+                except Exception as e:
+                    logger.error(f'[ModuleService] Module: {module.name} system init failed, skip...')
+                    continue
 
         # need for start consumer for core websocket sender
         # await cls._restart_core_consumer()
@@ -125,12 +131,12 @@ class ModuleService:
         """
         module_uow_service = ModuleUOWService(unit_of_work_factory())
         for module_name, module in cls._loaded_modules.copy().items():
-            if module.is_enabled() and module.get_state() == Module.AppState.RUNNING:
-                await cls.stop_module(module_name, module_uow_service)
-            await cls.shutdown_module(module_name, module_uow_service)
+            if module.is_enabled():
+                await cls.stop_module(module_name, module_uow_service, from_system=True)
+            await cls.shutdown_module(module_name, module_uow_service, from_system=True)
 
     @classmethod
-    async def init_module(cls, application, module_name: str, module_uow_service: ModuleUOWService) -> GenericModule:
+    async def init_module(cls, application, module_name: str, module_uow_service: ModuleUOWService, from_system=False) -> GenericModule:
 
         # except ModuleNotFoundError as e:
         #     logger.exception(e)
@@ -148,20 +154,22 @@ class ModuleService:
         module = cls._get_module(module_name)
         logger.debug(f'[ModuleService] Module: {module_name} init started!')
 
-        init_result = await module.init(application)
+        init_result = await module.init(application, from_system)
         logger.debug(f'[ModuleService] Module: {module_name} init finished!')
 
         return module
 
     @classmethod
-    async def start_module(cls, module_name: str, uow_service: ModuleUOWService) -> GenericModule:
+    async def start_module(cls, module_name: str, uow_service: ModuleUOWService, from_system=False) -> GenericModule:
         module = cls._get_module(module_name)
 
-        await module.start()
+        await module.start(from_system)
 
-        new_model = await uow_service.set_enabled(module_id=module.get_id())
-        # rebind new model to module after update
-        await module.bind_model(new_model, False)
+        if not from_system:
+            # if call come not from system then we can change it state in DB
+            new_model = await uow_service.set_enabled(module_id=module.get_id())
+            # rebind new model to module after update
+            await module.bind_model(new_model, False)
 
         logger.debug(f'[ModuleService] Module: {module.name} started!')
 
@@ -171,14 +179,16 @@ class ModuleService:
         return module
 
     @classmethod
-    async def stop_module(cls, module_name: str, module_uow_service: ModuleUOWService) -> GenericModule:
+    async def stop_module(cls, module_name: str, module_uow_service: ModuleUOWService, from_system=False) -> GenericModule:
         module = cls._get_module(module_name)
 
-        await module.stop()
+        await module.stop(from_system)
 
-        new_model = await module_uow_service.set_disabled(module_id=module.get_id())
-        # rebind new model to module after update
-        await module.bind_model(new_model, False)
+        if not from_system:
+            # if call come not from system then we can change it state in DB
+            new_model = await module_uow_service.set_disabled(module_id=module.get_id())
+            # rebind new model to module after update
+            await module.bind_model(new_model, False)
 
         logger.debug(f"[ModuleService] Module: {module.name} stopped")
 
@@ -188,11 +198,15 @@ class ModuleService:
         return module
 
     @classmethod
-    async def shutdown_module(cls, module_name: str, module_uow_service: ModuleUOWService):
+    async def shutdown_module(cls, module_name: str, module_uow_service: ModuleUOWService, from_system=False):
         module = cls._get_module(module_name)
-        await module.shutdown()
-        unload_module(module.name)
-        del cls._loaded_modules[module_name]
+        await module.shutdown(from_system)
+
+        if from_system:
+            # correctly unload and delete module from system call
+            unload_module(module.name)
+            del cls._loaded_modules[module_name]
+
         logger.debug(f"[ModuleService] Module: {module.name} shutdown complete")
 
     # @classmethod

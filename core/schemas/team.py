@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from core.schemas.common import UserModelShort
 from core.schemas.variable import VariableValueResponse
@@ -13,7 +13,7 @@ class TeamCreate(BaseModel):
 
 
 class TeamUpdate(BaseModel):
-    name: str
+    name: Optional[str] = Field(None, max_length=20, min_length=3)
     permissions: Optional[list[str]] = []
     users_ids: Optional[list[int]] = []
     variables: Optional[list[VariableValueResponse]] = []
