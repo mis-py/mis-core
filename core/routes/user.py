@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Annotated
 
 import loguru
 from fastapi import Security, APIRouter, Depends
@@ -22,7 +22,7 @@ router = APIRouter()
 )
 async def get_users(
         uow: UnitOfWorkDep,
-        team_id: Optional[int] = None,
+        team_id: int = None,
 ):
     if team_id is not None:
         await get_team_by_id(uow=uow, team_id=team_id)

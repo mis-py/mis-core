@@ -37,6 +37,7 @@ async def get_routing_key_by_id(uow: UnitOfWorkDep, key_id: int):
         raise NotFound('RoutingKey not found')
     return rk
 
+
 async def get_group_by_id(uow: UnitOfWorkDep, group_id: int = Query()):
     group = await GAccessGroupService(uow).get(id=group_id)
     if not group:

@@ -75,7 +75,6 @@ class IUnitOfWork(ABC):
 
 class TortoiseUnitOfWork(IUnitOfWork):
     def __init__(self):
-        self._in_transaction = in_transaction()
         self.user_repo = UserRepository(model=User)
         self.team_repo = TeamRepository(model=Team)
         self.variable_repo = VariableRepository(model=Variable)
@@ -93,6 +92,7 @@ class TortoiseUnitOfWork(IUnitOfWork):
         self.g_group_permission_repo = GGroupPermissionRepository(model=GuardianGroupPermission)
 
     async def __aenter__(self):
+        self._in_transaction = in_transaction()
         await self._in_transaction.__aenter__()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):

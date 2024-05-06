@@ -56,6 +56,7 @@ async def init_core_routes(app):
 
 async def pre_init_db():
     await TortoiseManager.pre_init()
+    logger.success("Tortoise-ORM pre-init finished")
 
 
 async def init_db(app, generate_schemas=True, add_exception_handlers=True):

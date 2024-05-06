@@ -198,6 +198,7 @@ async def catch_exceptions_middleware(request: Request, call_next):
             ).model_dump(),
         )
 
+app.middleware('http')(catch_exceptions_middleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -205,7 +206,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.middleware('http')(catch_exceptions_middleware)
 # app.add_middleware(PyInstrumentProfilerMiddleware)
 # app.add_middleware(BaseHTTPMiddleware, dispatch=analyze)
 app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)

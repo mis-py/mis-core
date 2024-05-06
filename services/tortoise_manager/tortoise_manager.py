@@ -11,38 +11,53 @@ settings = TortoiseSettings()
 
 
 class TortoiseManager:
-    _tortiose_orm: dict = {
-        "connections": {
-            "default": (
-                f"postgres://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}"
-                f"@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
-                if all((
-                    settings.POSTGRES_USER,
-                    settings.POSTGRES_PASSWORD,
-                    settings.POSTGRES_HOST,
-                    settings.POSTGRES_PORT,
-                    settings.POSTGRES_DB
-                )) else
-                "sqlite://db.sqlite3"
-            )
-        },
-        "apps": {
-            # models is module name
-            "models": {
-                "models": ["core.db.models", "core.db.mixin", "core.db.guardian"],
-                "default_connection": "default",
-            },
-        },
-        "timezone": TIMEZONE,
-    }
+    _db_url = (
+        f"postgres://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}"
+        f"@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
+        if all((
+            settings.POSTGRES_USER,
+            settings.POSTGRES_PASSWORD,
+            settings.POSTGRES_HOST,
+            settings.POSTGRES_PORT,
+            settings.POSTGRES_DB
+        )) else
+        "sqlite://db.sqlite3"
+    )
+    _modules = {"core": ["core.db.models", "core.db.mixin", "core.db.guardian"]}
+    # _tortiose_orm: dict = {
+    #     "connections": {
+    #         "default": (
+    #             f"postgres://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}"
+    #             f"@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
+    #             if all((
+    #                 settings.POSTGRES_USER,
+    #                 settings.POSTGRES_PASSWORD,
+    #                 settings.POSTGRES_HOST,
+    #                 settings.POSTGRES_PORT,
+    #                 settings.POSTGRES_DB
+    #             )) else
+    #             "sqlite://db.sqlite3"
+    #         )
+    #     },
+    #     "apps": {
+    #         # models is module name
+    #         # "core": {
+    #         #     "models": ["core.db.models", "core.db.mixin", "core.db.guardian"],
+    #         #     "default_connection": "default",
+    #         # },
+    #         "core": ["core.db.models", "core.db.mixin", "core.db.guardian"],
+    #     },
+    #     "timezone": TIMEZONE,
+    # }
     _migrations_to_apply: list = [str(BASE_DIR / "core" / "migrations")]
 
     @classmethod
     async def add_models(cls, app: str, models: list[str]):
-        cls._tortiose_orm['apps'][app] = dict(
-            models=models,
-            default_connection="default"
-        )
+        # cls._tortiose_orm['apps'][app] = dict(
+        #     models=models,
+        #     default_connection="default"
+        # )
+        cls._modules[app] = models
 
     @classmethod
     async def add_migrations(cls, path):
@@ -50,11 +65,18 @@ class TortoiseManager:
 
     @classmethod
     async def pre_init(cls):
-        Tortoise.init_models(cls._tortiose_orm['apps']['models']['models'], 'models')
+        for label, models in cls._modules.items():
+            Tortoise.init_models(models, label)
 
     @classmethod
     async def init(cls, app, generate_schemas, add_exception_handlers):
-        await Tortoise.init(config=cls._tortiose_orm, _create_db=settings.POSTGRES_CREATE_DB)
+        # await Tortoise.init(config=cls._tortiose_orm, _create_db=settings.POSTGRES_CREATE_DB)
+        await Tortoise.init(
+            db_url=cls._db_url,
+            modules=cls._modules,
+            timezone=TIMEZONE,
+            _create_db=settings.POSTGRES_CREATE_DB
+        )
 
         # TODO it should run only once on empty database, maybe out of MIS code
         if generate_schemas:
@@ -77,7 +99,8 @@ class TortoiseManager:
 
     @classmethod
     async def init_migrations(cls):
-        backend = get_backend(cls._tortiose_orm["connections"]["default"])
+        # backend = get_backend(cls._tortiose_orm["connections"]["default"])
+        backend = get_backend(cls._db_url)
         migrations = read_migrations(*cls._migrations_to_apply)
 
         try:

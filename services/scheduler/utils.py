@@ -1,10 +1,33 @@
 from dataclasses import dataclass
-from typing import Callable, Literal
-
+from typing import Callable, Literal, Coroutine, AsyncGenerator
+from functools import wraps
+from loguru import logger
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 
 from services.modules.utils import GenericModule
+
+
+def job_wrapper(func):
+    @wraps(func)
+    async def inner(*args, **kwargs):
+        obj_to_call = func(*args, **kwargs)
+
+        if isinstance(obj_to_call, Coroutine):
+            await obj_to_call
+        elif isinstance(obj_to_call, AsyncGenerator):
+            async for payload in obj_to_call:
+                logger.debug(payload)
+                # TODO extend logic here
+                # await Eventory.publish(
+                #     Message(
+                #         body={"dummy_setting": ctx.settings.PRIVATE_SETTING},
+                #     ),
+                #     routing_keys.DUMMY_EVENT,
+                #     ctx.app_name
+                # )
+
+    return inner
 
 
 @dataclass

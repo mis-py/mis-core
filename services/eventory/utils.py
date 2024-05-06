@@ -12,3 +12,9 @@ class CustomIncomingMessage(AbstractIncomingMessage, ABC):
 class EventTemplate:
     func: Callable
     route_key: str
+
+
+class RoutingKeysSet:
+    def __init__(self, routing_keys):
+        for routing_key in routing_keys:
+            self.__setattr__(routing_key.key, routing_key.name)

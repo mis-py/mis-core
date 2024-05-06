@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Request
-from loguru import logger
+from core.utils.schema import MisResponse
 
 
 from ..db import DummyModel, DummyModelSchema, DummyListModelSchema
@@ -7,9 +7,8 @@ from ..db import DummyModel, DummyModelSchema, DummyListModelSchema
 from .schemas import DummyResponse
 
 from core.schemas.common import UserModelShort
-from core.dependencies.variables import get_settings_proxy
-from services.modules.components import APIRoutes
-from services.variables.variables import VariableSet
+from core.dependencies.variables import VariablesDep
+
 router = APIRouter()
 
 
@@ -27,7 +26,7 @@ async def create_new(new_string: str):
 @router.get('/get_dummy_data', response_model=DummyResponse)
 async def get_dummy_data(
         request: Request,
-        settings_proxy: VariableSet = Depends(get_settings_proxy)
+        variables: VariablesDep
 ):
 
     schema = await DummyListModelSchema.from_queryset(DummyModel.all())
@@ -35,9 +34,8 @@ async def get_dummy_data(
     response = DummyResponse(
         current_user=await UserModelShort.from_tortoise_orm(request.state.current_user),
         test_data=schema.model_dump(),
-        setting=settings_proxy.PRIVATE_SETTING
+        setting=variables.PRIVATE_SETTING
     )
     return response
 
 
-routes = APIRoutes(router)

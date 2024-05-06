@@ -9,7 +9,6 @@ from core.services.module import ModuleUOWService
 from .utils import manifests_sort_by_dependency, import_module, unload_module, read_module_manifest, \
     module_dependency_check
 from ..utils import GenericModule
-from ..utils.BaseModule import BaseModule
 from const import MODULES_DIR, MODULES_DIR_NAME
 from ..utils.manifest import ModuleManifest
 
@@ -59,6 +58,7 @@ class ModuleService:
             manifests[module] = manifest
 
         # we need to load modules in specific order, so we sort it by dependency tree
+        # sort func adds module that not exist
         sorted_module_manifests = manifests_sort_by_dependency(manifests)
 
         # validation dependency version
@@ -113,10 +113,16 @@ class ModuleService:
             if module.is_enabled():
                 try:
                     await cls.init_module(application, module.name, module_uow_service, from_system=True)
-                    logger.debug(f'[ModuleService] Module: {module.name} auto-start is enabled starting...')
+                except Exception as e:
+                    logger.error(f'[ModuleService] Module: {module.name} system init failed ({e}), skip...')
+                    continue
+
+                logger.debug(f'[ModuleService] Module: {module.name} auto-start is enabled starting...')
+
+                try:
                     await cls.start_module(module.name, module_uow_service, from_system=True)
                 except Exception as e:
-                    logger.error(f'[ModuleService] Module: {module.name} system init failed, skip...')
+                    logger.error(f'[ModuleService] Module: {module.name} system init failed ({e}), skip...')
                     continue
 
         # need for start consumer for core websocket sender
@@ -155,7 +161,8 @@ class ModuleService:
         logger.debug(f'[ModuleService] Module: {module_name} init started!')
 
         init_result = await module.init(application, from_system)
-        logger.debug(f'[ModuleService] Module: {module_name} init finished!')
+
+        logger.debug(f'[ModuleService] Module: {module_name} init finished: {init_result}!')
 
         return module
 

@@ -1,1 +1,1 @@
-from .routes import routes
+from .routes import router

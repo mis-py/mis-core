@@ -347,11 +347,12 @@ class ModuleLogs(Component):
             if matched:
                 return matched.group(1) == self.module.name
         ctx: AppContext = await self.module.get_context()
+
         logger.add(
             LOGS_DIR / f"{self.module.name}/{self.module.name}.log",
             format=core_settings.LOGGER_FORMAT,
             rotation=core_settings.LOG_ROTATION,
-            level=ctx.settings.LOG_LEVEL,
+            level=ctx.variables.LOG_LEVEL,
             filter=filter_module_logs,
             serialize=True,
         )
@@ -384,17 +385,15 @@ class EventRoutingKeys(Component):
         pass
 
     async def shutdown(self):
-        # TODO why should I delete routing key?
-        # app_model = await App.get_or_none(name=self.module.name)
-        # await routing_key.filter(app=app_model).delete()
-        # logger.debug(f'[{self.module.name}] Routing keys deleted')
         pass
 
     async def save_routing_keys(self, app_model):
         uow = unit_of_work_factory()
+
         for key, value in self.routing_keys:
             routing_key = await RoutingKeyService(uow=uow).get(app_id=app_model.pk, key=key, name=value)
             if routing_key:
+                logger.debug(f'[RoutingKey] Routing key {key} already created for {self.module.name}')
                 continue
 
             try:
@@ -403,9 +402,10 @@ class EventRoutingKeys(Component):
             except IntegrityError as error:
                 logger.error(f'[RoutingKey] Routing key {key} create error: {error} for {self.module.name}')
 
-        deleted_num = await RoutingKeyService(uow=uow).delete_unused(
-            module_id=app_model.pk,
-            exist_keys=[value for key, value in self.routing_keys]
-        )
-
-        logger.debug(f'[RoutingKey] Deleted {deleted_num} unused routing keys for {self.module.name}')
+        # TODO rk is removing right after they created. fix it
+        # deleted_num = await RoutingKeyService(uow=uow).delete_unused(
+        #     module_id=app_model.pk,
+        #     exist_keys=[value for key, value in self.routing_keys]
+        # )
+        #
+        # logger.debug(f'[RoutingKey] Deleted {deleted_num} unused routing keys for {self.module.name}')

@@ -15,7 +15,7 @@ class User(Model, UserPermissionsMixin):
     # DEPRECATED - remove it
     signed_in = fields.BooleanField(default=False)
 
-    team = fields.ForeignKeyField('models.Team', related_name='users', on_delete=fields.SET_NULL, null=True)
+    team = fields.ForeignKeyField('core.Team', related_name='users', on_delete=fields.SET_NULL, null=True)
     settings: fields.ReverseRelation['VariableValue']
     groups: fields.ManyToManyRelation
     access_groups: fields.ManyToManyRelation['GuardianAccessGroup']
@@ -45,7 +45,7 @@ class Variable(Model):
     is_global = fields.BooleanField(default=True)
     type = fields.CharField(max_length=100, default="text")
 
-    app = fields.ForeignKeyField('models.Module', related_name='settings')
+    app = fields.ForeignKeyField('core.Module', related_name='settings')
 
     class PydanticMeta:
         exclude = ('values',)
@@ -55,10 +55,10 @@ class Variable(Model):
 
 
 class VariableValue(Model):
-    setting = fields.ForeignKeyField('models.Variable', related_name='values')
+    setting = fields.ForeignKeyField('core.Variable', related_name='values')
 
-    user = fields.ForeignKeyField('models.User', null=True, related_name='settings')
-    team = fields.ForeignKeyField('models.Team', null=True, related_name='settings')
+    user = fields.ForeignKeyField('core.User', null=True, related_name='settings')
+    team = fields.ForeignKeyField('core.Team', null=True, related_name='settings')
 
     value = fields.CharField(max_length=500)
 
@@ -77,7 +77,6 @@ class Module(Model):
         RUNNING = 'running'  # after start
         STOPPED = 'stopped'  # after stop
         SHUTDOWN = 'shutdown'  # after shutdown
-        ERROR = 'error'  # if any error in module occurred
 
     name = fields.CharField(max_length=50, unique=True)
     enabled = fields.BooleanField(default=False)
@@ -101,9 +100,9 @@ class ScheduledJob(Model):
         PAUSED = 'paused'
         RUNNING = 'running'
 
-    app = fields.ForeignKeyField('models.Module', related_name='jobs')
-    user = fields.ForeignKeyField('models.User', related_name='jobs')
-    team = fields.ForeignKeyField('models.Team', related_name='jobs', null=True)
+    app = fields.ForeignKeyField('core.Module', related_name='jobs')
+    user = fields.ForeignKeyField('core.User', related_name='jobs')
+    team = fields.ForeignKeyField('core.Team', related_name='jobs', null=True)
     job_id = fields.CharField(max_length=255, null=True)
     task_name = fields.CharField(max_length=255)
     status = fields.CharEnumField(enum_type=StatusTask)
@@ -124,7 +123,7 @@ class RoutingKey(Model):
 
     key = fields.CharField(max_length=100, unique=True)
     name = fields.CharField(max_length=100, unique=True)
-    app = fields.ForeignKeyField('models.Module', related_name='routing_keys')
+    app = fields.ForeignKeyField('core.Module', related_name='routing_keys')
     key_verbose = fields.CharField(max_length=255, null=True)
     template = fields.TextField(null=True)
 
@@ -136,9 +135,9 @@ class RoutingKeySubscription(Model):
     """User subscriptions to routing_keys"""
 
     user = fields.ForeignKeyField(
-        'models.User', related_name='subscriptions', on_delete=fields.CASCADE)
+        'core.User', related_name='subscriptions', on_delete=fields.CASCADE)
     routing_key = fields.ForeignKeyField(
-        'models.RoutingKey', related_name='key_subscriptions', on_delete=fields.CASCADE)
+        'core.RoutingKey', related_name='key_subscriptions', on_delete=fields.CASCADE)
 
     class Meta:
         table = "mis_routing_key_subscription"

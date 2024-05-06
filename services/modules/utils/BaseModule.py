@@ -1,13 +1,13 @@
+from abc import abstractmethod, ABC
 
 from typing import Callable
 from core.db.models import Module
-from core.exceptions import MISError
 from services.modules.component import Component
-from services.modules.utils.manifest import ModuleDependency
-from loguru import logger
+from services.modules.context import AppContext
+from services.modules.utils.manifest import ModuleDependency, ModuleManifest
 
 
-class BaseModule:
+class BaseModule(ABC):
     """
     Basic module data container
     """
@@ -66,141 +66,52 @@ class BaseModule:
         self.pre_init_components = pre_init_components
         self.components = components
 
+    @abstractmethod
     async def _set_state(self, state: Module.AppState) -> None:
-        self._model.state = state
-        await self._model.save()
+        raise NotImplementedError
 
+    @abstractmethod
     def get_state(self) -> Module.AppState:
-        return self._model.state
+        raise NotImplementedError
 
+    @abstractmethod
     def get_id(self) -> int:
-        return self._model.pk
+        raise NotImplementedError
 
+    @abstractmethod
     def is_enabled(self) -> bool:
-        return self._model.enabled
+        raise NotImplementedError
 
+    @abstractmethod
     async def pre_init(self) -> bool:
-        """
-        pre_init calls automatically on system startup
-        """
-        try:
-            for component in self.pre_init_components:
-                await component.bind(self).pre_init()
-                logger.debug(f'[{self.name}] component {component.__class__.__name__} pre_init finished')
+        raise NotImplementedError
 
-            # if all components pre_init success
-            if self.pre_init_event:
-                await self.pre_init_event(self)
-
-            return True
-
-        except Exception as error:
-            logger.exception(error)
-            logger.error(f"[{self.name}] Component and module pre_init failed. {error.__class__.__name__}")
-
-        return False
-
+    @abstractmethod
     async def bind_model(self, model, is_created) -> bool:
-        self._model = model
-        self._is_created = is_created
+        raise NotImplementedError
 
-        for component in self.components:
-            component.bind(self)
-
-        return True
-
+    @abstractmethod
     async def init(self, application, from_system=False) -> bool:
-        if not from_system and self._model.state not in [Module.AppState.SHUTDOWN, Module.AppState.PRE_INITIALIZED, Module.AppState.ERROR]:
-            raise MISError("Can not init module that is not in 'SHUTDOWN' or 'PRE_INITIALIZED' or 'ERROR' state")
+        raise NotImplementedError
 
-        try:
-            for component in self.components:
-                await component.init(application, self._model, self._is_created)
-                logger.debug(f'[{self.name}] component {component.__class__.__name__} init finished')
-
-            # if all components init success
-            if self.init_event:
-                await self.init_event(self)
-
-            # not change state if it is system call
-            if not from_system:
-                await self._set_state(Module.AppState.INITIALIZED)
-
-            return True
-
-        except Exception as error:
-            logger.exception(error)
-            logger.error(f"[{self.name}] Component and module init failed. {error.__class__.__name__}")
-
-            await self._set_state(Module.AppState.ERROR)
-
-        return False
-
+    @abstractmethod
     async def start(self, from_system=False) -> bool:
-        if self._model.state == Module.AppState.ERROR:
-            raise MISError("Can not start module that is in 'ERROR' state")
-        if not from_system and self._model.state not in [Module.AppState.STOPPED, Module.AppState.INITIALIZED]:
-            raise MISError("Can not start module that not in 'STOPPED' or 'INITIALIZED' state ")
+        raise NotImplementedError
 
-        try:
-            for component in self.components:
-                await component.start()
-                logger.debug(f'[{self.name}] component {component.__class__.__name__} started')
-
-            # if all components start success
-            if self.start_event:
-                await self.start_event(self)
-
-            # not change state if it is system call
-            if not from_system:
-                await self._set_state(Module.AppState.RUNNING)
-
-            return True
-
-        except Exception as error:
-            logger.exception(error)
-            logger.error(f"[{self.name}] Component and module start failed. {error.__class__.__name__}")
-
-            await self._set_state(Module.AppState.ERROR)
-
-        return False
-
+    @abstractmethod
     async def stop(self, from_system=False) -> bool:
-        if self._model.state == Module.AppState.ERROR:
-            raise MISError("Can not stop module that is in 'ERROR' state")
-        if not from_system and self._model.state != Module.AppState.RUNNING:
-            raise MISError("Can not stop module that not in 'RUNNING' state ")
+        raise NotImplementedError
 
-        for component in self.components:
-            await component.stop()
-            logger.debug(f'[{self.name}] component {component.__class__.__name__} stopped')
-
-        if self.stop_event:
-            await self.stop_event(self)
-
-        # not change state if it is system call
-        if not from_system:
-            await self._set_state(Module.AppState.STOPPED)
-
-        return True
-
+    @abstractmethod
     async def shutdown(self, from_system=False) -> bool:
-        if self._model.state == Module.AppState.ERROR:
-            raise MISError("Can not shutdown module that is in 'ERROR' state")
-        if not from_system and self._model.state not in [Module.AppState.STOPPED, Module.AppState.INITIALIZED, Module.AppState.PRE_INITIALIZED]:
-            raise MISError("Can not shutdown module that not in 'STOPPED', 'INITIALIZED', 'PRE_INITIALIZED' state")
+        raise NotImplementedError
 
-        for component in self.components:
-            await component.shutdown()
-            logger.debug(f'[{self.name}] component {component.__class__.__name__} shutdown finished')
+    @abstractmethod
+    async def get_context(self, user=None, team=None) -> AppContext:
+        raise NotImplementedError
 
-        if self.shutdown_event:
-            await self.shutdown_event(self)
-
-        # not change state if it is system call
-        if not from_system:
-            await self._set_state(Module.AppState.SHUTDOWN)
-
-        return True
+    @abstractmethod
+    def set_manifest(self, manifest: ModuleManifest) -> None:
+        raise NotImplementedError
 
 

@@ -6,7 +6,8 @@ from pytz import utc
 
 from apscheduler.executors.asyncio import AsyncIOExecutor
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.jobstores.redis import RedisJobStore
+# from apscheduler.jobstores.redis import RedisJobStore
+from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.job import Job
 from apscheduler.jobstores.base import ConflictingIdError
 from apscheduler.triggers.combining import OrTrigger
@@ -18,7 +19,7 @@ from core.utils.common import validate_task_extra
 
 from core.exceptions import NotFound, AlreadyExists, ValidationFailed, MISError
 from core.utils.task import get_trigger
-from .utils import Task
+from .utils import Task, job_wrapper
 # from core.utils import signature_to_dict
 # from core.db.helpers import StatusTask
 #
@@ -26,6 +27,7 @@ from .utils import Task
 from services.modules.context import AppContext
 
 from .config import SchedulerSettings
+
 
 settings = SchedulerSettings()
 
@@ -39,7 +41,8 @@ class SchedulerService:
     @classmethod
     async def init(cls, redishost='redis'):
         jobstores = {
-            'default': RedisJobStore(db=0, host=settings.REDIS_HOST)
+            # 'default': RedisJobStore(db=0, host=settings.REDIS_HOST)
+            'default': MemoryJobStore()
         }
         executors = {
             'default': AsyncIOExecutor(),
@@ -114,7 +117,7 @@ class SchedulerService:
             raise MISError(f"Trigger for job '{job_id}' not specified")
 
         job_instance = cls._scheduler.add_job(
-            func,
+            job_wrapper(func),
             id=str(job_id),
             trigger=trigger,
             args=(context, ),

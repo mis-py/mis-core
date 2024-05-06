@@ -5,10 +5,10 @@ from core.services.base.unit_of_work import unit_of_work_factory
 from core.services.guardian_service import GAccessGroupService, GuardianService
 from core.services.user import UserService
 from services.modules.utils import GenericModule
-from services.modules.components import Variables, ModuleLogs, TortoiseModels, EventRoutingKeys
+from services.modules.components import Variables, ModuleLogs, TortoiseModels, EventRoutingKeys, APIRoutes
 
 from .config import UserSettings, RoutingKeys, ModuleSettings
-from .routes import routes
+from .routes import router
 from .consumers import event_consumers
 from .db import DummyModel
 from .tasks import scheduled_tasks
@@ -26,6 +26,7 @@ async def init(module_instance: GenericModule):
     admin = await user_uow_service.get(username=DEFAULT_ADMIN_USERNAME)
 
     # create access group for module objects
+    # TODO this is constantly creating new group at startup
     group = await guardian_uow_service.create_with_users(
         name="Dummy group",
         users_ids=[admin.id],
@@ -51,7 +52,7 @@ module = GenericModule(
     components=[
         scheduled_tasks,
         event_consumers,
-        routes,
+        APIRoutes(router),
         # just create plain component, all work will be in init() method
         # we declare that module has models in module.db package
         Variables(app_settings, user_settings),

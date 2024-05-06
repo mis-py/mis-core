@@ -31,7 +31,16 @@ def unload_module(app_name: str, package: str = 'modules'):
 
 def module_dependency_check(module_manifest: ModuleManifest, all_manifests: dict[str, ModuleManifest]) -> bool:
     """Checks is all dependencies has correct version"""
+    if module_manifest is None:
+        logger.warning(f"Manifest is missing, skip dependency check!")
+        return False
+
     for dependency in module_manifest.dependencies:
+        if all_manifests[dependency.module] is None:
+            logger.warning(f"Manifest for module {dependency.module} is missing, "
+                           f"skip dependency check for current module {module_manifest.name}!")
+            return False
+
         is_valid_dependency = check_version_dependency(
             current_version=all_manifests[dependency.module].version,
             dependency_version=dependency.version,

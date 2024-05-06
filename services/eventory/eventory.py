@@ -2,15 +2,20 @@ import asyncio
 import functools
 from asyncio import Task
 from typing import Callable
+
+import loguru
 from loguru import logger
 import ujson
 from aio_pika import connect_robust, Message
 from aio_pika.abc import AbstractChannel, AbstractIncomingMessage, ExchangeType, AbstractRobustConnection
 from aiormq import DuplicateConsumerTag, AMQPConnectionError
 
+from core.services.base.unit_of_work import unit_of_work_factory
+from core.services.notification import RoutingKeyService
 from services.eventory.consumer import Consumer
 
 from .config import RabbitSettings
+from .utils import RoutingKeysSet
 
 settings = RabbitSettings()
 
@@ -171,3 +176,11 @@ class Eventory:
             await consumer.start()
             return True
         return False
+
+    @classmethod
+    async def make_routing_keys_set(cls, app):
+        uow = unit_of_work_factory()
+
+        routing_keys = await RoutingKeyService(uow=uow).filter(app_id=app.pk)
+
+        return RoutingKeysSet(routing_keys)
