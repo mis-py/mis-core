@@ -218,4 +218,4 @@ async def root():
 
 # for debugging
 if __name__ == "__main__":
-    uvicorn.run(app, host="localhost", port=8000, log_level='error')
+    uvicorn.run(app, host="localhost", port=8001, log_level='error')

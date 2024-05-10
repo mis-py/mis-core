@@ -1,44 +1,51 @@
 from typing import Annotated
 from fastapi.params import Depends, Query
 
-from core.dependencies.uow import UnitOfWorkDep
+from core.dependencies.services import get_user_service, get_team_service, get_module_service, get_routing_key_service, \
+    get_g_access_group_service
 from core.exceptions import NotFound
 from core.services.guardian_service import GAccessGroupService
+from core.services.module import ModuleService
 from core.services.user import UserService
 from core.services.team import TeamService
-from core.services.module import ModuleUOWService
 from core.services.notification import RoutingKeyService
 
 
-async def get_user_by_id(uow: UnitOfWorkDep, user_id: int):
-    user = await UserService(uow).get(id=user_id)
+async def get_user_by_id(user_service: Annotated[UserService, Depends(get_user_service)], user_id: int):
+    user = await user_service.get(id=user_id)
     if not user:
         raise NotFound('User not found')
     return user
 
 
-async def get_team_by_id(uow: UnitOfWorkDep, team_id: int):
-    team = await TeamService(uow).get(id=team_id, prefetch_related=['users'])
+async def get_team_by_id(team_service: Annotated[TeamService, Depends(get_team_service)], team_id: int):
+    team = await team_service.get(id=team_id, prefetch_related=['users'])
     if not team:
         raise NotFound('Team not found')
     return team
 
 
-async def get_module_by_id(uow: UnitOfWorkDep, module_id: int):
-    app = await ModuleUOWService(uow).get(id=module_id)
+async def get_module_by_id(module_service: Annotated[ModuleService, Depends(get_module_service)], module_id: int):
+    app = await module_service.get(id=module_id)
     if not app:
         raise NotFound('Module not found')
     return app
 
 
-async def get_routing_key_by_id(uow: UnitOfWorkDep, key_id: int):
-    rk = await RoutingKeyService(uow).get(id=key_id)
+async def get_routing_key_by_id(
+        routing_key_service: Annotated[ModuleService, Depends(get_routing_key_service)],
+        key_id: int
+):
+    rk = await routing_key_service.get(id=key_id)
     if not rk:
         raise NotFound('RoutingKey not found')
     return rk
 
-async def get_group_by_id(uow: UnitOfWorkDep, group_id: int = Query()):
-    group = await GAccessGroupService(uow).get(id=group_id)
+async def get_group_by_id(
+        g_access_group_service: Annotated[GAccessGroupService, Depends(get_g_access_group_service)],
+        group_id: int = Query(),
+):
+    group = await g_access_group_service.get(id=group_id)
     if not group:
         raise NotFound('Group not found')
     return group

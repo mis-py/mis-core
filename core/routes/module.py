@@ -1,3 +1,5 @@
+from typing import Annotated
+
 import tortoise.exceptions
 from fastapi import APIRouter, Security, Depends
 from fastapi import Request
@@ -7,10 +9,10 @@ from core.db.models import Module
 
 from core.dependencies.security import get_current_user
 from core.dependencies.misc import  PaginateParamsDep
-from core.dependencies.uow import UnitOfWorkDep
+from core.dependencies.services import get_module_service
 from core.dependencies.path import get_module_by_id
 from core.schemas.module import ModuleManifestResponse
-from core.services.module import ModuleUOWService
+from core.services import module
 from core.utils.schema import PageResponse, MisResponse
 # from .schema import BundleAppModel
 
@@ -25,14 +27,17 @@ router = APIRouter()
     dependencies=[Security(get_current_user)],
     response_model=PageResponse[ModuleManifestResponse]
 )
-async def get_modules(uow: UnitOfWorkDep, paginate_params: PaginateParamsDep, module_id: int = None):
+async def get_modules(
+        module_service: Annotated[module.ModuleService, Depends(get_module_service)],
+        paginate_params: PaginateParamsDep, module_id: int = None
+):
     if module_id:
-        await get_module_by_id(uow=uow, module_id=module_id)
+        await module_service.get_or_raise(id=module_id)
 
-    paginated_modules = await ModuleUOWService(uow).filter_and_paginate(
+    paginated_modules = await module_service.filter_and_paginate(
         id=module_id, params=paginate_params
     )
-    modules_with_manifest = await ModuleUOWService(uow).set_manifest_in_response(paginated_modules)
+    modules_with_manifest = await module_service.set_manifest_in_response(paginated_modules)
     return modules_with_manifest
 
 
@@ -42,20 +47,18 @@ async def get_modules(uow: UnitOfWorkDep, paginate_params: PaginateParamsDep, mo
     response_model=MisResponse[ModuleManifestResponse]
 )
 async def init_module(
-        uow: UnitOfWorkDep,
+        module_service: Annotated[module.ModuleService, Depends(get_module_service)],
         request: Request,
         module: Module = Depends(get_module_by_id),
 ):
-    module_uow_service = ModuleUOWService(uow)
-
-    inited_module = await ModuleService.init_module(request.app, module.name, module_uow_service)
+    inited_module = await ModuleService.init_module(request.app, module.name)
 
     module_response = ModuleManifestResponse(
         id=inited_module.get_id(),
         name=inited_module.name,
         enabled=inited_module.is_enabled(),
         state=inited_module.get_state(),
-        manifest=module_uow_service.get_manifest(inited_module.name)
+        manifest=module_service.get_manifest(inited_module.name)
     )
 
     return MisResponse[ModuleManifestResponse](result=module_response)
@@ -67,19 +70,17 @@ async def init_module(
     response_model=MisResponse[ModuleManifestResponse]
 )
 async def start_module(
-        uow: UnitOfWorkDep,
+        module_service: Annotated[module.ModuleService, Depends(get_module_service)],
         module: Module = Depends(get_module_by_id),
 ):
-    module_uow_service = ModuleUOWService(uow)
-
-    started_module = await ModuleService.start_module(module.name, module_uow_service)
+    started_module = await ModuleService.start_module(module.name)
 
     module_response = ModuleManifestResponse(
         id=started_module.get_id(),
         name=started_module.name,
         enabled=started_module.is_enabled(),
         state=started_module.get_state(),
-        manifest=module_uow_service.get_manifest(started_module.name)
+        manifest=module_service.get_manifest(started_module.name)
     )
 
     return MisResponse[ModuleManifestResponse](result=module_response)
@@ -91,19 +92,17 @@ async def start_module(
     response_model=MisResponse[ModuleManifestResponse]
 )
 async def stop_module(
-        uow: UnitOfWorkDep,
+        module_service: Annotated[module.ModuleService, Depends(get_module_service)],
         module: Module = Depends(get_module_by_id)
 ):
-    module_uow_service = ModuleUOWService(uow)
-
-    stopped_module = await ModuleService.stop_module(module.name, module_uow_service)
+    stopped_module = await ModuleService.stop_module(module.name)
 
     module_response = ModuleManifestResponse(
         id=stopped_module.get_id(),
         name=stopped_module.name,
         enabled=stopped_module.is_enabled(),
         state=stopped_module.get_state(),
-        manifest=module_uow_service.get_manifest(stopped_module.name)
+        manifest=module_service.get_manifest(stopped_module.name)
     )
 
     return MisResponse[ModuleManifestResponse](result=module_response)
@@ -115,12 +114,10 @@ async def stop_module(
     response_model=MisResponse()
 )
 async def shutdown_application(
-        uow: UnitOfWorkDep,
+        module_service: Annotated[module.ModuleService, Depends(get_module_service)],
         module: Module = Depends(get_module_by_id),
 ):
-    module_uow_service = ModuleUOWService(uow)
-
-    await ModuleService.shutdown_module(module.name, module_uow_service)
+    await ModuleService.shutdown_module(module.name)
 
     return MisResponse()
 

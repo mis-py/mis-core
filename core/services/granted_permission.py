@@ -1,20 +1,24 @@
+from tortoise.transactions import in_transaction
+
 from core.db.models import User, Team
+from core.repositories.granted_permission import IGrantedPermissionRepository
+from core.repositories.permission import IPermissionRepository
 from core.services.base.base_service import BaseService
-from core.services.base.unit_of_work import IUnitOfWork
 
 
 class GrantedPermissionService(BaseService):
-    def __init__(self, uow: IUnitOfWork):
-        super().__init__(repo=uow.granted_permission_repo)
-        self.uow = uow
+    def __init__(self, granted_permission_repo: IGrantedPermissionRepository, permission_repo: IPermissionRepository):
+        self.granted_permission_repo = granted_permission_repo
+        self.permission_repo = permission_repo
+        super().__init__(repo=granted_permission_repo)
 
     async def set_for_user(self, permissions: list, user: User):
-        async with self.uow:
+        async with in_transaction():
             for permission in permissions:
                 if user.pk == 1 and permission.permission_id == 1:
                     continue
 
-                perm = await self.uow.permission_repo.get(id=permission.permission_id)
+                perm = await self.permission_repo.get(id=permission.permission_id)
                 if not perm:
                     continue
 
@@ -24,9 +28,9 @@ class GrantedPermissionService(BaseService):
                     await user.remove_permission(perm.scope)
 
     async def set_for_team(self, permissions: list, team: Team):
-        async with self.uow:
+        async with in_transaction():
             for permission in permissions:
-                perm = await self.uow.permission_repo.get(id=permission.permission_id)
+                perm = await self.permission_repo.get(id=permission.permission_id)
                 if not perm:
                     continue
 

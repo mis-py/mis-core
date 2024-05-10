@@ -18,7 +18,8 @@ from config import CoreSettings
 from const import DEFAULT_ADMIN_USERNAME, PROD_ENVIRONMENT, ENVIRONMENT, LOGS_DIR, MODULES_DIR
 from core.db.models import ScheduledJob
 from core.dependencies.misc import inject_context, inject_user
-from core.services.base.unit_of_work import unit_of_work_factory
+from core.dependencies.services import get_permission_service, get_variable_service, get_routing_key_service, \
+    get_user_service, get_scheduled_job_service
 from core.services.notification import RoutingKeyService
 from core.services.permission import PermissionService
 from core.services.scheduled_job import ScheduledJobService
@@ -173,9 +174,9 @@ class ScheduledTasks(Component):
         Restore running tasks that saved in DB
         :return:
         """
-        uow = unit_of_work_factory()
+        scheduled_job_service: ScheduledJobService = get_scheduled_job_service()
 
-        saved_scheduled_jobs = await ScheduledJobService(uow).filter_by_module(module_name=self.module.name)
+        saved_scheduled_jobs = await scheduled_job_service.filter_by_module(module_name=self.module.name)
         for saved_job in saved_scheduled_jobs:
             await SchedulerService.restore_job(
                 saved_job=saved_job,
@@ -274,12 +275,13 @@ class Variables(Component):
         pass
 
     async def save_permissions(self, app_model):
-        uow = unit_of_work_factory()
-        admin_user = await UserService(uow).get(username=DEFAULT_ADMIN_USERNAME)
+        permission_service: PermissionService = get_permission_service()
+        user_service: UserService = get_user_service()
+        admin_user = await user_service.get(username=DEFAULT_ADMIN_USERNAME)
 
         exist_permission_ids = []
         for scope, description in self.module.permissions.items():
-            perm = await PermissionService(uow).update_or_create(
+            perm = await permission_service.update_or_create(
                 module=app_model,
                 name=description,
                 scope=scope,
@@ -291,12 +293,12 @@ class Variables(Component):
 
         logger.debug(f'[Variables] Permissions saved for {self.module.name}')
 
-        deleted_count = await PermissionService(uow).delete_unused(
+        deleted_count = await permission_service.delete_unused(
             module_id=app_model.pk, exist_ids=exist_permission_ids)
         logger.debug(f'[Variables] Deleted {deleted_count} unused permissions for {self.module.name}')
 
     async def save_variables(self, app_model):
-        uow = unit_of_work_factory()
+        variable_service: VariableService = get_variable_service()
 
         app_settings, user_settings = dict(self.module_settings), dict(self.user_settings)
         settings = itertools.chain(app_settings.items(), user_settings.items())
@@ -309,7 +311,7 @@ class Variables(Component):
         for key, default_value in settings:
             setting_type = typed_settings[key]["type"]
             is_global = key in app_settings
-            setting, is_created = await VariableService(uow).get_or_create(
+            setting, is_created = await variable_service.get_or_create(
                 module_id=app_model.pk,
                 key=key,
                 default_value=default_value,
@@ -317,7 +319,7 @@ class Variables(Component):
                 type=setting_type
             )
             if not is_created:
-                await VariableService(uow).update_params(
+                await variable_service.update_params(
                     variable=setting,
                     default_value=default_value,
                     is_global=is_global,
@@ -327,7 +329,7 @@ class Variables(Component):
             if ENVIRONMENT != PROD_ENVIRONMENT:
                 logger.debug(f'[Variables] Variable saved {key} ({default_value}) for {self.module.name}')
 
-        deleted_count = await VariableService(uow).delete_unused(
+        deleted_count = await variable_service.delete_unused(
             module_id=app_model.pk, exist_keys=[*app_settings.keys(), *user_settings.keys()],
         )
         logger.debug(f'[Variables] Deleted {deleted_count} unused variables for {self.module.name}')
@@ -391,19 +393,19 @@ class EventRoutingKeys(Component):
         pass
 
     async def save_routing_keys(self, app_model):
-        uow = unit_of_work_factory()
+        routing_key_service: RoutingKeyService = get_routing_key_service()
         for key, value in self.routing_keys:
-            routing_key = await RoutingKeyService(uow=uow).get(app_id=app_model.pk, key=key, name=value)
+            routing_key = await routing_key_service.get(app_id=app_model.pk, key=key, name=value)
             if routing_key:
                 continue
 
             try:
-                await RoutingKeyService(uow=uow).recreate(module_id=app_model.pk, key=key, name=value)
+                await routing_key_service.recreate(module_id=app_model.pk, key=key, name=value)
                 logger.debug(f'[RoutingKey] Created routing key {key} for {self.module.name}')
             except IntegrityError as error:
                 logger.error(f'[RoutingKey] Routing key {key} create error: {error} for {self.module.name}')
 
-        deleted_num = await RoutingKeyService(uow=uow).delete_unused(
+        deleted_num = await routing_key_service.delete_unused(
             module_id=app_model.pk,
             exist_keys=[value for key, value in self.routing_keys]
         )

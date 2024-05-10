@@ -1,5 +1,6 @@
 from abc import ABC
 
+from core.db.models import VariableValue
 from core.repositories.base.repository import IRepository, TortoiseORMRepository
 
 
@@ -9,6 +10,8 @@ class IVariableValueRepository(IRepository, ABC):
 
 
 class VariableValueRepository(TortoiseORMRepository, IVariableValueRepository):
+    model = VariableValue
+
     async def update_or_create(self, variable_id: int, value, user_id: int = None, team_id: int = None):
         variable_value_instance, is_created = await self.model.update_or_create(
             defaults={'value': value},

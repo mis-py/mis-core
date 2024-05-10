@@ -1,10 +1,12 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Security, Depends
 
 from core.db.models import User, RoutingKey
 from core.dependencies.misc import PaginateParamsDep
-from core.dependencies.uow import UnitOfWorkDep
 from core.dependencies.path import get_routing_key_by_id
 from core.dependencies.security import get_current_user
+from core.dependencies.services import get_routing_key_service, get_routing_key_subscription_service
 from core.repositories.routing_key import RoutingKeyRepository
 from core.services.notification import RoutingKeySubscriptionService, \
     RoutingKeyService
@@ -22,10 +24,10 @@ router = APIRouter()
     response_model=PageResponse[RoutingKeyResponse]
 )
 async def get_all_notifications(
-        uow: UnitOfWorkDep,
+        routing_key_service: Annotated[RoutingKeyService, Depends(get_routing_key_service)],
         paginate_params: PaginateParamsDep,
 ):
-    return await RoutingKeyService(uow).filter_and_paginate(params=paginate_params)
+    return await routing_key_service.filter_and_paginate(params=paginate_params)
 
 
 @router.get(
@@ -33,11 +35,11 @@ async def get_all_notifications(
     response_model=PageResponse[RoutingKeyResponse]
 )
 async def get_my_subscribes(
-        uow: UnitOfWorkDep,
+        routing_key_service: Annotated[RoutingKeyService, Depends(get_routing_key_service)],
         paginate_params: PaginateParamsDep,
         user: User = Depends(get_current_user)
 ):
-    return await RoutingKeyService(uow).filter_subscribed_and_paginate(
+    return await routing_key_service.filter_subscribed_and_paginate(
         user_id=user.pk,
         params=paginate_params,
     )
@@ -61,11 +63,11 @@ async def get_my_subscribes(
     response_model=MisResponse[RoutingKeyResponse]
 )
 async def edit_my_subscribe(
-        uow: UnitOfWorkDep,
+        routing_key_subscription_service: Annotated[RoutingKeySubscriptionService, Depends(get_routing_key_subscription_service)],
         rk: RoutingKey = Depends(get_routing_key_by_id),
         user: User = Depends(get_current_user)
 ):
-    subscription = await RoutingKeySubscriptionService(uow).subscribe(
+    subscription = await routing_key_subscription_service.subscribe(
         user_id=user.pk,
         routing_key_id=rk.pk
     )
@@ -77,11 +79,11 @@ async def edit_my_subscribe(
     response_model=MisResponse
 )
 async def remove_my_subscribe(
-        uow: UnitOfWorkDep,
+        routing_key_subscription_service: Annotated[RoutingKeySubscriptionService, Depends(get_routing_key_subscription_service)],
         rk: RoutingKey = Depends(get_routing_key_by_id),
         user: User = Depends(get_current_user)
 ):
-    await RoutingKeySubscriptionService(uow).unsubscribe(
+    await routing_key_subscription_service.unsubscribe(
         user_id=user.pk, routing_key_id=rk.pk,
     )
     return MisResponse()
@@ -93,11 +95,11 @@ async def remove_my_subscribe(
     response_model=MisResponse[RoutingKeyResponse]
 )
 async def edit_notification(
-        uow: UnitOfWorkDep,
+        routing_key_service: Annotated[RoutingKeyService, Depends(get_routing_key_service)],
         data: RoutingKeyUpdate,
         rk: RoutingKey = Depends(get_routing_key_by_id),
 ):
-    await RoutingKeyRepository(uow).update(id=rk.pk, data=data.model_dump())
+    await routing_key_service.update(id=rk.pk, schema_in=data)
 
     # set/update value in cache
     await RedisService.cache.set_json(

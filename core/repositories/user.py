@@ -16,10 +16,12 @@ class IUserRepository(IRepository, ABC):
 
 
 class UserRepository(TortoiseORMRepository, IUserRepository):
+    model = User
+
     async def find_by_ids(self, ids: list[int]) -> list[User]:
         return await self.model.filter(id__in=ids)
 
-    async def filter_by_subscription(self, routing_key: str, query = None):
+    async def filter_by_subscription(self, routing_key: str, query=None):
         query = query if query else self.model.filter()
         return await query.filter(
             subscriptions__isnull=False,

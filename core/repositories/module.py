@@ -11,5 +11,7 @@ class IModuleRepository(IRepository, ABC):
 
 
 class ModuleRepository(TortoiseORMRepository, IModuleRepository):
+    model = Module
+
     async def get_or_create_by_name(self, name: str) -> (Module, bool):
         return await self.model.get_or_create(name=name)

@@ -1,5 +1,6 @@
 from abc import ABC
 
+from core.db.guardian import GuardianContentType
 from core.repositories.base.repository import TortoiseORMRepository, IRepository
 
 
@@ -8,4 +9,4 @@ class IGContentTypeRepository(IRepository, ABC):
 
 
 class GContentTypeRepository(TortoiseORMRepository, IGContentTypeRepository):
-    pass
+    model = GuardianContentType

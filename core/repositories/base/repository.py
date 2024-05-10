@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Type, TypeVar, Optional
+from typing import Type, TypeVar, Optional, Any
 
 from fastapi_pagination.bases import AbstractParams
 from tortoise import Model
@@ -9,6 +9,8 @@ from fastapi_pagination.ext.tortoise import paginate as tortoise_paginate
 
 
 class IRepository(ABC):
+    model: Any = None
+
     @abstractmethod
     async def create(self, **kwargs):
         raise NotImplementedError()
@@ -45,14 +47,20 @@ class IRepository(ABC):
     async def paginate(self, **kwargs):
         raise NotImplementedError()
 
+    @abstractmethod
+    async def exists(self, **kwargs):
+        raise NotImplementedError()
+
 
 ModelType = TypeVar("ModelType", bound=Model)
 
 
 class TortoiseORMRepository(IRepository):
+    model: Type[ModelType] = None
 
-    def __init__(self, model: Type[ModelType]):
-        self.model = model
+    def __init__(self, model: Type[ModelType] = None):
+        if not self.model:
+            self.model = model
 
     async def create(self, data: dict) -> ModelType:
         """Create object from dict"""
@@ -97,3 +105,7 @@ class TortoiseORMRepository(IRepository):
     async def paginate(self, queryset: QuerySet, params: AbstractParams = None) -> PageResponse:
         """Paginate by fastapi-pagination and return pydantic model"""
         return await tortoise_paginate(queryset, params=params)
+
+    async def exists(self, **filters) -> bool:
+        """Check if model object exists"""
+        return await self.model.exists(**filters)

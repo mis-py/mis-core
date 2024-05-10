@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+from core.db.models import Variable
 from core.repositories.base.repository import IRepository, TortoiseORMRepository
 
 
@@ -14,6 +15,8 @@ class IVariableRepository(IRepository, ABC):
 
 
 class VariableRepository(TortoiseORMRepository, IVariableRepository):
+    model = Variable
+
     async def get_or_create(
             self,
             module_id: int,

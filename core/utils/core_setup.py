@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from tortoise import Tortoise
 
 from const import DEFAULT_ADMIN_USERNAME
@@ -5,8 +7,8 @@ from config import CoreSettings
 from core.db.guardian import GuardianPermission, GuardianContentType
 from core.db.mixin import GuardianMixin
 from core.db.models import Module, User, Team
-from core.services.base.unit_of_work import unit_of_work_factory
-from core.services.module import ModuleUOWService
+from core.dependencies.services import get_module_service, get_permission_service
+from core.services.module import ModuleService
 from core.services.permission import PermissionService
 from core.utils.common import camel_to_spaces
 from core.utils.security import get_password_hash
@@ -16,23 +18,24 @@ settings = CoreSettings()
 
 
 async def setup_core():
-    uow = unit_of_work_factory()
+    module_service: ModuleService = get_module_service()
+    permission_service: PermissionService = get_permission_service()
 
-    core = await ModuleUOWService(uow).get(name='core')
+    core = await module_service.get(name='core')
     if core is None:
         # Create core app as enabled and already running
-        core = await ModuleUOWService(uow).create_core(name='core')
+        core = await module_service.create_core(name='core')
 
-        await PermissionService(uow).create_with_scope(name='Superuser permissions', scope='sudo', module=core)
-        await PermissionService(uow).create_with_scope(name="Access for 'users' endpoints", scope="users", module=core)
-        await PermissionService(uow).create_with_scope(name="Access for 'teams' endpoints", scope="teams", module=core)
-        await PermissionService(uow).create_with_scope(name="Access for 'modules' endpoints", scope="modules", module=core)
-        await PermissionService(uow).create_with_scope(name="Access for 'groups' endpoints", scope="groups", module=core)
-        await PermissionService(uow).create_with_scope(name="Access for 'notifications' endpoints", scope="notifications", module=core)
-        await PermissionService(uow).create_with_scope(name="Access for 'logs' endpoints", scope="logs", module=core)
-        await PermissionService(uow).create_with_scope(name="Access for 'tasks' endpoints", scope="tasks", module=core)
-        await PermissionService(uow).create_with_scope(name="Access for 'consumers' endpoints", scope="consumers", module=core)
-        await PermissionService(uow).create_with_scope(name="Access for 'permissions' endpoints", scope="permissions", module=core)
+        await permission_service.create_with_scope(name='Superuser permissions', scope='sudo', module=core)
+        await permission_service.create_with_scope(name="Access for 'users' endpoints", scope="users", module=core)
+        await permission_service.create_with_scope(name="Access for 'teams' endpoints", scope="teams", module=core)
+        await permission_service.create_with_scope(name="Access for 'modules' endpoints", scope="modules", module=core)
+        await permission_service.create_with_scope(name="Access for 'groups' endpoints", scope="groups", module=core)
+        await permission_service.create_with_scope(name="Access for 'notifications' endpoints", scope="notifications", module=core)
+        await permission_service.create_with_scope(name="Access for 'logs' endpoints", scope="logs", module=core)
+        await permission_service.create_with_scope(name="Access for 'tasks' endpoints", scope="tasks", module=core)
+        await permission_service.create_with_scope(name="Access for 'consumers' endpoints", scope="consumers", module=core)
+        await permission_service.create_with_scope(name="Access for 'permissions' endpoints", scope="permissions", module=core)
 
     return core is None
 
