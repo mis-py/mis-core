@@ -13,13 +13,22 @@ class TrackerInstanceShortModel(TrackerInstanceBaseModel):
 
 
 class TrackerInstanceModel(TrackerInstanceShortModel):
-    api_key: str
+    # api_key: str
     base_url: str
     get_route: str
     edit_route: str
 
 
 class TrackerInstanceCreateModel(PydanticModel):
+    name: str
+    description: str
+    api_key: str
+    base_url: str
+    get_route: str
+    edit_route: str
+
+
+class TrackerInstanceUpdateModel(PydanticModel):
     name: str
     description: str
     api_key: str

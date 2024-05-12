@@ -5,7 +5,7 @@ import datetime
 import random
 import re
 import string
-
+import asyncio
 import loguru
 import pytz
 from fastapi.routing import APIRoute
@@ -137,3 +137,24 @@ def camel_to_spaces(camel_string: str):
 
 def exclude_none_values(data: dict):
     return {key: value for key, value in data.items() if value is not None}
+
+
+def safe_unpack(iterable: list, n: int):
+    for row in iterable:
+        row.extend([None] * (n - len(row)))
+        yield row[:n]
+
+
+async def gather_with_concurrency(n, *coros):
+    semaphore = asyncio.Semaphore(n)
+
+    async def sem_coro(coro):
+        async with semaphore:
+            return await coro
+
+    return await asyncio.gather(*(sem_coro(c) for c in coros), return_exceptions=True)
+
+
+# clamp value between two numbers
+def clamp(number, min_value=0.0, max_value=1.0):
+    return round(float(max(min(max_value, number), min_value)), 2)

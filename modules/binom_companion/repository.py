@@ -17,13 +17,5 @@ class ReplacementHistoryRepository(TortoiseORMRepository):
     pass
 
 
-class BinomCompanionDomainRepository(TortoiseORMRepository):
-    pass
-
-
-class BinomCompanionGeoRepository(TortoiseORMRepository):
-    pass
-
-
 class LeadRecordRepository(TortoiseORMRepository):
     pass

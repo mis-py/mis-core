@@ -15,5 +15,7 @@ router = APIRouter()
 )
 async def get_replacement_history():
     return await ProxyDomainService().get_history_domains(
-        prefetch_related=['from_domains', 'to_domain', 'replacement_group']
+        prefetch_related=[
+            'from_domains', 'to_domain', 'replacement_group', 'replaced_by'
+        ]
     )

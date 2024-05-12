@@ -2,18 +2,7 @@ from pydantic import BaseModel
 
 
 class UserSettings(BaseModel):
-    TRACKER_URL_GET: str = ""
-    TRACKER_URL_EDIT: str = ""
-    TRACKER_API_KEY: str = ""
-    SPREADSHEET_ID: str = ""
-    SHEET_NAME: str = ""
-    AFFILIATE_NETWORKS: str = ""
-    GEOS: str = ""
-    LEAD_RECORD_TTL: int = 60 * 30  # 30 minutes
-    PROXY_FAIL_CHECK_COEFFICIENT: float = 0.5
-    LEAD_DECREASE_CHECK_COEFFICIENT: float = 0.2
-    MINIMUM_REQUIRED_COEFFICIENT: float = 1.0
-    DOMAIN_CHANGE_ENABLED: bool = False
+    pass
 
 
 class ModuleSettings(BaseModel):
@@ -29,11 +18,3 @@ class RoutingKeys(BaseModel):
     PROXY_IP_CHANGED: str = 'proxy_ip_changed'
     DOMAIN_CHANGED: str = 'domain_changed'
     PROXY_DOMAIN_FAILED: str = 'proxy_domain_failed'
-
-
-GEO_TO_LANG: dict[str, str] = {
-    "RU": "RU",
-    "KZ": "KZ",
-    "TR": "TR",
-    "AZ": "AZ"
-}

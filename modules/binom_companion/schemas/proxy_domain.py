@@ -16,3 +16,8 @@ class ProxyDomainModel(ProxyDomainBaseModel):
 class ProxyDomainCreateModel(PydanticModel):
     name: str
     tracker_instance_id: int
+
+
+class ProxyDomainUpdateModel(PydanticModel):
+    name: str
+    tracker_instance_id: int

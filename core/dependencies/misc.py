@@ -10,6 +10,9 @@ from core.exceptions import NotFound
 from core.utils.schema import Params
 from services.eventory import Eventory
 from services.eventory.utils import RoutingKeysSet
+from services.modules.context import AppContext
+from services.modules.module_service import ModuleService
+from services.variables.variables import VariablesManager
 
 settings = CoreSettings()
 
@@ -43,6 +46,17 @@ async def get_routing_keys(
         module=Depends(get_current_app)
 ):
     return await Eventory.make_routing_keys_set(app=module)
+
+
+async def get_app_context(
+        user: User = Depends(get_current_user),
+        module: Module = Depends(get_current_app)
+):
+    await user.fetch_related('team')
+    return await ModuleService.make_module_context(module_name=module.name, user=user, team=user.team)
+
+
+AppContextDep = Annotated[AppContext, Depends(get_app_context)]
 
 PaginateParamsDep = Annotated[Params, Depends()]
 

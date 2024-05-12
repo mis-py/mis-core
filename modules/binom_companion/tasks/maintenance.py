@@ -1,13 +1,12 @@
 from loguru import logger
 
-from services.modules.components import ScheduledTasks
 from datetime import datetime, timedelta, timezone
 
 from services.modules.context import AppContext
 
 from ..service import LeadRecordService
 
-scheduled_tasks = ScheduledTasks()
+from . import scheduled_tasks
 
 
 # cleanup for old lead records
@@ -15,12 +14,15 @@ scheduled_tasks = ScheduledTasks()
     seconds=60,
     start_date=datetime.now() + timedelta(seconds=10)
 )
-async def old_lead_records_cleanup(ctx: AppContext):
-    lead_record_ttl = ctx.variables.LEAD_RECORD_TTL
+async def old_lead_records_cleanup(
+        ctx: AppContext,
+        lead_record_ttl=60 * 30
+):
     now = datetime.now(timezone.utc)
 
-    num_deleted = await LeadRecordService().filter(
+    query = await LeadRecordService().filter_queryable(
         time__lte=now - timedelta(seconds=lead_record_ttl)
-    ).delete()
+    )
+    num_deleted = await query.delete()
 
     logger.debug(f'Deleted {num_deleted} LeadRecords')

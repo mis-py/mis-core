@@ -17,8 +17,6 @@ class ReplacementGroupModel(ReplacementGroupShortModel):
     name: str
     description: str
 
-    aff_networks_ids: list[int]
-
     offer_group_id: int
     offer_geo: str
     offer_name_regexp_pattern: str
@@ -29,16 +27,10 @@ class ReplacementGroupModel(ReplacementGroupShortModel):
 
     is_active: bool
 
-    lead_record_ttl: int
-    proxy_fail_check_coefficient: float
-    lead_decrease_check_coefficient: float
-    minimum_required_coefficient: float
-
 
 class ReplacementGroupCreateModel(PydanticModel):
     name: str
     description: str
-    aff_networks_ids: list[int]
 
     offer_group_id: int
     offer_geo: str
@@ -48,9 +40,27 @@ class ReplacementGroupCreateModel(PydanticModel):
     land_language: str
     land_name_regexp_pattern: str
 
-    lead_record_ttl: int
-    proxy_fail_check_coefficient: float
-    lead_decrease_check_coefficient: float
-    minimum_required_coefficient: float
+    tracker_instance_id: int
+
+    is_active: bool
+
+
+class ReplacementGroupUpdateModel(PydanticModel):
+    name: str
+    description: str
+
+    offer_group_id: int
+    offer_geo: str
+    offer_name_regexp_pattern: str
+
+    land_group_id: int
+    land_language: str
+    land_name_regexp_pattern: str
 
     tracker_instance_id: int
+
+    is_active: bool
+
+
+class ReplacementGroupChangeProxyIds(PydanticModel):
+    replacement_group_ids: list[int]

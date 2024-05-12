@@ -1,1 +1,3 @@
-from .tasks import scheduled_tasks
+from services.modules.components import ScheduledTasks
+
+scheduled_tasks = ScheduledTasks()

@@ -2,14 +2,12 @@
   "name": "binom_companion",
   "display_name": "Binom Companion",
   "description": "Module for watching binom stats and replace offer domains",
-  "version": "0.3",
+  "version": "0.4",
   "author": "Jake Jameson",
   "category": "companion",
   "dependencies": [],
   "permissions": {
       "sudo": "Full module access",
-      "geos": "Access for 'geos' endpoints",
-      "domains": "Access for 'domains' endpoints"
   },
   "auth_disabled": true
 }

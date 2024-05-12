@@ -216,6 +216,13 @@ class ModuleService:
 
         logger.debug(f"[ModuleService] Module: {module.name} shutdown complete")
 
+    @classmethod
+    async def make_module_context(cls, module_name: str, user, team):
+        return await cls._get_module(module_name).get_context(
+            user=user,
+            team=team
+        )
+
     # @classmethod
     # async def _restart_core_consumer(cls):
     #     """
