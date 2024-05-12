@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 
 from const import LOGS_DIR, TASK_LOGS_DIR
 from core.db.models import Module
-from core.dependencies import get_current_user
+from core.dependencies.misc import get_current_user
 from core.exceptions import MISError
 from core.utils.common import find_log_file, select_logs_by_hour
 

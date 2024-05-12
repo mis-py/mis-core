@@ -37,48 +37,46 @@ positive_get_granted_permissions_dataset = [
         {
             'status_code': status.HTTP_200_OK,
             'msg': 'Success',
-            'result': {
-                'total': 2, 'current': 1, 'size': 50, 'pages': 1,
-                'items': [
-                    {
+            'result': [
+                {
+                    'id': 1,
+                    'permission': {
                         'id': 1,
-                        'permission': {
+                        'scope': 'core:sudo',
+                        'app': {
                             'id': 1,
-                            'scope': 'core:sudo',
-                            'app': {
-                                'id': 1,
-                                'name': 'core',
-                                'enabled': True
-                            }
-                        },
-                        'user': {
-                            'id': 1,
-                            'username': 'admin',
-                            'position': None
-                        },
-                        'team': None
+                            'name': 'core',
+                            'enabled': True
+                        }
                     },
-                    {
-                        "id": 3,
-                        "permission": {
-                            "id": 11,
-                            "scope": "dummy:dummy",
-                            "app": {
-                                "id": 2,
-                                "name": "dummy",
-                                "enabled": True
-                            }
-                        },
-                        "user": {
-                            "id": 1,
-                            "username": "admin",
-                            "position": None
-                        },
-                        "team": None
-                    }
-                ]
-            },
-            'status': True}
+                    'user': {
+                        'id': 1,
+                        'username': 'admin',
+                        'position': None
+                    },
+                    'team': None
+                },
+                {
+                    "id": 3,
+                    "permission": {
+                        "id": 11,
+                        "scope": "dummy:dummy",
+                        "app": {
+                            "id": 2,
+                            "name": "dummy",
+                            "enabled": True
+                        }
+                    },
+                    "user": {
+                        "id": 1,
+                        "username": "admin",
+                        "position": None
+                    },
+                    "team": None
+                }
+            ],
+            'status': True
+        }
     ),
     (
         {
@@ -87,21 +85,18 @@ positive_get_granted_permissions_dataset = [
         {
             'status_code': status.HTTP_200_OK,
             'msg': 'Success',
-            'result':
+            'result': [
                 {
-                    'total': 1, 'current': 1, 'size': 50, 'pages': 1,
-                    'items': [
-                        {
-                            'id': 2,
-                            'permission': {
-                                'id': 1, 'scope': 'core:sudo', 'app': {'id': 1, 'name': 'core', 'enabled': True}
-                            },
-                            'user': None,
-                            'team': {'id': 1, 'name': 'Superusers'},
-                        }
-                    ]
-                },
-            'status': True}
+                    'id': 2,
+                    'permission': {
+                        'id': 1, 'scope': 'core:sudo', 'app': {'id': 1, 'name': 'core', 'enabled': True}
+                    },
+                    'user': None,
+                    'team': {'id': 1, 'name': 'Superusers'},
+                }
+            ],
+            'status': True
+        }
     )
 ]
 

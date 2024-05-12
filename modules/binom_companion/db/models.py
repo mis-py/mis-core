@@ -1,7 +1,4 @@
 from tortoise import Model, fields
-from tortoise.contrib.postgres.fields import ArrayField
-
-from modules.binom_companion.db.dataclass import DomainStatus
 
 
 class TrackerInstance(Model):

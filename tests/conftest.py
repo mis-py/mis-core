@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from main import app
-from services.tortoise_manager import TortoiseManager
+from libs.tortoise_manager import TortoiseManager
 from tortoise import Tortoise, ConfigurationError, connections
 
 import logging

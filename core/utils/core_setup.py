@@ -80,8 +80,3 @@ async def setup_guardian():
                     name=f"Can {code_perm_name} {model_name_spaces}",
                     content_type=content_type,
                 )
-
-
-async def setup_events():
-    pass
-    # TODO implement

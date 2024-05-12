@@ -11,11 +11,12 @@ from core.exceptions import NotFound
 from core.utils.notification.message import Message
 from core.utils.notification.recipient import Recipient
 from core.utils.schema import PageResponse
-from services.eventory import Eventory
 from core.services.base.base_service import BaseService
-from services.modules.context import AppContext
 
-from modules.binom_companion.schemas.lead_record import LeadRecordModel
+from libs.eventory import Eventory
+from libs.modules.AppContext import AppContext
+
+from .schemas.lead_record import LeadRecordModel
 from .repository import (
     TrackerInstanceRepository,
     ReplacementGroupRepository,

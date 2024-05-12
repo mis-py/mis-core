@@ -2,7 +2,7 @@ from typing import Optional
 
 from core.schemas.task import TaskResponse
 from core.utils.task import format_trigger
-from services.scheduler import SchedulerService
+from libs.scheduler import SchedulerService
 
 
 def get_available_tasks(task_id: Optional[str] = None) -> list[TaskResponse]:

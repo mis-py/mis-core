@@ -7,7 +7,7 @@
   "category": "companion",
   "dependencies": [],
   "permissions": {
-      "sudo": "Full module access",
+      "sudo": "Full module access"
   },
   "auth_disabled": true
 }

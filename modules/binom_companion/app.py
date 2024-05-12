@@ -1,5 +1,5 @@
-from services.modules.utils import GenericModule
-from services.modules.components import Variables, ModuleLogs, TortoiseModels, EventRoutingKeys, APIRoutes
+from libs.modules.GenericModule import GenericModule
+from libs.modules.components import Variables, ModuleLogs, TortoiseModels, EventRoutingKeys, APIRoutes
 
 from .config import UserSettings, RoutingKeys, ModuleSettings
 from .routes import router

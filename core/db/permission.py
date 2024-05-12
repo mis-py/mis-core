@@ -21,4 +21,4 @@ class Permission(Model):
         table = 'mis_permissions'
 
     def __repr__(self):
-        return self.scope
+        return f"<Permission: {self.pk}, {self.name}, {self.scope}, {self.app}>"

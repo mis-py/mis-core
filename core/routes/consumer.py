@@ -1,10 +1,10 @@
 from aiormq import DuplicateConsumerTag
 from fastapi import APIRouter, Security, Response
 
-from core.dependencies import get_current_user
+from core.dependencies.misc import get_current_user
 from core.exceptions import NotFound, AlreadyExists
 
-from services.eventory import Eventory
+from libs.eventory import Eventory
 
 
 router = APIRouter(dependencies=[

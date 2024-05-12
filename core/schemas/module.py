@@ -1,10 +1,10 @@
 from typing import Optional
 
 from pydantic import BaseModel
-
-from core.db.models import Module
+from tortoise.contrib.pydantic import PydanticModel
+from core.db.dataclass import AppState
 from core.schemas.common import AppModel
-from services.modules.utils.manifest import ModuleManifest
+from libs.modules.utils.ModuleManifest import ModuleManifest
 
 
 class DownloadAppInput(BaseModel):
@@ -21,11 +21,11 @@ class ModuleManifestResponse(BaseModel):
     id: int
     name: str
     enabled: bool
-    state: Module.AppState
+    state: AppState
     manifest: Optional[ModuleManifest] = None
 
 
-class ModuleShortResponse(BaseModel):
+class ModuleShortResponse(PydanticModel):
     id: int
     name: str
     enabled: bool
@@ -35,4 +35,4 @@ class ModuleResponse(BaseModel):
     id: int
     name: str
     enabled: bool
-    state: Module.AppState
+    state: AppState

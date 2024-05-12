@@ -1,17 +1,18 @@
 from typing import Optional
 from pydantic import BaseModel
+from tortoise.contrib.pydantic import PydanticModel
 
 from core.schemas.common import UserModelShort, TeamModelShort
 from core.schemas.module import ModuleShortResponse
 
 
-class PermissionResponse(BaseModel):
+class PermissionResponse(PydanticModel):
     id: int
     scope: str
     app: ModuleShortResponse
 
 
-class GrantedPermissionResponse(BaseModel):
+class GrantedPermissionResponse(PydanticModel):
     id: int
     permission: PermissionResponse
     user: Optional[UserModelShort]

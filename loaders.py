@@ -1,13 +1,11 @@
-from functools import lru_cache
 from loguru import logger
 
-from services.eventory import Eventory
-from services.mongo.mongo import MongoService
-from services.redis import RedisService
-from services.scheduler import SchedulerService
-from services.modules.module_service import ModuleService
-from services.tortoise_manager import TortoiseManager
-from services.variables.variables import VariablesManager
+from libs.eventory import Eventory
+from libs.mongo.mongo import MongoService
+from libs.redis import RedisService
+from libs.scheduler import SchedulerService
+from libs.modules.module_service import ModuleService
+from libs.tortoise_manager import TortoiseManager
 
 from config import CoreSettings
 
@@ -22,15 +20,9 @@ from core.utils.core_setup import setup_core, setup_admin_user, setup_guardian
 # from typing import Dict, Iterable, Optional, Union
 
 from fastapi import APIRouter
-# from pydantic import BaseModel  # pylint: disable=E0611
 
 
-@lru_cache
-def get_settings():
-    return CoreSettings()
-
-
-settings = get_settings()
+settings = CoreSettings()
 
 
 async def init_core_routes(app):
@@ -102,7 +94,7 @@ async def init_admin_user():
 
 async def init_guardian():
     await setup_guardian()
-    logger.info('Guardian initialized')
+    logger.success('Guardian initialized')
 
 
 async def init_scheduler():

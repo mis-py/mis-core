@@ -26,11 +26,6 @@ class UserSelfUpdate(BaseModel):
     username: str = Field(max_length=20, min_length=3)
 
 
-class UserShortModel(BaseModel):
-    id: int
-    username: str
-
-
 class UserResponse(MisModel):
     id: int
     username: str

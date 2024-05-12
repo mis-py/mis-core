@@ -6,7 +6,7 @@ positive_get_modules = [
             "status_code": 200,
             "msg": "Success",
             "result": {
-                "total": 2,
+                "total": 3,
                 "current": 1,
                 "size": 50,
                 "pages": 1,
@@ -36,6 +36,26 @@ positive_get_modules = [
                             "dependencies": [],
                             "extra": {},
                             "auth_disabled": False
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "name": "binom_companion",
+                        "enabled": False,
+                        "state": "pre_initialized",
+                        "manifest": {
+                            "name": "binom_companion",
+                            "display_name": "Binom Companion",
+                            "description": "Module for watching binom stats and replace offer domains",
+                            "version": "0.4",
+                            "author": "Jake Jameson",
+                            "category": "companion",
+                            "permissions": {
+                                "sudo": "Full module access"
+                            },
+                            "dependencies": [],
+                            "auth_disabled": True,
+                            "extra": {}
                         }
                     }
                 ]

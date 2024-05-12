@@ -1,8 +1,8 @@
 from loguru import logger
 
 from core.utils.notification.message import Message
-from services.modules.components import EventManager
-from services.modules.context import AppContext
+from libs.modules.components import EventManager
+from libs.modules.AppContext import AppContext
 from ..config import RoutingKeys
 
 routing_keys = RoutingKeys()

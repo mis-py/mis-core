@@ -1,7 +1,4 @@
 import os
-
-# from dotenv import load_dotenv
-# from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
 
 # static config variables never changes

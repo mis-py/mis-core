@@ -352,11 +352,11 @@ positive_set_global_variables = [
         },
         [
             {
-                "setting_id": 1,
+                "variable_id": 1,
                 "new_value": 999
             },
             {
-                "setting_id": 2,
+                "variable_id": 2,
                 "new_value": "TEST"
             }
         ],
@@ -377,7 +377,7 @@ negative_set_global_variables = [
         },
         [
             {
-                "setting_id": 1,
+                "variable_id": 1,
                 "new_value": "TEST"
             }
         ],
@@ -395,7 +395,7 @@ negative_set_global_variables = [
         },
         [
             {
-                "setting_id": 1,
+                "variable_id": 1,
                 "new_value": "TEST"
             }
         ],
@@ -413,7 +413,7 @@ negative_set_global_variables = [
         },
         [
             {
-                "setting_id": 1,
+                "variable_id": 1,
                 "new_value": "TEST"
             }
         ],
@@ -426,7 +426,7 @@ negative_set_global_variables = [
         },
         [
             {
-                "setting_id": 1,
+                "variable_id": 1,
                 "new_value": "TEST"
             }
         ],
@@ -446,7 +446,7 @@ positive_set_local_variables = [
         },
         [
             {
-                "setting_id": 3,
+                "variable_id": 3,
                 "new_value": "test"
             }
         ],
@@ -458,7 +458,7 @@ positive_set_local_variables = [
         },
         [
             {
-                "setting_id": 3,
+                "variable_id": 3,
                 "new_value": "test"
             }
         ],
@@ -473,7 +473,7 @@ negative_set_local_variables = [
         },
         [
             {
-                "setting_id": 0,
+                "variable_id": 0,
                 "new_value": "TEST"
             }
         ],
@@ -490,7 +490,7 @@ negative_set_local_variables = [
         },
         [
             {
-                "setting_id": 1,
+                "variable_id": 1,
                 "new_value": "TEST"
             }
         ],
@@ -507,7 +507,7 @@ negative_set_local_variables = [
         },
         [
             {
-                "setting_id": 0,
+                "variable_id": 0,
                 "new_value": "TEST"
             }
         ],
@@ -524,7 +524,7 @@ negative_set_local_variables = [
         },
         [
             {
-                "setting_id": 1,
+                "variable_id": 1,
                 "new_value": "TEST"
             }
         ],

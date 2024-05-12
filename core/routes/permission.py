@@ -1,3 +1,4 @@
+import loguru
 from fastapi import APIRouter, Depends, Security, Query
 
 from core.db.models import User, Team
@@ -24,23 +25,21 @@ async def permissions_list(uow: UnitOfWorkDep):
     )
 
 
-# TODO remove here pagination
 @router.get(
     '/granted/my',
-    response_model=PageResponse[GrantedPermissionResponse]
+    response_model=MisResponse[GrantedPermissionResponse]
 )
 async def get_my_granted_permissions(uow: UnitOfWorkDep, user: User = Depends(get_current_user)):
-    return await GrantedPermissionService(uow).filter_and_paginate(
+    return await GrantedPermissionService(uow).filter(
         user_id=user.pk,
         prefetch_related=['team', 'user', 'permission__app'],
     )
 
 
-# TODO remove here pagination
 @router.get(
     '/granted',
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])],
-    response_model=PageResponse[GrantedPermissionResponse],
+    response_model=MisResponse[list[GrantedPermissionResponse]],
 )
 async def get_granted_permissions(
         uow: UnitOfWorkDep,
@@ -53,18 +52,23 @@ async def get_granted_permissions(
     if user_id is not None:
         user = await get_user_by_id(uow=uow, user_id=user_id)
 
-        return await GrantedPermissionService(uow).filter_and_paginate(
+        granted_permissions = await GrantedPermissionService(uow).filter(
             user_id=user.pk,
+            # TODO create example with nested prefetch
             prefetch_related=['team', 'user', 'permission__app'],
         )
+
+        return MisResponse[list[GrantedPermissionResponse]](result=granted_permissions)
 
     if team_id is not None:
         team = await get_team_by_id(uow=uow, team_id=team_id)
 
-        return await GrantedPermissionService(uow).filter_and_paginate(
+        granted_permissions = await GrantedPermissionService(uow).filter(
             team_id=team.pk,
             prefetch_related=['team', 'user', 'permission__app'],
         )
+
+        return MisResponse[list[GrantedPermissionResponse]](result=granted_permissions)
 
 
 @router.put(

@@ -1,11 +1,9 @@
-from fastapi_pagination import Page
-
-from core.db.models import Module
+from core.db.dataclass import AppState
 from core.schemas.module import ModuleManifestResponse
 from core.services.base.base_service import BaseService
 from core.services.base.unit_of_work import IUnitOfWork
 from core.utils.schema import PageResponse
-from services.modules.module_service.utils import read_module_manifest
+from libs.modules.module_service.utils import read_module_manifest
 
 
 class ModuleUOWService(BaseService):
@@ -52,5 +50,5 @@ class ModuleUOWService(BaseService):
         return await self.uow.module_repo.create(data={
             'name': name,
             'enabled': True,
-            'state': Module.AppState.RUNNING,
+            'state': AppState.RUNNING,
         })

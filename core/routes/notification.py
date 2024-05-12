@@ -11,7 +11,7 @@ from core.services.notification import RoutingKeySubscriptionService, \
 from core.schemas.notification import RoutingKeyResponse, RoutingKeyUpdate
 from core.utils.notification.utils import routing_key_to_dict
 from core.utils.schema import MisResponse, PageResponse
-from services.redis import RedisService
+from libs.redis import RedisService
 
 
 router = APIRouter()

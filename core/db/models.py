@@ -1,8 +1,7 @@
-from enum import Enum
-
 from tortoise import fields
 from tortoise.models import Model
 from .mixin import UserPermissionsMixin, TeamPermissionsMixin, Permission
+from .dataclass import AppState, StatusTask
 
 
 class User(Model, UserPermissionsMixin):
@@ -12,11 +11,8 @@ class User(Model, UserPermissionsMixin):
 
     disabled = fields.BooleanField(default=False)
 
-    # DEPRECATED - remove it
-    signed_in = fields.BooleanField(default=False)
-
     team = fields.ForeignKeyField('core.Team', related_name='users', on_delete=fields.SET_NULL, null=True)
-    settings: fields.ReverseRelation['VariableValue']
+    variable_values: fields.ReverseRelation['VariableValue']
     groups: fields.ManyToManyRelation
     access_groups: fields.ManyToManyRelation['GuardianAccessGroup']
 
@@ -31,7 +27,7 @@ class User(Model, UserPermissionsMixin):
 
 
 class Team(Model, TeamPermissionsMixin):
-    name = fields.CharField(max_length=50, )  # unique=True)
+    name = fields.CharField(max_length=50, unique=True)
     users: fields.ReverseRelation[User]
 
     class Meta:
@@ -45,49 +41,42 @@ class Variable(Model):
     is_global = fields.BooleanField(default=True)
     type = fields.CharField(max_length=100, default="text")
 
-    app = fields.ForeignKeyField('core.Module', related_name='settings')
+    app = fields.ForeignKeyField('core.Module', related_name='variables')
 
     class PydanticMeta:
         exclude = ('values',)
 
     class Meta:
-        table = 'mis_settings'
+        table = 'mis_variables'
 
 
 class VariableValue(Model):
-    setting = fields.ForeignKeyField('core.Variable', related_name='values')
+    variable = fields.ForeignKeyField('core.Variable', related_name='values')
 
-    user = fields.ForeignKeyField('core.User', null=True, related_name='settings')
-    team = fields.ForeignKeyField('core.Team', null=True, related_name='settings')
+    user = fields.ForeignKeyField('core.User', null=True, related_name='variable_values')
+    team = fields.ForeignKeyField('core.Team', null=True, related_name='variable_values')
 
-    value = fields.CharField(max_length=500)
+    value = fields.CharField(max_length=2048)
 
     class PydanticMeta:
         exclude = ('user', 'team', 'user_id', 'team_id')
 
     class Meta:
-        table = 'mis_setting_values'
-        unique_together = (('setting', 'user'), ('setting', 'team'))
+        table = 'mis_variable_values'
+        unique_together = (('variable', 'user'), ('variable', 'team'))
 
 
 class Module(Model):
-    class AppState(str, Enum):
-        PRE_INITIALIZED = 'pre_initialized'  # initial state
-        INITIALIZED = 'initialized'  # after init
-        RUNNING = 'running'  # after start
-        STOPPED = 'stopped'  # after stop
-        SHUTDOWN = 'shutdown'  # after shutdown
-
     name = fields.CharField(max_length=50, unique=True)
     enabled = fields.BooleanField(default=False)
     permissions: fields.ReverseRelation[Permission]
     state = fields.CharEnumField(enum_type=AppState, default=AppState.PRE_INITIALIZED)
 
     class PydanticMeta:
-        exclude = ('permissions', 'settings')
+        exclude = ('permissions', 'variables')
 
     class Meta:
-        table = 'mis_apps'
+        table = 'mis_modules'
 
     def __str__(self):
         return f'<Module: {self.name}>'
@@ -95,10 +84,6 @@ class Module(Model):
 
 class ScheduledJob(Model):
     """Needed for manage when to start scheduled tasks"""
-
-    class StatusTask(str, Enum):
-        PAUSED = 'paused'
-        RUNNING = 'running'
 
     app = fields.ForeignKeyField('core.Module', related_name='jobs')
     user = fields.ForeignKeyField('core.User', related_name='jobs')
