@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+from core.db.guardian import GuardianGroupPermission
 from core.repositories.base.repository import TortoiseORMRepository, IRepository
 
 
@@ -18,6 +19,8 @@ class IGGroupPermissionRepository(IRepository, ABC):
 
 
 class GGroupPermissionRepository(TortoiseORMRepository, IGGroupPermissionRepository):
+    model = GuardianGroupPermission
+
     async def get_or_create(self, group_id: int, permission_id: int, content_type_id: int, object_pk):
         return await self.model.get_or_create(
             group_id=group_id,
@@ -25,7 +28,6 @@ class GGroupPermissionRepository(TortoiseORMRepository, IGGroupPermissionReposit
             content_type_id=content_type_id,
             object_pk=object_pk,
         )
-
 
     async def get_objects_pks(self, group_id: int, model: str, perm: str):
         return await self.model.filter(

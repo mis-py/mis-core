@@ -11,6 +11,8 @@ class IRoutingKeySubscriptionRepository(IRepository, ABC):
 
 
 class RoutingKeySubscriptionRepository(TortoiseORMRepository, IRoutingKeySubscriptionRepository):
+    model = RoutingKeySubscription
+
     async def create_bulk(self, user_id: int, routing_key_ids: list[int]):
         objects = []
         for routing_key_id in routing_key_ids:

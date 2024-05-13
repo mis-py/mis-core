@@ -1,15 +1,15 @@
 from core.db.models import Variable
+from core.repositories.variable import IVariableRepository
 from core.schemas.variable import UpdateVariable
 from core.services.base.base_service import BaseService
-from core.services.base.unit_of_work import IUnitOfWork
 from libs.variables.utils import type_convert
 from core.exceptions import NotFound, ValidationFailed
 
 
 class VariableService(BaseService):
-    def __init__(self, uow: IUnitOfWork):
-        super().__init__(repo=uow.variable_repo)
-        self.uow = uow
+    def __init__(self, variable_repo: IVariableRepository):
+        self.variable_repo = variable_repo
+        super().__init__(repo=variable_repo)
 
     async def set_variables(self, variables: list[UpdateVariable]):
         for variable in variables:
@@ -18,7 +18,7 @@ class VariableService(BaseService):
 
             converted_value = await self.validate_variable(variable, variable_obj)
 
-            await self.uow.variable_repo.update(
+            await self.variable_repo.update(
                 id=variable_obj.id,
                 data={'default_value': converted_value},
             )
@@ -42,7 +42,7 @@ class VariableService(BaseService):
             is_global: bool,
             type: str
     ):
-        return await self.uow.variable_repo.get_or_create(
+        return await self.variable_repo.get_or_create(
             module_id=module_id,
             key=key,
             default_value=default_value,
@@ -55,7 +55,7 @@ class VariableService(BaseService):
         if (variable.default_value != default_value
                 or variable.is_global != is_global
                 or variable.type != type):
-            await self.uow.variable_repo.update(
+            await self.variable_repo.update(
                 id=variable.pk,
                 data={
                     'default_value': default_value,
@@ -67,5 +67,5 @@ class VariableService(BaseService):
 
     async def delete_unused(self, module_id: int, exist_keys: list[str]) -> int:
         """Remove unused variables for app"""
-        return await self.uow.variable_repo.delete_unused(module_id=module_id, exist_keys=exist_keys)
+        return await self.variable_repo.delete_unused(module_id=module_id, exist_keys=exist_keys)
 

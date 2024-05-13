@@ -3,14 +3,15 @@ from loguru import logger
 import os
 
 from core.db.dataclass import AppState
+from core.db.models import Module
+from core.dependencies.services import get_module_service
 from core.exceptions import MISError
-from core.services.base.unit_of_work import unit_of_work_factory
-from core.services.module import ModuleUOWService
 from .utils import manifests_sort_by_dependency, import_module, unload_module, read_module_manifest, \
     module_dependency_check
 from ..GenericModule import GenericModule
 from const import MODULES_DIR, MODULES_DIR_NAME
 from ..utils.ModuleManifest import ModuleManifest
+from core.services import module
 
 
 # from modules.core.notifications.handlers import eventory_message_handler
@@ -21,6 +22,7 @@ from ..utils.ModuleManifest import ModuleManifest
 class ModuleService:
     _modules_manifests: dict[str, ModuleManifest] = {}
     _loaded_modules: dict[str, GenericModule] = {}
+    _service: module.ModuleService = get_module_service()
 
     # _core_consumer: Optional[Consumer]
 
@@ -93,7 +95,7 @@ class ModuleService:
         Method called by system loader!
         Creates DB model instance and bind it to module instance and module components
         """
-        module_uow_service = ModuleUOWService(unit_of_work_factory())
+        module_uow_service = get_module_service()
         for module_name, module in cls._loaded_modules.items():
             module_model, is_created = await module_uow_service.get_or_create(name=module_name)
             if is_created:
@@ -108,11 +110,10 @@ class ModuleService:
         Method called by system loader!
         Run module init and start if module is enabled
         """
-        module_uow_service = ModuleUOWService(unit_of_work_factory())
         for module_name, module in cls._loaded_modules.items():
             if module.is_enabled():
                 try:
-                    await cls.init_module(application, module.name, module_uow_service, from_system=True)
+                    await cls.init_module(application, module.name, from_system=True)
                 except Exception as e:
                     logger.error(f'[ModuleService] Module: {module.name} system init failed ({e}), skip...')
                     continue
@@ -120,7 +121,7 @@ class ModuleService:
                 logger.debug(f'[ModuleService] Module: {module.name} auto-start is enabled starting...')
 
                 try:
-                    await cls.start_module(module.name, module_uow_service, from_system=True)
+                    await cls.start_module(module.name, from_system=True)
                 except Exception as e:
                     logger.error(f'[ModuleService] Module: {module.name} system init failed ({e}), skip...')
                     continue
@@ -135,14 +136,13 @@ class ModuleService:
         Executes when application shutdowns.
         Calls stop_module for every enabled app if enabled and then shutdown
         """
-        module_uow_service = ModuleUOWService(unit_of_work_factory())
         for module_name, module in cls._loaded_modules.copy().items():
             if module.is_enabled():
-                await cls.stop_module(module_name, module_uow_service, from_system=True)
-            await cls.shutdown_module(module_name, module_uow_service, from_system=True)
+                await cls.stop_module(module_name, from_system=True)
+            await cls.shutdown_module(module_name, from_system=True)
 
     @classmethod
-    async def init_module(cls, application, module_name: str, module_uow_service: ModuleUOWService, from_system=False) -> GenericModule:
+    async def init_module(cls, application, module_name: str, from_system=False) -> GenericModule:
 
         # except ModuleNotFoundError as e:
         #     logger.exception(e)
@@ -167,14 +167,14 @@ class ModuleService:
         return module
 
     @classmethod
-    async def start_module(cls, module_name: str, uow_service: ModuleUOWService, from_system=False) -> GenericModule:
+    async def start_module(cls, module_name: str, from_system=False) -> GenericModule:
         module = cls._get_module(module_name)
 
         await module.start(from_system)
 
         if not from_system:
             # if call come not from system then we can change it state in DB
-            new_model = await uow_service.set_enabled(module_id=module.get_id())
+            new_model = await cls._service.set_enabled(module_id=module.get_id())
             # rebind new model to module after update
             await module.bind_model(new_model, False)
 
@@ -186,14 +186,14 @@ class ModuleService:
         return module
 
     @classmethod
-    async def stop_module(cls, module_name: str, module_uow_service: ModuleUOWService, from_system=False) -> GenericModule:
+    async def stop_module(cls, module_name: str, from_system=False) -> GenericModule:
         module = cls._get_module(module_name)
 
         await module.stop(from_system)
 
         if not from_system:
             # if call come not from system then we can change it state in DB
-            new_model = await module_uow_service.set_disabled(module_id=module.get_id())
+            new_model = await cls._service.set_disabled(module_id=module.get_id())
             # rebind new model to module after update
             await module.bind_model(new_model, False)
 
@@ -205,7 +205,7 @@ class ModuleService:
         return module
 
     @classmethod
-    async def shutdown_module(cls, module_name: str, module_uow_service: ModuleUOWService, from_system=False):
+    async def shutdown_module(cls, module_name: str, from_system=False):
         module = cls._get_module(module_name)
         await module.shutdown(from_system)
 
@@ -232,19 +232,19 @@ class ModuleService:
     #     if cls._core_consumer:
     #         await cls._core_consumer.stop()
 
-        # all_keys = await crud.routing_key.all_keys_values_list()
-        # senders = await cls._get_all_senders()
-        #
-        # # TODO for what redis here?
-        # message_handler_partial = async_partial(coro=eventory_message_handler, redis=RedisService)
-        #
-        # cls._core_consumer = await Eventory.register_handler(
-        #     app_name='core',
-        #     routing_keys=all_keys,
-        #     callback=message_handler_partial,
-        #     senders=senders,
-        # )
-        # await cls._core_consumer.start()
+    # all_keys = await crud.routing_key.all_keys_values_list()
+    # senders = await cls._get_all_senders()
+    #
+    # # TODO for what redis here?
+    # message_handler_partial = async_partial(coro=eventory_message_handler, redis=RedisService)
+    #
+    # cls._core_consumer = await Eventory.register_handler(
+    #     app_name='core',
+    #     routing_keys=all_keys,
+    #     callback=message_handler_partial,
+    #     senders=senders,
+    # )
+    # await cls._core_consumer.start()
 
     # @classmethod
     # async def _get_all_senders(cls):

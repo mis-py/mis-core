@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 from tortoise.queryset import QuerySet
 
+from core.db.models import RoutingKey
 from core.repositories.base.repository import TortoiseORMRepository, IRepository
 
 
@@ -17,6 +18,8 @@ class IRoutingKeyRepository(IRepository, ABC):
 
 
 class RoutingKeyRepository(TortoiseORMRepository, IRoutingKeyRepository):
+    model = RoutingKey
+
     async def filter_by_user(self, user_id: int) -> QuerySet:
         return self.model.filter(key_subscriptions__user_id=user_id)
 
