@@ -16,6 +16,7 @@ from aiormq import DuplicateConsumerTag
 
 from config import CoreSettings
 from const import DEFAULT_ADMIN_USERNAME, PROD_ENVIRONMENT, ENVIRONMENT, LOGS_DIR, MODULES_DIR
+from core.db.dataclass import StatusTask
 from core.db.models import ScheduledJob
 from core.dependencies.services import get_permission_service, get_variable_service, get_routing_key_service, \
     get_user_service, get_scheduled_job_service
@@ -179,7 +180,7 @@ class ScheduledTasks(Component):
             await SchedulerService.restore_job(
                 saved_job=saved_job,
                 module=self.module,
-                run_at_startup=saved_job.status == ScheduledJob.StatusTask.RUNNING
+                run_at_startup=saved_job.status == StatusTask.RUNNING
             )
 
         # TODO implement autostart at root user

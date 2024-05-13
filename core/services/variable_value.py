@@ -1,3 +1,4 @@
+from core.db.models import Variable
 from core.exceptions import ValidationFailed, NotFound
 from core.repositories.variable import IVariableRepository
 from core.repositories.variable_value import IVariableValueRepository

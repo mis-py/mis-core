@@ -29,8 +29,9 @@ from core.services.variable_value import VariableValueService
 
 def get_user_service() -> UserService:
     user_repo = UserRepository()
+    team_repo = TeamRepository()
 
-    user_service = UserService(user_repo=user_repo)
+    user_service = UserService(user_repo=user_repo, team_repo=team_repo)
     return user_service
 
 

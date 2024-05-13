@@ -156,7 +156,7 @@ class SchedulerService:
             logger.info(f'[SchedulerService]: Restored job {job.name}')
         except (ValueError, ConflictingIdError) as error:
             logger.error(f'[SchedulerService] Error add job: {error}')
-            raise AlreadyExists(f"Conflict id, job already exists for this {task.type}")
+            return None
 
         return job
 
