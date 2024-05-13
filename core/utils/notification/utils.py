@@ -3,8 +3,9 @@ from loguru import logger
 from core.db.models import RoutingKey
 from loguru import logger
 
-from services.eventory import CustomIncomingMessage
-from services.redis import RedisService
+from libs.eventory import CustomIncomingMessage
+from libs.redis import RedisService
+
 from .message import Message, IncomingProcessedMessage
 from ...services.base.unit_of_work import unit_of_work_factory
 from ...services.user import UserService

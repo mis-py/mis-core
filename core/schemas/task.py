@@ -3,6 +3,7 @@ import re
 from typing import Literal, Optional
 from core.utils.schema import MisModel
 from core.db.models import ScheduledJob
+from core.db.dataclass import StatusTask
 
 
 class JobTrigger(MisModel):
@@ -39,7 +40,7 @@ class JobTrigger(MisModel):
 class JobResponse(JobTrigger):
     job_id: int
     name: str
-    status: ScheduledJob.StatusTask
+    status: StatusTask
     app_id: Optional[int]
     user_id: Optional[int]
     team_id: Optional[int]

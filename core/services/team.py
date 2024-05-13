@@ -3,7 +3,7 @@ from core.exceptions import ValidationFailed, MISError
 from core.schemas.team import TeamCreate, TeamUpdate
 from core.services.base.base_service import BaseService
 from core.services.base.unit_of_work import IUnitOfWork
-from services.variables.utils import type_convert
+from libs.variables.utils import type_convert
 
 
 class TeamService(BaseService):
@@ -21,10 +21,10 @@ class TeamService(BaseService):
             if team_in.users_ids:
                 await self.uow.user_repo.update_list(update_ids=team_in.users_ids, data={'team_id': new_team.id})
 
-            for setting in team_in.variables:
-                variable = await self.uow.variable_repo.get(id=setting.setting_id)
+            for variable_in in team_in.variables:
+                variable = await self.uow.variable_repo.get(id=variable_in.variable_id)
                 try:
-                    type_convert(value=setting.new_value, to_type=variable.type)
+                    type_convert(value=variable_in.new_value, to_type=variable.type)
                 except ValueError:
                     raise ValidationFailed(
                         f"Can't set setting {variable.key}. Value is not '{variable.type}' type",
@@ -37,7 +37,7 @@ class TeamService(BaseService):
 
                 await self.uow.variable_value_repo.update_or_create(
                     variable_id=variable.pk,
-                    value=setting.new_value,
+                    value=variable_in.new_value,
                     team_id=new_team.pk,
                 )
         return new_team

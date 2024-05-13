@@ -3,7 +3,7 @@ from core.exceptions import ValidationFailed, NotFound
 from core.schemas.variable import UpdateVariable
 from core.services.base.base_service import BaseService
 from core.services.base.unit_of_work import IUnitOfWork
-from services.variables.utils import type_convert
+from libs.variables.utils import type_convert
 
 
 class VariableValueService(BaseService):
@@ -22,10 +22,10 @@ class VariableValueService(BaseService):
         for variable in variables:
             # remove VariableValue if new_value is empty
             if not variable.new_value:
-                await self.uow.variable_value_repo.delete(user_id=user_id, setting_id=variable.setting_id)
+                await self.uow.variable_value_repo.delete(user_id=user_id, variable_id=variable.variable_id)
                 continue
 
-            variable_obj = await self.uow.variable_repo.get(id=variable.setting_id)
+            variable_obj = await self.uow.variable_repo.get(id=variable.variable_id)
 
             await self.validate_variable(variable=variable, variable_obj=variable_obj)
 
@@ -38,17 +38,17 @@ class VariableValueService(BaseService):
 
     async def validate_variable(self, variable: UpdateVariable, variable_obj: Variable):
         if not variable_obj:
-            raise NotFound(f"VariableValue with ID '{variable.setting_id}' not exist")
+            raise NotFound(f"VariableValue with ID '{variable.variable_id}' not exist")
 
         try:
             type_convert(value=variable.new_value, to_type=variable_obj.type)
         except ValueError:
             raise ValidationFailed(
-                f"Can't convert value '{variable.new_value}' to '{variable_obj.type}' for VariableValue with ID '{variable.setting_id}'",
+                f"Can't convert value '{variable.new_value}' to '{variable_obj.type}' for VariableValue with ID '{variable.variable_id}'",
             )
 
         if variable_obj.is_global:
             raise ValidationFailed(
-                f"Can't set global VariableValue with ID '{variable.setting_id}' as local setting for user",
+                f"Can't set global VariableValue with ID '{variable.variable_id}' as local setting for user",
             )
 

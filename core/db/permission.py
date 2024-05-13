@@ -3,22 +3,22 @@ from tortoise.models import Model
 
 
 class GrantedPermission(Model):
-    permission = fields.ForeignKeyField('models.Permission', related_name='granted_permissions')
-    user = fields.ForeignKeyField('models.User', null=True, related_name='granted_permissions')
-    team = fields.ForeignKeyField('models.Team', null=True, related_name='granted_permissions')
+    permission = fields.ForeignKeyField('core.Permission', related_name='granted_permissions')
+    user = fields.ForeignKeyField('core.User', null=True, related_name='granted_permissions')
+    team = fields.ForeignKeyField('core.Team', null=True, related_name='granted_permissions')
 
     class Meta:
-        table = 'mis_grantedpermissions'
+        table = 'mis_granted_permissions'
         unique_together = (('permission', 'user'), ('permission', 'team'))
 
 
 class Permission(Model):
     name = fields.CharField(max_length=50)
     scope = fields.CharField(max_length=30, unique=True)
-    app = fields.ForeignKeyField('models.Module', related_name='permissions')
+    app = fields.ForeignKeyField('core.Module', related_name='permissions')
 
     class Meta:
         table = 'mis_permissions'
 
     def __repr__(self):
-        return self.scope
+        return f"<Permission: {self.pk}, {self.name}, {self.scope}, {self.app}>"

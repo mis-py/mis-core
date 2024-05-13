@@ -1,14 +1,12 @@
-import loguru
-
+from core.db.dataclass import AppState, StatusTask
 from core.db.models import ScheduledJob, User, Team, Module
 from core.exceptions import NotFound, AlreadyExists, MISError
 from core.schemas.task import JobCreate, JobTrigger
 from core.services.base.base_service import BaseService
 from core.services.base.unit_of_work import IUnitOfWork
 from core.utils.task import get_trigger
-from services.scheduler import SchedulerService
+from libs.scheduler import SchedulerService
 
-# TODO CRITICAL - should tasks start if module is disabled?
 
 class ScheduledJobService(BaseService):
     def __init__(self, uow: IUnitOfWork):
@@ -68,6 +66,9 @@ class ScheduledJobService(BaseService):
         module = task.module
         task_name = task.name
 
+        if module._model.state != AppState.RUNNING:
+            raise MISError("Not allowed creating job for module that is not running")
+
         if task.single_instance:
             scheduled_job = await self.uow.scheduled_job_repo.get(
                 task_name=task_name, app=module._model, user=user, team=team
@@ -81,7 +82,7 @@ class ScheduledJobService(BaseService):
                 team=team,
                 app=module._model,
                 task_name=task_name,
-                status=ScheduledJob.StatusTask.RUNNING if task.autostart else ScheduledJob.StatusTask.PAUSED,
+                status=StatusTask.RUNNING if task.autostart else StatusTask.PAUSED,
                 extra_data=job_in.extra,
                 trigger={"data": job_in.trigger}
             )
@@ -126,7 +127,7 @@ class ScheduledJobService(BaseService):
 
             updated_obj = await self.uow.scheduled_job_repo.update(
                 id=job_id,
-                data={'status': ScheduledJob.StatusTask.PAUSED.value}
+                data={'status': StatusTask.PAUSED.value}
             )
 
             await updated_obj.save()
@@ -139,7 +140,7 @@ class ScheduledJobService(BaseService):
 
             updated_obj = await self.uow.scheduled_job_repo.update(
                 id=job_id,
-                data={'status': ScheduledJob.StatusTask.RUNNING.value}
+                data={'status': StatusTask.RUNNING.value}
             )
 
             await updated_obj.save()

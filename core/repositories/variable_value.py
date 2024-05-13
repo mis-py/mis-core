@@ -12,7 +12,7 @@ class VariableValueRepository(TortoiseORMRepository, IVariableValueRepository):
     async def update_or_create(self, variable_id: int, value, user_id: int = None, team_id: int = None):
         variable_value_instance, is_created = await self.model.update_or_create(
             defaults={'value': value},
-            setting_id=variable_id,
+            variable_id=variable_id,
             user_id=user_id,
             team_id=team_id
         )

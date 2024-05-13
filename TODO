@@ -7,8 +7,6 @@ IMPORTS
 3. Local application/library specific imports.
 
 TYPE CHECKING
-import types vis type cheking
-
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -22,6 +20,5 @@ TODO introduce mongodb to dummy  https://www.mongodb.com/developer/languages/pyt
 TODO introduce websockets to dummy  https://fastapi.tiangolo.com/advanced/websockets/#handling-disconnections-and-multiple-clients
 TODO introduce redis to dummy  https://github.com/redis/redis-py
 TODO introduce or verify proper logging to dummy  https://github.com/Delgan/loguru
-TODO finish rename settings to variables
 TODO implement clickhouse  https://clickhouse.com/docs/en/intro
 TODO scopes.py replace hardcode strings with class

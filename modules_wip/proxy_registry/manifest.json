@@ -1,0 +1,14 @@
+{
+  "name": "proxy_registry",
+  "display_name": "Proxy Registry",
+  "description": "Module provides proxy registry for various operations",
+  "version": "0.1",
+  "author": "Kankuro, ADLR",
+  "category": "data provider",
+  "dependencies": [],
+  "permissions": {
+      "sudo": "Full module access",
+      "proxies": "Access for 'proxies' endpoints"
+  },
+  "auth_disabled": false
+}

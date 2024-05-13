@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from main import app
-from services.tortoise_manager import TortoiseManager
+from libs.tortoise_manager import TortoiseManager
 from tortoise import Tortoise, ConfigurationError, connections
 
 import logging
@@ -32,7 +32,11 @@ async def drop_databases():
 async def init_database():
     log.info("Init Tortoise to cleanup before tests")
     # Call init() directly to init without create_db flag
-    await Tortoise.init(config=TortoiseManager._tortiose_orm)
+    await Tortoise.init(
+        db_url=TortoiseManager._db_url,
+        modules=TortoiseManager._modules,
+    )
+    # await Tortoise.init(config=TortoiseManager._tortiose_orm)
     await drop_databases()
     await connections.close_all()
 

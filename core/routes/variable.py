@@ -12,7 +12,7 @@ from core.services.variable import VariableService
 from core.services.variable_value import VariableValueService
 from core.utils.schema import MisResponse, PageResponse
 from core.exceptions.exceptions import ValidationFailed, MISError
-from services.variables.variables import VariablesManager
+from libs.variables.variables import VariablesManager
 
 
 router = APIRouter()
@@ -72,7 +72,7 @@ async def get_local_variables(
     return await VariableValueService(uow).filter_and_paginate(
         team_id=team_id,
         user_id=user_id,
-        prefetch_related=['setting']
+        prefetch_related=['variable']
     )
 
 
@@ -137,7 +137,7 @@ async def get_my_variables(
 ):
     return await VariableValueService(uow).filter_and_paginate(
         user_id=user.pk,
-        prefetch_related=['setting']
+        prefetch_related=['variable']
     )
 
 

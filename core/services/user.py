@@ -1,11 +1,14 @@
+from tortoise.exceptions import IntegrityError
+
 from core.auth_backend import set_password
 from core.db.models import User
 from core.exceptions import ValidationFailed, MISError, TokenError
 from core.schemas.user import UserCreate, UserUpdate
 from core.services.base.base_service import BaseService
 from core.services.base.unit_of_work import IUnitOfWork
+from core.services.team import TeamService
 from core.utils.notification.recipient import Recipient
-from services.variables.utils import type_convert
+from core.exceptions import NotFound, AlreadyExists
 
 
 class UserService(BaseService):
@@ -14,14 +17,23 @@ class UserService(BaseService):
         self.uow = uow
 
     async def create_with_pass(self, user_in: UserCreate) -> User:
+        if user_in.team_id is not None:
+            team = await TeamService(self.uow).get(id=user_in.team_id)
+            if not team:
+                raise NotFound(f"Team id '{user_in.team_id}' not exist")
+
         async with self.uow:
-            new_user = User(
-                username=user_in.username,
-                team_id=user_in.team_id,
-                position=user_in.position,
-            )
-            set_password(new_user, user_in.password)
-            await self.uow.user_repo.save(obj=new_user)
+            # TODO refactor this try except shit
+            try:
+                new_user = User(
+                    username=user_in.username,
+                    team_id=user_in.team_id,
+                    position=user_in.position,
+                )
+                set_password(new_user, user_in.password)
+                await self.uow.user_repo.save(obj=new_user)
+            except IntegrityError:
+                raise AlreadyExists(f"User with username '{user_in.username}' already exists")
 
         return new_user
 

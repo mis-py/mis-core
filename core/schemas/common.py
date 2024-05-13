@@ -1,8 +1,6 @@
 from tortoise.contrib.pydantic import PydanticModel
-from pydantic import BaseModel
 from typing import Optional
 from core.db.models import Module, User, Team
-from services.modules.utils.manifest import ModuleManifest
 
 
 class UserModelShort(PydanticModel):

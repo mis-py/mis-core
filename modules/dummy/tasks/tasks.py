@@ -2,9 +2,10 @@ from loguru import logger
 
 from core.utils.notification.message import Message
 from ..config import ModuleSettings, RoutingKeys
-from services.modules.components import ScheduledTasks
-from services.modules.context import AppContext
-from services.eventory import Eventory
+from libs.modules.components import ScheduledTasks
+from libs.modules.AppContext import AppContext
+from libs.eventory import Eventory
+
 
 scheduled_tasks = ScheduledTasks()
 config = ModuleSettings()
@@ -17,13 +18,15 @@ async def dummy_task(ctx: AppContext):
         f"Execute task every {config.TICK_5_SEC} seconds for module {ctx.app_name} "
         f"and sending message to eventory"
     )
+    yield "yield test 1"
     await Eventory.publish(
         Message(
-            body={"dummy_setting": ctx.settings.PRIVATE_SETTING},
+            body={"dummy_setting": ctx.variables.PRIVATE_SETTING},
         ),
         routing_keys.DUMMY_EVENT,
         ctx.app_name
     )
+    yield "yield test 2"
 
 
 @scheduled_tasks.schedule_task(trigger=None)

@@ -8,6 +8,7 @@ from starlette.requests import Request
 from core.dependencies.uow import UnitOfWorkDep
 from core.exceptions import AuthError
 from config import CoreSettings
+from const import DEFAULT_ADMIN_USERNAME
 from core.auth_backend import oauth2_scheme, check_user_perm
 from core.services.auth import AuthService
 from core.services.user import UserService
@@ -23,8 +24,7 @@ async def get_current_user(
         token: str = Depends(oauth2_scheme),
 ):
     if not settings.AUTHORIZATION_ENABLED:
-        # TODO replace it from config param
-        return await UserService(uow).get(username='admin')
+        return await UserService(uow).get(username=DEFAULT_ADMIN_USERNAME)
 
     if token:
         user = await AuthService(uow).get_user_from_token(token=token)

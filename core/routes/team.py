@@ -27,7 +27,7 @@ async def get_teams(uow: UnitOfWorkDep):
     response_model=MisResponse[TeamResponse]
 )
 async def get_team(uow: UnitOfWorkDep, team: Team = Depends(get_team_by_id)):
-    team_with_related = await TeamService(uow).get(id=team.pk, prefetch_related=['users', 'settings'])
+    team_with_related = await TeamService(uow).get(id=team.pk, prefetch_related=['users', 'variable_values'])
     team_with_related.permissions = await TeamService(uow).get_permissions(team_with_related)
 
     return MisResponse[TeamResponse](result=team_with_related)
@@ -40,7 +40,7 @@ async def get_team(uow: UnitOfWorkDep, team: Team = Depends(get_team_by_id)):
 )
 async def create_team(uow: UnitOfWorkDep, team_in: TeamCreate):
     new_team = await TeamService(uow).create_with_perms_users_vars(team_in)
-    team_with_related = await TeamService(uow).get(id=new_team.pk, prefetch_related=['users', 'settings'])
+    team_with_related = await TeamService(uow).get(id=new_team.pk, prefetch_related=['users', 'variable_values'])
 
     return MisResponse[TeamResponse](result=team_with_related)
 
@@ -57,7 +57,7 @@ async def edit_team(uow: UnitOfWorkDep, team_in: TeamUpdate, team: Team = Depend
     await TeamService(uow).update_with_perms_and_users(team=team_with_related, team_in=team_in)
 
     updated_team_with_related = await TeamService(uow).get(
-        id=team_with_related.pk, prefetch_related=['users', 'settings'])
+        id=team_with_related.pk, prefetch_related=['users', 'variable_values'])
 
     return MisResponse[TeamResponse](result=updated_team_with_related)
 
@@ -88,5 +88,5 @@ async def set_team_users(
     await TeamService(uow).set_users(team=team_with_related, users_ids=users_ids)
 
     updated_team_with_related = await TeamService(uow).get(
-        id=team.pk, prefetch_related=['users', 'settings'])
+        id=team.pk, prefetch_related=['users', 'variable_values'])
     return MisResponse[TeamResponse](result=updated_team_with_related)

@@ -1,7 +1,3 @@
-import loguru
-from apscheduler.job import Job
-from loguru import logger
-
 from fastapi import APIRouter, Depends, Security
 
 from core.db.models import User
