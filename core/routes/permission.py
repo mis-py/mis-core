@@ -1,14 +1,18 @@
-import loguru
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Security, Query
 
 from core.db.models import User, Team
+from core.dependencies.services import get_permission_service, get_granted_permission_service, get_user_service, \
+    get_team_service
 from core.exceptions import MISError
-from core.dependencies.uow import UnitOfWorkDep
 from core.schemas.permission import GrantedPermissionResponse, PermissionResponse, PermissionUpdate
 from core.dependencies.path import get_user_by_id, get_team_by_id
 from core.dependencies.security import get_current_user
 from core.services.granted_permission import GrantedPermissionService
 from core.services.permission import PermissionService
+from core.services.team import TeamService
+from core.services.user import UserService
 from core.utils.schema import PageResponse, MisResponse
 
 router = APIRouter()
@@ -19,8 +23,10 @@ router = APIRouter()
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:permissions'])],
     response_model=PageResponse[PermissionResponse]
 )
-async def permissions_list(uow: UnitOfWorkDep):
-    return await PermissionService(uow).filter_and_paginate(
+async def permissions_list(
+        permission_service: Annotated[PermissionService, Depends(get_permission_service)]
+):
+    return await permission_service.filter_and_paginate(
         prefetch_related=['app'],
     )
 
@@ -29,8 +35,11 @@ async def permissions_list(uow: UnitOfWorkDep):
     '/granted/my',
     response_model=MisResponse[GrantedPermissionResponse]
 )
-async def get_my_granted_permissions(uow: UnitOfWorkDep, user: User = Depends(get_current_user)):
-    return await GrantedPermissionService(uow).filter(
+async def get_my_granted_permissions(
+        granted_permission_service: Annotated[GrantedPermissionService, Depends(get_granted_permission_service)],
+        user: User = Depends(get_current_user),
+):
+    return await granted_permission_service.filter(
         user_id=user.pk,
         prefetch_related=['team', 'user', 'permission__app'],
     )
@@ -42,7 +51,9 @@ async def get_my_granted_permissions(uow: UnitOfWorkDep, user: User = Depends(ge
     response_model=MisResponse[list[GrantedPermissionResponse]],
 )
 async def get_granted_permissions(
-        uow: UnitOfWorkDep,
+        granted_permission_service: Annotated[GrantedPermissionService, Depends(get_granted_permission_service)],
+        user_service: Annotated[UserService, Depends(get_user_service)],
+        team_service: Annotated[TeamService, Depends(get_team_service)],
         user_id: int = Query(default=None),
         team_id: int = Query(default=None)
 ):
@@ -50,9 +61,9 @@ async def get_granted_permissions(
         raise MISError("Use only one filter")
 
     if user_id is not None:
-        user = await get_user_by_id(uow=uow, user_id=user_id)
+        user = await user_service.get_or_raise(id=user_id)
 
-        granted_permissions = await GrantedPermissionService(uow).filter(
+        granted_permissions = await granted_permission_service.filter(
             user_id=user.pk,
             # TODO create example with nested prefetch
             prefetch_related=['team', 'user', 'permission__app'],
@@ -61,9 +72,9 @@ async def get_granted_permissions(
         return MisResponse[list[GrantedPermissionResponse]](result=granted_permissions)
 
     if team_id is not None:
-        team = await get_team_by_id(uow=uow, team_id=team_id)
+        team = await team_service.get_or_raise(id=team_id)
 
-        granted_permissions = await GrantedPermissionService(uow).filter(
+        granted_permissions = await granted_permission_service.filter(
             team_id=team.pk,
             prefetch_related=['team', 'user', 'permission__app'],
         )
@@ -77,7 +88,9 @@ async def get_granted_permissions(
     response_model=MisResponse,
 )
 async def set_granted_permissions(
-        uow: UnitOfWorkDep,
+        granted_permission_service: Annotated[GrantedPermissionService, Depends(get_granted_permission_service)],
+        user_service: Annotated[UserService, Depends(get_user_service)],
+        team_service: Annotated[TeamService, Depends(get_team_service)],
         permissions: list[PermissionUpdate],
         user_id: int = Query(default=None),
         team_id: int = Query(default=None)
@@ -86,12 +99,11 @@ async def set_granted_permissions(
         raise MISError("Use only one filter")
 
     if user_id is not None:
-        user = await get_user_by_id(uow=uow, user_id=user_id)
-        await GrantedPermissionService(uow).set_for_user(permissions=permissions, user=user)
+        user = await user_service.get_or_raise(id=user_id)
+        await granted_permission_service.set_for_user(permissions=permissions, user=user)
 
     if team_id is not None:
-        team = await get_team_by_id(uow=uow, team_id=team_id)
-        await GrantedPermissionService(uow).set_for_team(permissions=permissions, team=team)
+        team = await team_service.get_or_raise(id=team_id)
+        await granted_permission_service.set_for_team(permissions=permissions, team=team)
 
     return MisResponse()
-

@@ -17,6 +17,7 @@ class IGAccessGroupRepository(IRepository, ABC):
 
 
 class GAccessGroupRepository(TortoiseORMRepository, IGAccessGroupRepository):
+    model = GuardianAccessGroup
 
     async def add_users(self, group: GuardianAccessGroup, users: list[User]):
         await group.users.add(*users)

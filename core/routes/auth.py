@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from core.db.models import User
 from core.dependencies.security import get_current_user
-from core.dependencies.uow import UnitOfWorkDep
+from core.dependencies.services import get_auth_service
 
 from core.schemas.auth import AccessToken, ChangePasswordData
 from core.services.auth import AuthService
@@ -19,10 +19,10 @@ router = APIRouter()
     response_model=MisResponse[AccessToken]
 )
 async def get_access_token(
-        uow: UnitOfWorkDep,
+        auth_service: Annotated[AuthService, Depends(get_auth_service)],
         form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
 ):
-    access_token = await AuthService(uow).authenticate(form_data)
+    access_token = await auth_service.authenticate(form_data)
     return MisResponse[AccessToken](result=access_token)
 
 
@@ -31,10 +31,10 @@ async def get_access_token(
     response_model=MisResponse
 )
 async def logout(
-        uow: UnitOfWorkDep,
+        auth_service: Annotated[AuthService, Depends(get_auth_service)],
         current_user: User = Depends(get_current_user),
 ):
-    await AuthService(uow).de_authenticate(current_user.pk)
+    await auth_service.de_authenticate(current_user.pk)
     return MisResponse()
 
 
@@ -43,11 +43,11 @@ async def logout(
     response_model=MisResponse
 )
 async def change_password_endpoint(
-        uow: UnitOfWorkDep,
+        auth_service: Annotated[AuthService, Depends(get_auth_service)],
         data: ChangePasswordData,
         current_user: User = Depends(get_current_user),
 ):
-    await AuthService(uow).change_password(
+    await auth_service.change_password(
         current_user,
         data.old_password,
         data.new_password

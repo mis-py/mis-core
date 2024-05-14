@@ -1,7 +1,7 @@
 from loguru import logger
 
 from const import DEFAULT_ADMIN_USERNAME
-from core.services.base.unit_of_work import unit_of_work_factory
+from core.dependencies.services import get_g_access_group_service, get_user_service, get_guardian_service
 from core.services.guardian_service import GAccessGroupService, GuardianService
 from core.services.user import UserService
 from libs.modules.GenericModule import GenericModule
@@ -21,31 +21,29 @@ routing_keys = RoutingKeys()
 
 async def init(module_instance: GenericModule):
     pass
-    # TODO move it to endpoints
-    # uow = unit_of_work_factory()
+    # g_access_group_service: GAccessGroupService = get_g_access_group_service()
+    # guardian_service: GuardianService = get_guardian_service()
+    # user_service: UserService = get_user_service()
     #
-    # guardian_uow_service = GAccessGroupService(uow)
-    # user_uow_service = UserService(uow)
-    # admin = await user_uow_service.get(username=DEFAULT_ADMIN_USERNAME)
+    # admin = await user_service.get(username=DEFAULT_ADMIN_USERNAME)
     #
     # # create access group for module objects
-    # # TODO this is constantly creating new group at startup
-    # group = await guardian_uow_service.create_with_users(
+    # group = await g_access_group_service.create_with_users(
     #     name="Dummy group",
     #     users_ids=[admin.id],
     # )
     #
     # # create example object
-    # dummy_object_1 = await DummyService().create_by_kwargs(dummy_string="Dummy 1")
+    # dummy_object_1, _ = await DummyModel.get_or_create(dummy_string="Dummy 1")
     #
     # # allow access to object for group
-    # await GuardianService(uow).assign_perm('read', group, dummy_object_1)
-    # await GuardianService(uow).assign_perm('edit', group, dummy_object_1)
+    # await guardian_service.assign_perm('read', group, dummy_object_1)
+    # await guardian_service.assign_perm('edit', group, dummy_object_1)
     #
     # # check group access on object
-    # is_read_perm = await GuardianService(uow).has_perm('read', group, dummy_object_1)
-    # is_edit_perm = await GuardianService(uow).has_perm('edit', group, dummy_object_1)
-    # is_delete_perm = await GuardianService(uow).has_perm('delete', group, dummy_object_1)
+    # is_read_perm = await guardian_service.has_perm('read', group, dummy_object_1)
+    # is_edit_perm = await guardian_service.has_perm('edit', group, dummy_object_1)
+    # is_delete_perm = await guardian_service.has_perm('delete', group, dummy_object_1)
     # logger.info(f"{group.name} read={is_read_perm} edit={is_edit_perm} delete={is_delete_perm}")
 
 module = GenericModule(

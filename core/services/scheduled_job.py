@@ -1,24 +1,28 @@
 from core.db.dataclass import AppState, StatusTask
+from tortoise.transactions import in_transaction
+
 from core.db.models import ScheduledJob, User, Team, Module
 from core.exceptions import NotFound, AlreadyExists, MISError
+from core.repositories.module import IModuleRepository
+from core.repositories.scheduled_job import IScheduledJobRepository
 from core.schemas.task import JobCreate, JobTrigger
 from core.services.base.base_service import BaseService
-from core.services.base.unit_of_work import IUnitOfWork
 from core.utils.task import get_trigger
 from libs.scheduler import SchedulerService
 
 
 class ScheduledJobService(BaseService):
-    def __init__(self, uow: IUnitOfWork):
-        super().__init__(repo=uow.scheduled_job_repo)
-        self.uow = uow
+    def __init__(self, scheduled_job_repo: IScheduledJobRepository, module_repo: IModuleRepository):
+        self.scheduled_job_repo = scheduled_job_repo
+        self.module_repo = module_repo
+        super().__init__(repo=scheduled_job_repo)
 
     async def get_jobs(
             self,
-            task_name:str = None,
-            user_id:int = None,
-            team_id:int = None,
-            job_id:int = None
+            task_name: str = None,
+            user_id: int = None,
+            team_id: int = None,
+            job_id: int = None
     ) -> list[ScheduledJob]:
         jobs = list()
 
@@ -54,7 +58,6 @@ class ScheduledJobService(BaseService):
 
         task = SchedulerService.get_task(task_name, module_name)
 
-
         # trigger logic: if specified in request - use trigger in request
         # otherwise use trigger defined by task
         # requested trigger serialized in DB as is
@@ -70,13 +73,13 @@ class ScheduledJobService(BaseService):
             raise MISError("Not allowed creating job for module that is not running")
 
         if task.single_instance:
-            scheduled_job = await self.uow.scheduled_job_repo.get(
+            scheduled_job = await self.scheduled_job_repo.get(
                 task_name=task_name, app=module._model, user=user, team=team
             )
             if scheduled_job:
                 raise AlreadyExists("Scheduled job already exists")
 
-        async with self.uow:
+        async with in_transaction():
             job_db: ScheduledJob = ScheduledJob(
                 user=user,
                 team=team,
@@ -86,7 +89,7 @@ class ScheduledJobService(BaseService):
                 extra_data=job_in.extra,
                 trigger={"data": job_in.trigger}
             )
-            await self.uow.scheduled_job_repo.save(obj=job_db)
+            await self.scheduled_job_repo.save(obj=job_db)
 
             job_instance = await SchedulerService.add_job(
                 task_name=task_name,
@@ -100,9 +103,9 @@ class ScheduledJobService(BaseService):
             return job_db
 
     async def update_job_trigger(self, job_id: int, schedule_in: JobTrigger):
-        async with self.uow:
+        async with in_transaction():
             job: ScheduledJob = await self.get(id=job_id, prefetch_related=['app'])
-            module: Module = await self.uow.module_repo.get(id=job.app.pk)
+            module: Module = await self.module_repo.get(id=job.app.pk)
 
             task = SchedulerService.get_task(job.task_name, module.name)
 
@@ -112,7 +115,7 @@ class ScheduledJobService(BaseService):
 
             await SchedulerService.reschedule_job(job_id, trigger=trigger)
 
-            updated_obj = await self.uow.scheduled_job_repo.update(
+            updated_obj = await self.scheduled_job_repo.update(
                 id=job_id,
                 data={'trigger': {"data": schedule_in.trigger}}
             )
@@ -122,23 +125,23 @@ class ScheduledJobService(BaseService):
             return await self.get(id=job_id, prefetch_related=['user', 'team', 'app'])
 
     async def set_paused_status(self, job_id: int):
-        async with self.uow:
+        async with in_transaction():
             await SchedulerService.pause_job(job_id)
 
-            updated_obj = await self.uow.scheduled_job_repo.update(
+            updated_obj = await self.scheduled_job_repo.update(
                 id=job_id,
                 data={'status': StatusTask.PAUSED.value}
             )
 
             await updated_obj.save()
 
-            return await self.uow.scheduled_job_repo.get(id=job_id, prefetch_related=['user', 'team', 'app'])
+            return await self.scheduled_job_repo.get(id=job_id, prefetch_related=['user', 'team', 'app'])
 
     async def set_running_status(self, job_id: int):
-        async with self.uow:
+        async with in_transaction():
             await SchedulerService.resume_job(job_id)
 
-            updated_obj = await self.uow.scheduled_job_repo.update(
+            updated_obj = await self.scheduled_job_repo.update(
                 id=job_id,
                 data={'status': StatusTask.RUNNING.value}
             )
@@ -148,14 +151,13 @@ class ScheduledJobService(BaseService):
             return await self.get(id=job_id, prefetch_related=['user', 'team', 'app'])
 
     async def cancel_job(self, job_id: int):
-        async with self.uow:
+        async with in_transaction():
             await SchedulerService.remove_job(job_id)
 
-            await self.uow.scheduled_job_repo.delete(id=job_id)
+            await self.scheduled_job_repo.delete(id=job_id)
 
     async def filter_by_module(self, module_name: str):
-        return await self.uow.scheduled_job_repo.filter_by_module(
+        return await self.scheduled_job_repo.filter_by_module(
             module_name=module_name,
             prefetch_related=['user', 'team', 'app'],
         )
-

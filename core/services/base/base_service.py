@@ -2,6 +2,7 @@ from fastapi_pagination.bases import AbstractParams
 from pydantic import BaseModel
 from tortoise.queryset import QuerySet
 
+from core.exceptions import NotFound
 from core.repositories.base.repository import IRepository, ModelType
 from core.utils.common import exclude_none_values
 from core.utils.schema import PageResponse
@@ -27,6 +28,15 @@ class BaseService:
 
     async def get(self, prefetch_related: list[str] = None, **filters) -> ModelType:
         return await self.repo.get(prefetch_related=prefetch_related, **filters)
+
+    async def exists(self, **filters) -> bool:
+        return await self.repo.exists(**filters)
+
+    async def get_or_raise(self, prefetch_related: list[str]= None, **filters) -> ModelType:
+        model_object = await self.repo.get(prefetch_related=prefetch_related, **filters)
+        if not model_object:
+            raise NotFound(f"{self.repo.model.__name__} not found")
+        return model_object
 
     async def filter(self, prefetch_related: list[str] = None, **filters) -> list[ModelType]:
         filters_without_none = exclude_none_values(filters)

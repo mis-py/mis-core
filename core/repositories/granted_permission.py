@@ -1,5 +1,6 @@
 from abc import ABC
 
+from core.db.permission import GrantedPermission
 from core.repositories.base.repository import TortoiseORMRepository, IRepository
 
 
@@ -8,4 +9,4 @@ class IGrantedPermissionRepository(IRepository, ABC):
 
 
 class GrantedPermissionRepository(TortoiseORMRepository, IGrantedPermissionRepository):
-    pass
+    model = GrantedPermission

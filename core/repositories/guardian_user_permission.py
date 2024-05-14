@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+from core.db.guardian import GuardianUserPermission
 from core.repositories.base.repository import TortoiseORMRepository, IRepository
 
 
@@ -14,6 +15,8 @@ class IGUserPermissionRepository(IRepository, ABC):
 
 
 class GUserPermissionRepository(TortoiseORMRepository, IGUserPermissionRepository):
+    model = GuardianUserPermission
+
     async def get_or_create(self, user_id: int, permission_id: int, content_type_id: int, object_pk):
         return await self.model.get_or_create(
             user_id=user_id,

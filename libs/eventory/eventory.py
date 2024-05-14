@@ -9,7 +9,7 @@ from aio_pika import connect_robust, Message
 from aio_pika.abc import AbstractChannel, AbstractIncomingMessage, ExchangeType, AbstractRobustConnection
 from aiormq import DuplicateConsumerTag, AMQPConnectionError
 
-from core.services.base.unit_of_work import unit_of_work_factory
+from core.repositories.routing_key import RoutingKeyRepository
 from core.services.notification import RoutingKeyService
 
 from .consumer import Consumer
@@ -178,8 +178,8 @@ class Eventory:
 
     @classmethod
     async def make_routing_keys_set(cls, app):
-        uow = unit_of_work_factory()
+        routing_key_service = RoutingKeyService(routing_key_repo=RoutingKeyRepository())
 
-        routing_keys = await RoutingKeyService(uow=uow).filter(app_id=app.pk)
+        routing_keys = await routing_key_service.filter(app_id=app.pk)
 
         return RoutingKeysSet(routing_keys)

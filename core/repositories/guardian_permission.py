@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+from core.db.guardian import GuardianPermission
 from core.repositories.base.repository import TortoiseORMRepository, IRepository
 
 
@@ -18,6 +19,8 @@ class IGPermissionRepository(IRepository, ABC):
 
 
 class GPermissionRepository(TortoiseORMRepository, IGPermissionRepository):
+    model = GuardianPermission
+
     async def group_perms_list(self, model: str, group_id: int, object_pk: str):
         return await self.model.filter(
             content_type__model=model,
