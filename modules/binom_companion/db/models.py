@@ -52,6 +52,9 @@ class ProxyDomain(Model):
     name = fields.CharField(max_length=2048, unique=True)
     date_added = fields.DatetimeField(auto_now_add=True)
 
+    # in case we need to mark domain as not working
+    is_invalid = fields.BooleanField(default=False)
+
     # currently some domains can be used only with some trackers
     tracker_instance: fields.ForeignKeyRelation["TrackerInstance"] = fields.ForeignKeyField(
         model_name="binom_companion.TrackerInstance",
@@ -88,6 +91,8 @@ class ReplacementHistory(Model):
     lands = fields.JSONField()
 
     date_changed = fields.DatetimeField(auto_now_add=True)
+
+    reason = fields.CharField(max_length=2048)
 
     def __str__(self):
         return f'<ReplacementHistory: {self.pk}, {self.to_domain} {self.replaced_by} {self.replacement_group} {self.date_changed.strftime("%d.%m.%Y %H:%M:%S")}>'

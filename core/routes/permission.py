@@ -33,16 +33,17 @@ async def permissions_list(
 
 @router.get(
     '/granted/my',
-    response_model=MisResponse[GrantedPermissionResponse]
+    response_model=MisResponse[list[GrantedPermissionResponse]]
 )
 async def get_my_granted_permissions(
         granted_permission_service: Annotated[GrantedPermissionService, Depends(get_granted_permission_service)],
-        user: User = Depends(get_current_user),
+        user: User = Depends(get_current_user)
 ):
-    return await granted_permission_service.filter(
+    granted_permissions = await granted_permission_service.filter(
         user_id=user.pk,
         prefetch_related=['team', 'user', 'permission__app'],
     )
+    return MisResponse[list[GrantedPermissionResponse]](result=granted_permissions)
 
 
 @router.get(

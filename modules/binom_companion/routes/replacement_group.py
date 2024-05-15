@@ -99,6 +99,10 @@ async def change_proxy_domain(
     replacement_group_ids: ReplacementGroupChangeProxyIds,
     ctx: AppContextDep
 ):
-    await ReplacementGroupService().proxy_change(ctx, replacement_group_ids.replacement_group_ids)
+    await ReplacementGroupService().proxy_change(
+        ctx,
+        replacement_group_ids.replacement_group_ids,
+        "Changed via endpoint"
+    )
 
     return MisResponse

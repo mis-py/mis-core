@@ -21,3 +21,4 @@ class ProxyDomainCreateModel(PydanticModel):
 class ProxyDomainUpdateModel(PydanticModel):
     name: str
     tracker_instance_id: int
+    is_invalid: bool

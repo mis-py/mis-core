@@ -9,7 +9,9 @@ async def single_replacement_group_proxy_change(ctx: AppContext, replacement_gro
     """Tasks that run only single replacement group."""
     await ReplacementGroupService().proxy_change(
         ctx=ctx,
-        replacement_group_ids=[replacement_group_id]
+        replacement_group_ids=[replacement_group_id],
+        # TODO pass to context some data about running job
+        reason="Automatic task"
     )
 
 
@@ -20,6 +22,8 @@ async def multiple_replacement_group_proxy_change(ctx: AppContext, replacement_g
     Main purpose is that we can assign single domain on multiple groups at single run.
     """
     await ReplacementGroupService().proxy_change(
-        ctx=ctx, replacement_group_ids=replacement_group_ids
+        ctx=ctx,
+        replacement_group_ids=replacement_group_ids,
+        reason="Automatic task"
     )
 
