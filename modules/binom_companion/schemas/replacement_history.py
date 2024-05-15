@@ -20,3 +20,4 @@ class ReplacementHistoryBaseModel(PydanticModel):
 class ReplacementHistoryModel(ReplacementHistoryBaseModel):
     offers: str
     lands: str
+    reason: str

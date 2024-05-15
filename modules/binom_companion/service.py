@@ -200,7 +200,7 @@ class ReplacementGroupService(BaseService):
     def __init__(self):
         super().__init__(repo=ReplacementGroupRepository(model=ReplacementGroup))
 
-    async def proxy_change(self, ctx: AppContext, replacement_group_ids: list[int]):
+    async def proxy_change(self, ctx: AppContext, replacement_group_ids: list[int], reason: str):
         """ Function to run domain replacement for specific replacement groups with group validation """
 
         groups: list[ReplacementGroup] = await self.repo.filter(
@@ -223,7 +223,7 @@ class ReplacementGroupService(BaseService):
         active_groups = [group for group in groups if group.is_active]
 
         if len(active_groups) > 0:
-            await ProxyDomainService().change_domain(ctx, active_groups)
+            await ProxyDomainService().change_domain(ctx, active_groups, reason)
         else:
             logger.warning(f"Run replacement_group_proxy_change task ERROR: Nothing to run")
 
@@ -265,9 +265,10 @@ class ProxyDomainService(BaseService):
         subfilter = await self.history.filter_queryable(replacement_group_id=group.pk)
         subfilter_values = subfilter.values('to_domain_id')
 
-        # get domains except id that was used
+        # get domains except id that was used and is not invalid
         query = await self.repo.filter_queryable(
-            id__not_in=Subquery(subfilter_values)
+            id__not_in=Subquery(subfilter_values),
+            is_invalid=False
         )
 
         result = await query
@@ -318,7 +319,7 @@ class ProxyDomainService(BaseService):
             return False
         return True
 
-    async def change_domain(self, ctx: AppContext, groups: list[ReplacementGroup]) -> dict:
+    async def change_domain(self, ctx: AppContext, groups: list[ReplacementGroup], reason: str) -> dict:
         """
         Function to changing offers/landings domain. It does not perform any group validations!
         :param ctx:
@@ -365,7 +366,8 @@ class ProxyDomainService(BaseService):
                 offers_list=offers,
                 lands_list=landings,
                 replaced_by=ctx.user,
-                replacement_group=group
+                replacement_group=group,
+                reason=reason
             )
 
             change_result['new_domain'] = new_domain.name
@@ -389,7 +391,8 @@ class ProxyDomainService(BaseService):
             offers_list: list[int],
             lands_list: list[int],
             replaced_by: 'User',
-            replacement_group: ReplacementGroup
+            replacement_group: ReplacementGroup,
+            reason: str
     ):
         previous_domains_models: list[ProxyDomain] = await self.repo.filter(
             name__in=previous_domains
@@ -400,7 +403,8 @@ class ProxyDomainService(BaseService):
             lands=lands_list,
             replaced_by=replaced_by,
             to_domain=new_domain,
-            replacement_group=replacement_group
+            replacement_group=replacement_group,
+            reason=reason
         ))
 
         await new_record.from_domains.add(*previous_domains_models)

@@ -69,8 +69,9 @@ class SchedulerService:
     @classmethod
     def add_task(cls, task: Task, module_name: str):
         if f"{module_name}:{task.name}" in cls._tasks:
-            logger.warning(f"[ModuleService] Task already registered: {module_name}:{task.name}")
+            logger.warning(f"[SchedulerService] Task already registered: {module_name}:{task.name}")
         cls._tasks[f"{module_name}:{task.name}"] = task
+        logger.debug(f"[SchedulerService] Added scheduled task: {task.name} from module: {module_name}")
 
     @classmethod
     def get_task(cls, task_name: str, module_name: str) -> Task | None:

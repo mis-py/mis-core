@@ -160,19 +160,15 @@ class ScheduledTasks(Component):
         pass
 
     async def init(self, application, app_db_model, is_created: bool):
-        logger.debug(f"[{self.module.name}] Adding scheduled tasks")
+        """
+        Add all tasks to SchedulerService and restore jobs saved in db always in paused state.
+        :return:
+        """
         # register in SchedulerService all declared tasks and provide module for them
         for task in self._tasks:
             task.module = self.module
             SchedulerService.add_task(task, self.module.name)
 
-        logger.debug(f"[{self.module.name}] Added scheduled tasks ")
-
-    async def start(self):
-        """
-        Restore running tasks that saved in DB
-        :return:
-        """
         scheduled_job_service: ScheduledJobService = get_scheduled_job_service()
 
         saved_scheduled_jobs = await scheduled_job_service.filter_by_module(module_name=self.module.name)
@@ -180,27 +176,36 @@ class ScheduledTasks(Component):
             await SchedulerService.restore_job(
                 saved_job=saved_job,
                 module=self.module,
-                run_at_startup=saved_job.status == StatusTask.RUNNING
+                run_at_startup=False
             )
 
-        # TODO implement autostart at root user
+    async def start(self):
+        """
+        Run tasks that saved in DB and was in StatusTask.RUNNING state
+        :return:
+        """
+        scheduled_job_service: ScheduledJobService = get_scheduled_job_service()
+
+        saved_scheduled_jobs = await scheduled_job_service.filter_by_module(module_name=self.module.name)
+        for saved_job in saved_scheduled_jobs:
+            if saved_job.status == StatusTask.RUNNING:
+                await SchedulerService.resume_job(saved_job.pk)
 
     async def stop(self):
-        pass
-        # TODO actually it set pause for all jobs in db
-        # jobs = await crud_jobs.get_all_scheduled_jobs(self.module.name)
-        # for job in jobs:
-        #     logger.debug(f'[{self.module.name}]: Pause job {job.name}')
-        #     job.pause()
+        """
+        Set pause for all tasks that saved in DB
+        :return:
+        """
+        scheduled_job_service: ScheduledJobService = get_scheduled_job_service()
+        saved_scheduled_jobs = await scheduled_job_service.filter_by_module(module_name=self.module.name)
+        for saved_job in saved_scheduled_jobs:
+            await SchedulerService.pause_job(saved_job.pk)
+
+        # I'm not pushing any changes to database, left this responsibility to other layer
         # await crud_jobs.set_pause_all_app_jobs(self.module.name)
 
     async def shutdown(self):
         pass
-        # TODO actually it removes all saved jobs from db
-        # for job in self.module.jobs:
-        #     logger.debug(f'{self.module.name}[JOB]: Remove job {job.name}')
-        #     job.remove()
-        # await crud_jobs.remove_all_app_tasks(self.module.name)
 
 
 class APIRoutes(Component):
