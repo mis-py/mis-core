@@ -1,9 +1,9 @@
-from typing import Annotated
+from typing import Annotated, Optional
 from fastapi.params import Depends, Query
 
 from core.dependencies.services import get_user_service, get_team_service, get_module_service, get_routing_key_service, \
     get_g_access_group_service
-from core.exceptions import NotFound
+from core.exceptions import NotFound, ValidationFailed
 from core.services.guardian_service import GAccessGroupService
 from core.services.module import ModuleService
 from core.services.user import UserService
@@ -25,11 +25,21 @@ async def get_team_by_id(team_service: Annotated[TeamService, Depends(get_team_s
     return team
 
 
-async def get_module_by_id(module_service: Annotated[ModuleService, Depends(get_module_service)], module_id: int):
-    app = await module_service.get(id=module_id)
-    if not app:
+async def get_module_by_id(
+        module_service: Annotated[ModuleService, Depends(get_module_service)],
+        module_id: Optional[int] = None,
+        module_name: Optional[str] = None,
+):
+    if module_id:
+        module = await module_service.get(id=module_id)
+    elif module_name:
+        module = await module_service.get(name=module_name)
+    else:
+        raise ValidationFailed("module_id or module_name is required")
+
+    if not module:
         raise NotFound('Module not found')
-    return app
+    return module
 
 
 async def get_routing_key_by_id(
