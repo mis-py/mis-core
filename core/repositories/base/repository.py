@@ -70,6 +70,7 @@ class TortoiseORMRepository(IRepository):
         """Update object from dict"""
         db_obj = await self.get(**filters)
         await db_obj.update_from_dict(data)
+        await db_obj.save()
         return db_obj
 
     async def update_list(self, update_ids: list[str], data: dict) -> int:

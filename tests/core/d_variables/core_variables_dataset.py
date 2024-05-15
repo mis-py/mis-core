@@ -216,7 +216,7 @@ positive_get_global_variables = [
     ),
     (
         {
-            "module_id": 2,
+            "module_name": "dummy",
         },
         {
             "status_code": 200,

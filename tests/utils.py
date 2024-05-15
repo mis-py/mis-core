@@ -1,5 +1,6 @@
 import logging
 import json
+from types import NoneType
 
 log = logging.getLogger(__name__)
 
@@ -39,8 +40,11 @@ def _sorted(json_data, ignore_keys: list = None):
 
     if isinstance(json_data, dict):
         return sorted((k, _sorted(v, ignore_keys)) for k, v in json_data.items() if check_key(k))
-    if isinstance(json_data, list):
+    elif isinstance(json_data, list):
         return sorted(_sorted(x, ignore_keys) for x in json_data if check_key(x))
+    elif isinstance(json_data, NoneType):
+        # this for fix TypeError: '<' not supported between instances of 'list' and 'NoneType'
+        return []
     else:
         return json_data
 
@@ -58,7 +62,7 @@ def pretty_json(json_data):
     return json.dumps(json_data, indent=4)
 
 
-def check_response(response, expected, ignore_keys:list = None):
+def check_response(response, expected, ignore_keys: list = None):
     response_json = response.json()
 
     log.info(pretty_json(response_json))
