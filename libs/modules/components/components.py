@@ -156,6 +156,9 @@ class ScheduledTasks(Component):
             return func
         return _wrapper
 
+    def extend(self, tasks: list[Task]):
+        self._tasks.extend(tasks)
+
     async def pre_init(self):
         pass
 
