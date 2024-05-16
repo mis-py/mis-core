@@ -2,11 +2,11 @@ from loguru import logger
 
 from datetime import datetime, timedelta, timezone
 
-from services.modules.context import AppContext
-
+from libs.modules.AppContext import AppContext
+from libs.modules.components import ScheduledTasks
 from ..service import LeadRecordService
 
-from . import scheduled_tasks
+scheduled_tasks = ScheduledTasks()
 
 
 # cleanup for old lead records

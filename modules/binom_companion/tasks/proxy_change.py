@@ -1,7 +1,8 @@
-from services.modules.context import AppContext
+from libs.modules.AppContext import AppContext
+from libs.modules.components import ScheduledTasks
 from ..service import ReplacementGroupService
 
-from . import scheduled_tasks
+scheduled_tasks = ScheduledTasks()
 
 
 @scheduled_tasks.schedule_task(trigger=None)

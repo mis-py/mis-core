@@ -1,5 +1,8 @@
+import json
 import re
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlparse
+
 import aiohttp
 import urllib3
 from fastapi_pagination.bases import AbstractParams
@@ -228,7 +231,8 @@ class ReplacementGroupService(BaseService):
             logger.warning(f"Run replacement_group_proxy_change task ERROR: Nothing to run")
 
     async def check_replacement_group(self, replacement_group_id: int):
-        replacement_group: ReplacementGroup = await self.get(id=replacement_group_id, prefetch_related=['tracker_instance'])
+        replacement_group: ReplacementGroup = await self.get(id=replacement_group_id,
+                                                             prefetch_related=['tracker_instance'])
 
         offer_ids, _ = await TrackerInstanceService().fetch_offers(
             replacement_group,
@@ -502,7 +506,7 @@ class LeadRecordService(BaseService):
 
         if diff >= diff_percent:
             logger.debug(f'[{geo}] Diff {diff:.1f}% between previous: {previous_period_leads} '
-                          f'and last: {last_period_leads} periods, our level is: {diff_percent}%')
+                         f'and last: {last_period_leads} periods, our level is: {diff_percent}%')
             return True
         return False
 
@@ -547,3 +551,64 @@ class LeadRecordService(BaseService):
             )
 
         return time_since_last_lead
+
+
+class YandexBrowserCheckService:
+
+    async def check_domains(self, domains: list[str], yandex_api_key: str) -> list[str]:
+        """Return malware domains if found"""
+        if not domains:
+            return []
+
+        url_with_key = f"https://sba.yandex.net/v4/threatMatches:find?key={yandex_api_key}"
+
+        payload = {
+            "client": {
+                "clientId": "your_client_name",
+                "clientVersion": "1.0"
+            },
+            "threatInfo": {
+                "threatTypes": [
+                    "UNWANTED_SOFTWARE",
+                    "POTENTIALLY_HARMFUL_APPLICATION",
+                    "THREAT_TYPE_UNSPECIFIED",
+                    "MALWARE",
+                    "SOCIAL_ENGINEERING",
+                ],
+                "platformTypes": ["WINDOWS", "CHROME", "ANDROID", "IOS"],
+                "threatEntryTypes": ["URL"],
+                "threatEntries": self.make_threat_entries(domains)
+            }
+        }
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url_with_key, data=json.dumps(payload), headers=headers) as response:
+                response_data = await response.json()
+
+        banned_domains = self.banned_domains_from_response(response_data)
+        return banned_domains
+
+    def banned_domains_from_response(self, data: dict) -> list:
+        banned_domains = []
+        if 'matches' not in data:
+            return banned_domains
+
+        for match in data['matches']:
+            domain = self.extract_domain(match['threat']['url'])
+            banned_domains.append(domain)
+        return list(set(banned_domains))
+
+    def make_threat_entries(self, domains: list[str]):
+        entries = []
+        for domain in domains:
+            entries.append({
+                'url': f"https://{domain}"
+            })
+        return entries
+
+    def extract_domain(self, url: str):
+        parsed_url = urlparse(url)
+        domain = parsed_url.netloc
+        return domain
