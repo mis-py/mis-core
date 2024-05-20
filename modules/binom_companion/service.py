@@ -249,6 +249,21 @@ class ReplacementGroupService(BaseService):
             "landing": landing_ids
         }
 
+    async def filter_with_history_and_paginate(
+            self,
+            history_limit: int,
+            params: AbstractParams = None,
+            **filters,
+    ):
+        queryset = await self.repo.filter_queryable_with_history(
+            history_limit=history_limit, **filters
+        )
+        return await self.repo.paginate(queryset=queryset, params=params)
+
+    async def get_with_history(self, history_limit: int, **filters):
+        return await self.repo.get_with_history(history_limit=history_limit, **filters)
+
+
 
 class ProxyDomainService(BaseService):
     def __init__(self):
@@ -541,7 +556,7 @@ class LeadRecordService(BaseService):
             logger.debug(f"[{user_tag}] No leads registered in DB for specified GEO.")
             return False
 
-        #logging.debug(last_geo_lead)
+        # logging.debug(last_geo_lead)
 
         time_since_last_lead = int((now - last_geo_lead.time).total_seconds())
 

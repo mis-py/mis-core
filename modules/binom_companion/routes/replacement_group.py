@@ -1,12 +1,13 @@
 import loguru
-from fastapi import APIRouter, Security
+from fastapi import APIRouter, Security, Query
 
-from core.dependencies.misc import AppContextDep
+from core.dependencies.misc import AppContextDep, PaginateParamsDep
 from core.dependencies.security import get_current_user
 from core.utils.schema import PageResponse, MisResponse
 
 from ..schemas.replacement_group import ReplacementGroupModel, ReplacementGroupCreateModel, ReplacementGroupUpdateModel, \
     ReplacementGroupChangeProxyIds
+from ..schemas.replacement_group_with_history import ReplacementGroupWithHistory
 from ..service import ReplacementGroupService
 
 router = APIRouter(
@@ -16,13 +17,15 @@ router = APIRouter(
 
 @router.get(
     '',
-    response_model=PageResponse[ReplacementGroupModel]
+    response_model=PageResponse[ReplacementGroupWithHistory]
 )
-async def get_replacement_groups():
-    return await ReplacementGroupService().filter_and_paginate(
-        prefetch_related=[
-            'replacement_history'
-        ]
+async def get_replacement_groups(
+        paginate_params: PaginateParamsDep,
+        history_limit: int = Query(default=10),
+):
+    return await ReplacementGroupService().filter_with_history_and_paginate(
+        history_limit=history_limit,
+        params=paginate_params,
     )
 
 
@@ -40,17 +43,17 @@ async def create_replacement_group(replacement_group_in: ReplacementGroupCreateM
 
 @router.get(
     '/get',
-    response_model=MisResponse[ReplacementGroupModel]
+    response_model=MisResponse[ReplacementGroupWithHistory]
 )
-async def get_replacement_group(replacement_group_id: int):
-    replacement_group = await ReplacementGroupService().get(
+async def get_replacement_group(
+        replacement_group_id: int,
+        history_limit: int = Query(default=10),
+):
+    replacement_group = await ReplacementGroupService().get_with_history(
         id=replacement_group_id,
-        prefetch_related=[
-            'replacement_history'
-        ]
+        history_limit=history_limit,
     )
-
-    return MisResponse[ReplacementGroupModel](result=replacement_group)
+    return MisResponse[ReplacementGroupWithHistory](result=replacement_group)
 
 
 @router.put(
