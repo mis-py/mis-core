@@ -3,6 +3,7 @@ import re
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
 
+import aiodns
 import aiohttp
 import urllib3
 from fastapi_pagination.bases import AbstractParams
@@ -264,7 +265,6 @@ class ReplacementGroupService(BaseService):
         return await self.repo.get_with_history(history_limit=history_limit, **filters)
 
 
-
 class ProxyDomainService(BaseService):
     def __init__(self):
         super().__init__(repo=ProxyDomainRepository(model=ProxyDomain))
@@ -433,6 +433,9 @@ class ProxyDomainService(BaseService):
             await self.create(proxy_domain_in) for proxy_domain_in in proxy_domains_in
         ]
         return list_objects
+
+    async def set_invalid(self, domain_id: int):
+        return await self.repo.update(id=domain_id, data={'is_invalid': True})
 
 
 class LeadRecordService(BaseService):
@@ -627,3 +630,14 @@ class YandexBrowserCheckService:
         parsed_url = urlparse(url)
         domain = parsed_url.netloc
         return domain
+
+
+class DNSCheckerService:
+
+    async def check_record(self, domain: str, record: str = 'A'):
+        resolver = aiodns.DNSResolver()
+        try:
+            await resolver.query(domain, record)
+            return True
+        except aiodns.error.DNSError:
+            return False
