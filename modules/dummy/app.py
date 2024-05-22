@@ -8,10 +8,9 @@ from libs.modules.GenericModule import GenericModule
 from libs.modules.components import Variables, ModuleLogs, TortoiseModels, EventRoutingKeys, APIRoutes
 
 from .config import UserSettings, RoutingKeys, ModuleSettings
-from .routes import router
 from .consumers import event_consumers
 from .db.models import DummyModel
-from .service import DummyService
+from .routes import router
 from .tasks import scheduled_tasks
 
 app_settings = ModuleSettings()
