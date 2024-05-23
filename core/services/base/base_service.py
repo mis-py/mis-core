@@ -32,7 +32,7 @@ class BaseService:
     async def exists(self, **filters) -> bool:
         return await self.repo.exists(**filters)
 
-    async def get_or_raise(self, prefetch_related: list[str]= None, **filters) -> ModelType:
+    async def get_or_raise(self, prefetch_related: list[str] = None, **filters) -> ModelType:
         model_object = await self.repo.get(prefetch_related=prefetch_related, **filters)
         if not model_object:
             raise NotFound(f"{self.repo.model.__name__} not found")
