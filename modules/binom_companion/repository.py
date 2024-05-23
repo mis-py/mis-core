@@ -1,16 +1,7 @@
-<<<<<<< HEAD
-
 from tortoise.query_utils import Prefetch
+
 from core.repositories.base.repository import TortoiseORMRepository
 from modules.binom_companion.db.models import ReplacementHistory
-
-=======
-from tortoise.query_utils import Prefetch
-from tortoise.queryset import QuerySet
-
-from core.repositories.base.repository import TortoiseORMRepository
-from modules.binom_companion.db.models import ReplacementGroup, ReplacementHistory
->>>>>>> main
 
 
 class TrackerInstanceRepository(TortoiseORMRepository):
