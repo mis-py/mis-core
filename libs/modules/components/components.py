@@ -156,6 +156,9 @@ class ScheduledTasks(Component):
             return func
         return _wrapper
 
+    def extend(self, tasks: list[Task]):
+        self._tasks.extend(tasks)
+
     async def pre_init(self):
         pass
 
@@ -228,7 +231,7 @@ class APIRoutes(Component):
             # dependencies.append(Depends(inject_user))
 
         for route in self.router.routes:
-            if route.tags:
+            if hasattr(route, 'tags') and route.tags:
                 tags = [f'{self.module.name} | {route.tags[0]}']
             else:
                 tags = [self.module.name]

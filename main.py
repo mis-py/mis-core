@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import sys
 import uvicorn
@@ -218,4 +219,8 @@ async def root():
 
 # for debugging
 if __name__ == "__main__":
+    if sys.platform == 'win32':
+        # https://github.com/saghul/aiodns?tab=readme-ov-file#note-for-windows-users
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
     uvicorn.run(app, host="localhost", port=8000, log_level='error')

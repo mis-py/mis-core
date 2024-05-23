@@ -46,13 +46,18 @@ async def get_global_variables(
         module_service: Annotated[ModuleService, Depends(get_module_service)],
         # is_global: bool = Query(default=None),
         module_id: int = Query(default=None),
+        module_name: str = Query(default=None),
 ):
     if module_id is not None:
-        await module_service.get_or_raise(id=module_id)
+        module_instance = await module_service.get_or_raise(id=module_id)
+    elif module_name is not None:
+        module_instance = await module_service.get_or_raise(name=module_name)
+    else:
+        module_instance = None
 
     return await variable_service.filter_and_paginate(
         # is_global=is_global,
-        app_id=module_id
+        app_id=module_instance.pk if module_instance else None,
     )
 
 

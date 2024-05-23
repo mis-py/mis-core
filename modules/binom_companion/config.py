@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 
 class UserSettings(BaseModel):
-    pass
+    YANDEX_API_KEY: str = ""
 
 
 class ModuleSettings(BaseModel):

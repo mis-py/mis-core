@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from typing import Type, TypeVar, Optional, Any
 
 from fastapi_pagination.bases import AbstractParams
+from motor.motor_asyncio import AsyncIOMotorCollection
+from pymongo import ReturnDocument
 from tortoise import Model
 from tortoise.queryset import QuerySet
 from core.utils.schema import PageResponse
@@ -70,6 +72,7 @@ class TortoiseORMRepository(IRepository):
         """Update object from dict"""
         db_obj = await self.get(**filters)
         await db_obj.update_from_dict(data)
+        await db_obj.save()
         return db_obj
 
     async def update_list(self, update_ids: list[str], data: dict) -> int:
@@ -109,3 +112,50 @@ class TortoiseORMRepository(IRepository):
     async def exists(self, **filters) -> bool:
         """Check if model object exists"""
         return await self.model.exists(**filters)
+
+
+CollectionType = TypeVar("CollectionType", bound=AsyncIOMotorCollection)
+
+
+class MongodbRepository(IRepository):
+    model: Type[CollectionType] = None
+
+    def __init__(self, model: Type[CollectionType] = None):
+        if self.model is None:
+            self.model = model
+
+    async def create(self, data: dict):
+        return await self.model.insert_one(data)
+
+    async def update(self, data: dict, **filters):
+        return await self.model.find_one_and_update(
+            filters, {"$set": data},
+            return_document=ReturnDocument.AFTER
+        )
+
+    async def update_list(self, filters: dict, data: dict) -> int:
+        return await self.model.update_many(filters, data)
+
+    async def delete(self, **filters):
+        return await self.model.delete_one(filters)
+
+    async def get(self, **filters) -> Optional[ModelType]:
+        return await self.model.find_one(filters)
+
+    async def filter(self, **filters) -> list[ModelType]:
+        return await self.model.find(filters).to_list(length=100)
+
+    async def filter_queryable(self, prefetch_related: list[str] = None, **filters) -> QuerySet:
+        """Returns filtered queryset"""
+        # TODO
+
+    async def paginate(self, queryset: QuerySet, params: AbstractParams = None) -> PageResponse:
+        """Paginate by fastapi-pagination and return pydantic model"""
+        # TODO
+
+    async def exists(self, **filters) -> bool:
+        """Check if model object exists"""
+        result = await self.model.count_documents(filters, limit=1)
+        if result != 0:
+            return True
+        return False

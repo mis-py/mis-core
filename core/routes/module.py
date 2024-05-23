@@ -26,13 +26,18 @@ router = APIRouter()
 )
 async def get_modules(
         module_service: Annotated[module.ModuleService, Depends(get_module_service)],
-        paginate_params: PaginateParamsDep, module_id: int = None
+        paginate_params: PaginateParamsDep, module_id: int = None, module_name: str = None,
 ):
     if module_id:
-        await module_service.get_or_raise(id=module_id)
+        module_instance = await module_service.get_or_raise(id=module_id)
+    elif module_name:
+        module_instance = await module_service.get_or_raise(name=module_name)
+    else:
+        module_instance = None
 
     paginated_modules = await module_service.filter_and_paginate(
-        id=module_id, params=paginate_params
+        id=module_instance.pk if module_instance else None,
+        params=paginate_params
     )
     modules_with_manifest = await module_service.set_manifest_in_response(paginated_modules)
     return modules_with_manifest

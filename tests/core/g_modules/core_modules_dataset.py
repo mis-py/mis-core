@@ -1,4 +1,3 @@
-
 positive_get_modules = [
     (
         {},
@@ -6,7 +5,7 @@ positive_get_modules = [
             "status_code": 200,
             "msg": "Success",
             "result": {
-                "total": 3,
+                "total": 4,
                 "current": 1,
                 "size": 50,
                 "pages": 1,
@@ -57,6 +56,27 @@ positive_get_modules = [
                             "auth_disabled": True,
                             "extra": {}
                         }
+                    },
+                    {
+                        "id": 4,
+                        "name": "proxy_registry",
+                        "enabled": False,
+                        "state": "pre_initialized",
+                        "manifest": {
+                            "name": "proxy_registry",
+                            "display_name": "Proxy Registry",
+                            "description": "Module provides proxy registry for various operations",
+                            "version": "0.1",
+                            "author": "Kankuro, ADLR",
+                            "category": "data provider",
+                            "permissions": {
+                                "sudo": "Full module access",
+                                "proxies": "Access for 'proxies' endpoints"
+                            },
+                            "dependencies": [],
+                            "auth_disabled": False,
+                            "extra": {}
+                        }
                     }
                 ]
             },
@@ -65,7 +85,7 @@ positive_get_modules = [
     ),
     (
         {
-            "module_id": 2
+            "module_name": "dummy"
         },
         {
             "status_code": 200,
@@ -117,11 +137,10 @@ negative_get_modules = [
     ),
 ]
 
-
 positive_init_modules = [
     (
         {
-            "module_id": 2
+            "module_name": "dummy"
         },
         {
             "status_code": 200,
@@ -176,11 +195,10 @@ negative_init_modules = [
     )
 ]
 
-
 positive_start_module = [
     (
         {
-            "module_id": 2
+            "module_name": "dummy"
         },
         {
             "status_code": 200,
@@ -238,7 +256,7 @@ negative_start_module = [
 positive_stop_module = [
     (
         {
-            "module_id": 2
+            "module_name": "dummy"
         },
         {
             "status_code": 200,
@@ -296,7 +314,7 @@ negative_stop_module = [
 positive_shutdown_modules = [
     (
         {
-            "module_id": 2
+            "module_name": "dummy"
         },
         {
             "status_code": 200,

@@ -11,6 +11,7 @@ from libs.eventory import Eventory
 from libs.eventory.utils import RoutingKeysSet
 from libs.modules.AppContext import AppContext
 from libs.modules.module_service import ModuleService
+from libs.redis import RedisService
 
 settings = CoreSettings()
 
@@ -41,8 +42,14 @@ async def get_app_context(
     return await ModuleService.make_module_context(module_name=module.name, user=user, team=user.team)
 
 
+async def get_redis_service() -> RedisService:
+    return RedisService()
+
+
 AppContextDep = Annotated[AppContext, Depends(get_app_context)]
 
 PaginateParamsDep = Annotated[Params, Depends()]
 
 RoutingKeysDep = Annotated[RoutingKeysSet, Depends(get_routing_keys)]
+
+RedisServiceDep = Annotated[RedisService, Depends(get_redis_service)]
