@@ -51,7 +51,7 @@ async def delete_dummy(dummy_id: int):
 
     return MisResponse()
 
-# todo examples with dependencies varioables, user, team, model etc
+
 # @router.get('/get_dummy_data', response_model=DummyResponse)
 # async def get_dummy_data(
 #         request: Request,

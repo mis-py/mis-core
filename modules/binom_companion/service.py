@@ -12,6 +12,7 @@ from core.utils.notification.message import Message
 from core.utils.notification.recipient import Recipient
 from core.utils.schema import PageResponse
 from core.services.base.base_service import BaseService
+from core.utils.common import exclude_none_values
 
 from libs.eventory import Eventory
 from libs.modules.AppContext import AppContext
@@ -31,7 +32,7 @@ from .db.models import (
     ReplacementHistory,
     LeadRecord
 )
-from .schemas.proxy_domain import ProxyDomainCreateModel
+from .schemas.proxy_domain import ProxyDomainCreateBulkModel
 from .util.util import regexp_match
 
 
@@ -40,16 +41,27 @@ class TrackerInstanceService(BaseService):
         super().__init__(repo=TrackerInstanceRepository(model=TrackerInstance))
 
     async def check_connection(self, tracker_instance_id: int):
-        tracker_instance = await self.get(id=tracker_instance_id)
+        tracker_instance: TrackerInstance = await self.get(id=tracker_instance_id)
 
-        json_data = await self.make_tracker_get_request(
-            page='Offers',
-            instance=tracker_instance
-        )
+        async with aiohttp.ClientSession() as session:
+            url = f"{tracker_instance.base_url}/{tracker_instance.edit_route}?api_key={tracker_instance.api_key}&action=monitor@get"
 
-        if json_data and len(json_data) > 0:
-            return True
-        return False
+            response = await session.get(url)
+
+            if not response.ok:
+                logger.error(f'Invalid response from Tracker {tracker_instance.name}: {response.status} {response.text}')
+                return None
+
+            try:
+                data = await response.json(loads=loads, content_type=None)
+
+            except JSONDecodeError:
+                logger.error(f'Invalid data from Tracker {tracker_instance.name}: {response.text}')
+                return None
+
+            if data and len(data) > 0:
+                return data.get("tracker_info")
+        return None
 
     @staticmethod
     async def make_tracker_get_request(
@@ -200,9 +212,7 @@ class ReplacementGroupService(BaseService):
     def __init__(self):
         super().__init__(repo=ReplacementGroupRepository(model=ReplacementGroup))
 
-    async def proxy_change(self, ctx: AppContext, replacement_group_ids: list[int], reason: str):
-        """ Function to run domain replacement for specific replacement groups with group validation """
-
+    async def get_groups_from_id(self, replacement_group_ids: list[int], is_active: bool = True) -> list[ReplacementGroup]:
         groups: list[ReplacementGroup] = await self.repo.filter(
             id__in=replacement_group_ids,
             prefetch_related=['tracker_instance']
@@ -213,14 +223,20 @@ class ReplacementGroupService(BaseService):
         )
 
         if len(not_exist_groups) > 0:
-            logger.warning(f"Run replacement_group_proxy_change task ERROR: Group ids: {not_exist_groups} not exists")
+            logger.warning(f"Run replacement_group_proxy_change task ERROR: Group ids: {not_exist_groups} not exists and would not be used")
 
-        not_active_groups = [group.pk for group in groups if not group.is_active]
+        # not_active_groups = [group.pk for group in groups if not (group.is_active == is_active)]
+        #
+        # if len(not_active_groups) > 0:
+        #     logger.warning(f"Run replacement_group_proxy_change task ERROR: Group ids: {not_active_groups} not active")
 
-        if len(not_active_groups) > 0:
-            logger.warning(f"Run replacement_group_proxy_change task ERROR: Group ids: {not_active_groups} not active")
+        active_groups = [group for group in groups if (group.is_active == is_active)]
 
-        active_groups = [group for group in groups if group.is_active]
+        return active_groups
+
+    async def proxy_change(self, ctx: AppContext, replacement_group_ids: list[int], reason: str):
+        """ Function to run domain replacement for specific replacement groups with group validation """
+        active_groups = await self.get_groups_from_id(replacement_group_ids=replacement_group_ids)
 
         if len(active_groups) > 0:
             await ProxyDomainService().change_domain(ctx, active_groups, reason)
@@ -245,6 +261,22 @@ class ReplacementGroupService(BaseService):
             "landing": landing_ids
         }
 
+    async def filter_with_history_and_paginate(
+            self,
+            history_limit: int,
+            params: AbstractParams = None,
+            **filters,
+    ):
+        filters_without_none = exclude_none_values(filters)
+        queryset = await self.repo.filter_queryable_with_history(
+            history_limit=history_limit, **filters_without_none
+        )
+        return await self.repo.paginate(queryset=queryset, params=params)
+
+    async def get_with_history(self, history_limit: int, **filters):
+        filters_without_none = exclude_none_values(filters)
+        return await self.repo.get_with_history(history_limit=history_limit, **filters_without_none)
+
 
 class ProxyDomainService(BaseService):
     def __init__(self):
@@ -261,6 +293,11 @@ class ProxyDomainService(BaseService):
         return await self.history.paginate(queryset=queryset, params=params)
 
     async def get_new_domains(self, group: ReplacementGroup):
+        """
+        Use this function to get only working and ready domains for replacement group!
+        :param group:
+        :return:
+        """
         # get all domains for specific group
         subfilter = await self.history.filter_queryable(replacement_group_id=group.pk)
         subfilter_values = subfilter.values('to_domain_id')
@@ -268,28 +305,47 @@ class ProxyDomainService(BaseService):
         # get domains except id that was used and is not invalid
         query = await self.repo.filter_queryable(
             id__not_in=Subquery(subfilter_values),
-            is_invalid=False
+            is_invalid=False,
+            is_ready=True,
+            tracker_instance=group.tracker_instance
         )
 
         result = await query
 
         return result
 
-    async def get_new_domain_for_selected_groups(self, groups: list[ReplacementGroup]) -> ProxyDomain:
-        group_ids = [group.pk for group in groups]
-
+    async def get_new_domains_for_selected_groups(self, groups: list[ReplacementGroup]) -> list[ProxyDomain]:
+        """
+        Use this function if you need to get new ready and working domains for specified replacement groups!
+        :param groups:
+        :return:
+        """
         # For every group we get available domains that was not used previously
-        available_domains_for_group = {}
+        available_domains_for_group: dict[str, ProxyDomain] = {}
         for group in groups:
             available_domains_for_group[group.name] = await self.get_new_domains(group=group)
 
-        group_items_sets = [set(item) for item in available_domains_for_group.values() if item]
+        filtered_items = [item for item in available_domains_for_group.values() if item]
 
-        if not group_items_sets:
+        return filtered_items
+
+    async def find_intersection(self, groups: list[ReplacementGroup]) -> set:
+        """Use this function if you need to find only domains available for all groups!"""
+        group_items = await self.get_new_domains_for_selected_groups(groups)
+
+        # In available domains find domain that available for all groups else return emty set
+        intersection = set.intersection(*[set(item) for item in group_items if item]) if group_items else set()
+
+        return intersection
+
+    async def get_new_domain_for_selected_groups(self, groups: list[ReplacementGroup]) -> ProxyDomain:
+        """Use this function if you need to get single ready and working domain for specified groups"""
+        group_ids = [group.pk for group in groups]
+
+        intersection = await self.find_intersection(groups)
+
+        if not intersection:
             raise NotFound(f"Not found available domains for groups: {group_ids}")
-
-        # In available domains find domain that available for all groups
-        intersection = set.intersection(*group_items_sets)
 
         # logger.debug(intersection)
 
@@ -409,11 +465,21 @@ class ProxyDomainService(BaseService):
 
         await new_record.from_domains.add(*previous_domains_models)
 
-    async def create_bulk(self, proxy_domains_in: list[ProxyDomainCreateModel]) -> list[ProxyDomain]:
+    async def create_bulk(self, proxy_domains_in: ProxyDomainCreateBulkModel) -> list[ProxyDomain]:
         list_objects = [
-            await self.create(proxy_domain_in) for proxy_domain_in in proxy_domains_in
+            await self.create_by_kwargs(
+                name=domain,
+                server_name=proxy_domains_in.server_name,
+                tracker_instance_id=proxy_domains_in.tracker_instance_id
+            ) for domain in proxy_domains_in.domain_names
         ]
+        [await model.fetch_related("tracker_instance") for model in list_objects]
         return list_objects
+
+    async def get_server_names(self):
+        base_query = await self.repo.filter_queryable()
+        result = base_query.order_by("server_name").distinct().values_list('server_name', flat=True)
+        return dict(server_names=await result)
 
 
 class LeadRecordService(BaseService):

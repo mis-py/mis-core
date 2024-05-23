@@ -1,7 +1,6 @@
-import loguru
-from fastapi import APIRouter, Security
+from fastapi import APIRouter, Security, Query
 
-from core.dependencies.misc import AppContextDep
+from core.dependencies.misc import AppContextDep, PaginateParamsDep
 from core.dependencies.security import get_current_user
 from core.utils.schema import PageResponse, MisResponse
 
@@ -18,11 +17,16 @@ router = APIRouter(
     '',
     response_model=PageResponse[ReplacementGroupModel]
 )
-async def get_replacement_groups():
-    return await ReplacementGroupService().filter_and_paginate(
-        prefetch_related=[
-            'replacement_history'
-        ]
+
+async def get_replacement_groups(
+        paginate_params: PaginateParamsDep,
+        is_active: bool | None = None,
+        history_limit: int = Query(default=10),
+):
+    return await ReplacementGroupService().filter_with_history_and_paginate(
+        history_limit=history_limit,
+        params=paginate_params,
+        is_active=is_active
     )
 
 
@@ -33,7 +37,7 @@ async def get_replacement_groups():
 async def create_replacement_group(replacement_group_in: ReplacementGroupCreateModel):
     replacement_group = await ReplacementGroupService().create(replacement_group_in)
 
-    await replacement_group.fetch_related("replacement_history")
+    await replacement_group.fetch_related("tracker_instance")
 
     return MisResponse[ReplacementGroupModel](result=replacement_group)
 
@@ -66,7 +70,7 @@ async def edit_replacement_group(
         schema_in=replacement_group_in
     )
 
-    await replacement_group.fetch_related("replacement_history")
+    await replacement_group.fetch_related("tracker_instance")
 
     return MisResponse[ReplacementGroupModel](result=replacement_group)
 

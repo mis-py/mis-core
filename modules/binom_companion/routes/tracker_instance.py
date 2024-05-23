@@ -79,9 +79,9 @@ async def delete_tracker_instance(tracker_instance_id: int):
 
 @router.get(
     '/check',
-    response_model=MisResponse[bool]
+    response_model=MisResponse[dict]
 )
 async def check_connection_tracker_instance(tracker_instance_id: int):
     check_result = await TrackerInstanceService().check_connection(tracker_instance_id)
 
-    return MisResponse[bool](result=check_result)
+    return MisResponse[dict](result=check_result)
