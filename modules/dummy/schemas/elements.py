@@ -1,16 +1,17 @@
 from typing import Optional
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import Field
+
+from core.utils.schema import MisModel
 
 
-class DummyElementRead(BaseModel):
+class DummyElementRead(MisModel):
     id: int
     name: str
+    is_visible: bool
 
-    model_config = ConfigDict(from_attributes=True)
 
-
-class DummyElementUpdate(BaseModel):
+class DummyElementUpdate(MisModel):
     id: int = Field(ge=1)
     name: Optional[str] = None
-
+    is_visible: Optional[bool] = None

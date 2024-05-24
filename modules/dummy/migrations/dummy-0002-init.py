@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS "dummy_element_dummy"
 (
     "id" SERIAL NOT NULL PRIMARY KEY,
     "name" VARCHAR(255) NOT NULL,
+    "is_visible" BOOL NOT NULL  DEFAULT True,
     "created_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP,
     "category_id" INT REFERENCES "dummy_category_dummy" ("id") ON DELETE CASCADE,
 )

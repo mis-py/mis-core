@@ -10,3 +10,6 @@ class IDummyElementRepository(IRepository, ABC):
 
 class DummyElementRepository(TortoiseORMRepository, IDummyElementRepository):
     model = DummyElementModel
+
+    async def get_ids(self, **filters):
+        return await self.model.filter(**filters).values_list("id", flat=True)

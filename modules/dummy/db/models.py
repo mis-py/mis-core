@@ -43,6 +43,7 @@ class DummyElementModel(Model):
     name = fields.CharField(max_length=255)
     category = fields.ForeignKeyField('dummy.DummyCategoryModel',
                                       on_delete=fields.CASCADE, related_name='elements')
+    is_visible = fields.BooleanField(default=True)
     created_at = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
