@@ -26,6 +26,10 @@ class IRepository(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    async def update_bulk(self, **kwargs):
+        raise NotImplementedError()
+
+    @abstractmethod
     async def delete(self, **kwargs):
         raise NotImplementedError()
 
@@ -75,9 +79,24 @@ class TortoiseORMRepository(IRepository):
         await db_obj.save()
         return db_obj
 
-    async def update_list(self, update_ids: list[str], data: dict) -> int:
+    async def update_list(self, update_ids: list[int], data: dict) -> int:
         """Update object from dict"""
         return await self.model.filter(id__in=update_ids).update(**data)
+
+    async def update_bulk(self, data_items: list[dict], update_fields: set[str]):
+        ids = [item['id'] for item in data_items]
+        objects = await self.model.filter(id__in=ids)
+
+        id_to_obj = {obj.pk: obj for obj in objects}
+        for item in data_items:
+            id_obj = item.pop('id')
+            obj = id_to_obj.get(id_obj)
+            if not obj:
+                continue
+            await obj.update_from_dict(item)
+
+        await self.model.bulk_update(objects=objects, fields=update_fields)
+        return objects
 
     async def delete(self, **filters) -> None:
         """Delete filtered objects"""

@@ -65,7 +65,7 @@ async def delete_dummy(
 
     return MisResponse()
 
-# todo examples with dependencies varioables, user, team, model etc
+
 @router.get('/get_dummy_data', response_model=MisResponse[DummyDataResponse])
 async def get_dummy_data(
         dummy_model_service: Annotated[DummyService, Depends(get_dummy_model_service)],
