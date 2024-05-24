@@ -7,13 +7,10 @@ from core.dependencies.misc import PaginateParamsDep
 from core.dependencies.path import get_routing_key_by_id
 from core.dependencies.security import get_current_user
 from core.dependencies.services import get_routing_key_service, get_routing_key_subscription_service
-from core.repositories.routing_key import RoutingKeyRepository
 from core.services.notification import RoutingKeySubscriptionService, \
     RoutingKeyService
-from core.schemas.notification import RoutingKeyResponse, RoutingKeyUpdate
-from core.utils.notification.utils import routing_key_to_dict
+from core.schemas.notification import RoutingKeyResponse, RoutingKeyUpdate, RoutingKeySubscriptionResponse
 from core.utils.schema import MisResponse, PageResponse
-from libs.redis import RedisService
 
 
 router = APIRouter()
@@ -60,7 +57,7 @@ async def get_my_subscribes(
 
 @router.post(
     '/subscribe',
-    response_model=MisResponse[RoutingKeyResponse]
+    response_model=MisResponse[RoutingKeySubscriptionResponse]
 )
 async def edit_my_subscribe(
         routing_key_subscription_service: Annotated[RoutingKeySubscriptionService, Depends(get_routing_key_subscription_service)],
@@ -69,9 +66,9 @@ async def edit_my_subscribe(
 ):
     subscription = await routing_key_subscription_service.subscribe(
         user_id=user.pk,
-        routing_key_id=rk.pk
+        routing_key_id=rk.pk,
     )
-    return MisResponse[RoutingKeyResponse](result=subscription)
+    return MisResponse[RoutingKeySubscriptionResponse](result=subscription)
 
 
 @router.delete(
@@ -100,11 +97,6 @@ async def edit_notification(
         rk: RoutingKey = Depends(get_routing_key_by_id),
 ):
     await routing_key_service.update(id=rk.pk, schema_in=data)
+    await routing_key_service.set_to_cache(rk=rk)
 
-    # set/update value in cache
-    await RedisService.cache.set_json(
-        cache_name="routing_key",
-        key=rk.name,
-        value=routing_key_to_dict(rk),
-    )
     return MisResponse[RoutingKeyResponse](result=rk)

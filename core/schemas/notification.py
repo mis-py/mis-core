@@ -17,3 +17,9 @@ class RoutingKeyResponse(MisModel):
     app_id: int
     key_verbose: Optional[str]
     template: Optional[str]
+
+
+class RoutingKeySubscriptionResponse(MisModel):
+    id: int
+    user_id: int
+    routing_key_id: int
