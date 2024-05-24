@@ -256,10 +256,11 @@ class ReplacementGroupService(BaseService):
             params: AbstractParams = None,
             **filters,
     ):
-        queryset = await self.repo.filter_queryable_with_history(
-            history_limit=history_limit, **filters
-        )
-        return await self.repo.paginate(queryset=queryset, params=params)
+        queryset = await self.repo.filter_queryable_with_history(**filters)
+        results = await self.repo.paginate(queryset=queryset, params=params)
+        for item in results.result.items:
+            item.replacement_history = item.replacement_history[:history_limit]
+        return results
 
     async def get_with_history(self, history_limit: int, **filters):
         return await self.repo.get_with_history(history_limit=history_limit, **filters)
