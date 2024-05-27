@@ -1,3 +1,4 @@
+from loguru import logger
 from tortoise import transactions
 
 from core.db.dataclass import AppState, StatusTask
@@ -102,7 +103,6 @@ class ScheduledJobService(BaseService):
 
         return job_db
 
-    @transactions.atomic()
     async def update_job_trigger(self, job_id: int, schedule_in: JobTrigger):
         job: ScheduledJob = await self.get(id=job_id, prefetch_related=['app'])
         module: Module = await self.module_repo.get(id=job.app.pk)
@@ -115,38 +115,53 @@ class ScheduledJobService(BaseService):
 
         await SchedulerService.reschedule_job(job_id, trigger=trigger)
 
-        updated_obj = await self.scheduled_job_repo.update(
-            id=job_id,
-            data={'trigger': {"data": schedule_in.trigger}}
-        )
+        job_obj = SchedulerService.get_job(job_id)
+        if job_obj.next_run_time:
+            try:
+                await self.scheduled_job_repo.update(
+                    id=job_id,
+                    data={'trigger': {"data": schedule_in.trigger}}
+                )
+            except Exception as e:
+                logger.exception(e)
 
-        await updated_obj.save()
+                # set old trigger
+                old_trigger = get_trigger(job.trigger)
+                if not old_trigger and task.trigger:
+                    old_trigger = task.trigger
+                await SchedulerService.reschedule_job(job_id, trigger=old_trigger)
 
         return await self.get(id=job_id, prefetch_related=['user', 'team', 'app'])
 
-    @transactions.atomic()
     async def set_paused_status(self, job_id: int):
         await SchedulerService.pause_job(job_id)
 
-        updated_obj = await self.scheduled_job_repo.update(
-            id=job_id,
-            data={'status': StatusTask.PAUSED.value}
-        )
-
-        await updated_obj.save()
+        job = SchedulerService.get_job(job_id)
+        if job.next_run_time is None:
+            try:
+                await self.scheduled_job_repo.update(
+                    id=job_id,
+                    data={'status': StatusTask.PAUSED.value}
+                )
+            except Exception as e:
+                logger.exception(e)
+                await SchedulerService.resume_job(job_id)
 
         return await self.scheduled_job_repo.get(id=job_id, prefetch_related=['user', 'team', 'app'])
 
-    @transactions.atomic()
     async def set_running_status(self, job_id: int):
         await SchedulerService.resume_job(job_id)
 
-        updated_obj = await self.scheduled_job_repo.update(
-            id=job_id,
-            data={'status': StatusTask.RUNNING.value}
-        )
-
-        await updated_obj.save()
+        job = SchedulerService.get_job(job_id)
+        if job.next_run_time:
+            try:
+                await self.scheduled_job_repo.update(
+                    id=job_id,
+                    data={'status': StatusTask.RUNNING.value}
+                )
+            except Exception as e:
+                logger.exception(e)
+                await SchedulerService.pause_job(job_id)
 
         return await self.get(id=job_id, prefetch_related=['user', 'team', 'app'])
 
