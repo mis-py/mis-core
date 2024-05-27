@@ -1,4 +1,4 @@
-from tortoise.transactions import in_transaction
+from tortoise import transactions
 
 from core.db.models import Team
 from core.exceptions import ValidationFailed, MISError
@@ -25,48 +25,48 @@ class TeamService(BaseService):
         self.variable_value_repo = variable_value_repo
         super().__init__(repo=team_repo)
 
+    @transactions.atomic()
     async def create_with_perms_users_vars(self, team_in: TeamCreate):
-        async with in_transaction():
-            new_team = await self.team_repo.create(data={'name': team_in.name})
+        new_team = await self.team_repo.create(data={'name': team_in.name})
 
-            if team_in.permissions:
-                await new_team.set_permissions(team_in.permissions)
+        if team_in.permissions:
+            await new_team.set_permissions(team_in.permissions)
 
-            if team_in.users_ids:
-                await self.user_repo.update_list(update_ids=team_in.users_ids, data={'team_id': new_team.id})
+        if team_in.users_ids:
+            await self.user_repo.update_list(update_ids=team_in.users_ids, data={'team_id': new_team.id})
 
-            for variable_in in team_in.variables:
-                variable = await self.uow.variable_repo.get(id=variable_in.variable_id)
-                try:
-                    type_convert(value=variable_in.new_value, to_type=variable.type)
-                except ValueError:
-                    raise ValidationFailed(
-                        f"Can't set setting {variable.key}. Value is not '{variable.type}' type",
-                    )
-
-                if variable.is_global:
-                    raise ValidationFailed(
-                        f"Can't set global setting {variable.key} as local setting for user",
-                    )
-
-                await self.variable_value_repo.update_or_create(
-                    variable_id=variable.pk,
-                    value=variable_in.new_value,
-                    team_id=new_team.pk,
+        for variable_in in team_in.variables:
+            variable = await self.uow.variable_repo.get(id=variable_in.variable_id)
+            try:
+                type_convert(value=variable_in.new_value, to_type=variable.type)
+            except ValueError:
+                raise ValidationFailed(
+                    f"Can't set setting {variable.key}. Value is not '{variable.type}' type",
                 )
+
+            if variable.is_global:
+                raise ValidationFailed(
+                    f"Can't set global setting {variable.key} as local setting for user",
+                )
+
+            await self.variable_value_repo.update_or_create(
+                variable_id=variable.pk,
+                value=variable_in.new_value,
+                team_id=new_team.pk,
+            )
         return new_team
 
+    @transactions.atomic()
     async def update_with_perms_and_users(self, team: Team, team_in: TeamUpdate):
-        async with in_transaction():
-            if team_in.name:
-                team.name = team_in.name
-                await self.team_repo.save(obj=team)
+        if team_in.name:
+            team.name = team_in.name
+            await self.team_repo.save(obj=team)
 
-            if team_in.permissions:
-                await team.set_permissions(team_in.permissions)
+        if team_in.permissions:
+            await team.set_permissions(team_in.permissions)
 
-            if team_in.users_ids:
-                await self.set_users(team=team, users_ids=team_in.users_ids)
+        if team_in.users_ids:
+            await self.set_users(team=team, users_ids=team_in.users_ids)
         return team
 
     async def get_permissions(self, team: Team):

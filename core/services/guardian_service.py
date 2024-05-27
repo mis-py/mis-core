@@ -1,4 +1,4 @@
-from tortoise.transactions import in_transaction
+from tortoise import transactions
 
 from core.db.guardian import GuardianAccessGroup
 from core.db.models import User
@@ -32,11 +32,11 @@ class GAccessGroupService(BaseService):
         self.user_repo = user_repo
         super().__init__(repo=g_access_group_repo)
 
+    @transactions.atomic()
     async def create_with_users(self, name: str, users_ids: list[int] = None):
-        async with in_transaction():
-            group = await self.g_access_group_repo.create(data={'name': name})
-            if users_ids:
-                await self.add_users(group=group, users_ids=users_ids)
+        group = await self.g_access_group_repo.create(data={'name': name})
+        if users_ids:
+            await self.add_users(group=group, users_ids=users_ids)
         return group
 
     async def add_users(self, group: GuardianAccessGroup, users_ids: list[int]):
@@ -66,21 +66,21 @@ class GUserPermissionService(BaseService):
         self.user_repo = user_repo
         super().__init__(repo=g_user_permission_repo)
 
+    @transactions.atomic()
     async def add_user_perm(self, schema_in: UserPermCreate):
-        async with in_transaction():
-            content_type = await self.g_content_type_repo.get(id=schema_in.content_type_id)
-            if content_type is None:
-                raise NotFound(f"content_type_id '{schema_in.content_type_id}' not found")
+        content_type = await self.g_content_type_repo.get(id=schema_in.content_type_id)
+        if content_type is None:
+            raise NotFound(f"content_type_id '{schema_in.content_type_id}' not found")
 
-            permission = await self.g_permission_repo.get(id=schema_in.permission_id)
-            if permission is None:
-                raise NotFound(f"permission_id '{schema_in.permission_id}' not found")
+        permission = await self.g_permission_repo.get(id=schema_in.permission_id)
+        if permission is None:
+            raise NotFound(f"permission_id '{schema_in.permission_id}' not found")
 
-            user = await self.user_repo.get(id=schema_in.user_id)
-            if user is None:
-                raise NotFound(f"user_id '{schema_in.user_id}' not found")
+        user = await self.user_repo.get(id=schema_in.user_id)
+        if user is None:
+            raise NotFound(f"user_id '{schema_in.user_id}' not found")
 
-            user_perm = await self.g_user_permission_repo.create(data=schema_in.model_dump())
+        user_perm = await self.g_user_permission_repo.create(data=schema_in.model_dump())
         return user_perm
 
 
@@ -100,21 +100,21 @@ class GGroupPermissionService(BaseService):
         self.user_repo = user_repo
         super().__init__(repo=g_group_permission_repo)
 
+    @transactions.atomic()
     async def add_group_perm(self, schema_in: GroupPermCreate):
-        async with in_transaction():
-            content_type = await self.g_content_type_repo.get(id=schema_in.content_type_id)
-            if content_type is None:
-                raise NotFound(f"content_type_id '{schema_in.content_type_id}' not found")
+        content_type = await self.g_content_type_repo.get(id=schema_in.content_type_id)
+        if content_type is None:
+            raise NotFound(f"content_type_id '{schema_in.content_type_id}' not found")
 
-            permission = await self.g_permission_repo.get(id=schema_in.permission_id)
-            if permission is None:
-                raise NotFound(f"permission_id '{schema_in.permission_id}' not found")
+        permission = await self.g_permission_repo.get(id=schema_in.permission_id)
+        if permission is None:
+            raise NotFound(f"permission_id '{schema_in.permission_id}' not found")
 
-            group = await self.g_access_group_repo.get(id=schema_in.group_id)
-            if group is None:
-                raise NotFound(f"group_id '{schema_in.group_id}' not found")
+        group = await self.g_access_group_repo.get(id=schema_in.group_id)
+        if group is None:
+            raise NotFound(f"group_id '{schema_in.group_id}' not found")
 
-            group_perm = await self.g_group_permission_repo.create(data=schema_in.model_dump())
+        group_perm = await self.g_group_permission_repo.create(data=schema_in.model_dump())
         return group_perm
 
 

@@ -1,4 +1,4 @@
-from tortoise.transactions import in_transaction
+from tortoise import transactions
 
 from core.db.models import Module
 from core.db.permission import Permission
@@ -23,20 +23,20 @@ class PermissionService(BaseService):
     def make_module_scope(module_name: str, scope: str):
         return f"{module_name}:{scope}"
 
+    @transactions.atomic()
     async def update_or_create(self, name: str, scope: str, module: Module) -> Permission:
-        async with in_transaction():
-            app_scope = self.make_module_scope(module_name=module.name, scope=scope)
-            perm = await self.get(scope=app_scope)
-            if not perm:
-                perm = await self.create_with_scope(
-                    scope=scope,
-                    module=module,
-                    name=name,
-                )
-            else:
-                await self.permission_repo.update(
-                    id=perm.pk, data={'app_id': module.pk, 'name': name})
-            return perm
+        app_scope = self.make_module_scope(module_name=module.name, scope=scope)
+        perm = await self.get(scope=app_scope)
+        if not perm:
+            perm = await self.create_with_scope(
+                scope=scope,
+                module=module,
+                name=name,
+            )
+        else:
+            await self.permission_repo.update(
+                id=perm.pk, data={'app_id': module.pk, 'name': name})
+        return perm
 
     async def delete_unused(self, module_id: int, exist_ids: list[int]) -> int:
         """Delete unused permissions for module"""
