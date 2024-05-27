@@ -49,7 +49,9 @@ class TortoiseManager:
     #     },
     #     "timezone": TIMEZONE,
     # }
-    _migrations_to_apply: list = [str(BASE_DIR / "core" / "migrations")]
+    _migrations_to_apply: dict = {
+        "core": str(BASE_DIR / "core" / "migrations"),
+    }
 
     @classmethod
     async def add_models(cls, app: str, models: list[str]):
@@ -60,8 +62,8 @@ class TortoiseManager:
         cls._modules[app] = models
 
     @classmethod
-    async def add_migrations(cls, path):
-        cls._migrations_to_apply.append(path)
+    async def add_migrations(cls, app_name, path):
+        cls._migrations_to_apply[app_name] = path
 
     @classmethod
     async def pre_init(cls):
@@ -101,14 +103,18 @@ class TortoiseManager:
     async def init_migrations(cls):
         # backend = get_backend(cls._tortiose_orm["connections"]["default"])
         backend = get_backend(cls._db_url)
-        migrations = read_migrations(*cls._migrations_to_apply)
 
-        try:
-            with backend.lock():
-                backend.apply_migrations(backend.to_apply(migrations))
-        except Exception as e:
-            e_name = e.__class__.__name__
-            logger.error(f"[TortoiseManager] Error during migrations: {e_name} {e}")
+        for migration in cls._migrations_to_apply.keys():
+
+            migrations = read_migrations(*cls._migrations_to_apply[migration])
+
+            try:
+                with backend.lock():
+                    logger.debug(f"[TortoiseManager] Applying migration for: {migration} [{migrations}]")
+                    backend.apply_migrations(backend.to_apply(migrations))
+            except Exception as e:
+                e_name = e.__class__.__name__
+                logger.error(f"[TortoiseManager] Error during migration: {migration} {e_name} {e}")
 
     @classmethod
     async def shutdown(cls):
