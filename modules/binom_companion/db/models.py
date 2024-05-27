@@ -52,8 +52,8 @@ class ProxyDomain(Model):
     name = fields.CharField(max_length=2048, unique=True)
     date_added = fields.DatetimeField(auto_now_add=True)
 
-    # in case we need to track domain is broken or not working
-    is_invalid = fields.BooleanField(default=False)
+    # initially domain in invalid and must be validated automatically or by hands
+    is_invalid = fields.BooleanField(default=True)
 
     # for tracking what server is binded to domain and ready state after setup
     is_ready = fields.BooleanField(default=False)

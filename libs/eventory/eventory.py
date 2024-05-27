@@ -15,6 +15,7 @@ from core.services.notification import RoutingKeyService
 from .consumer import Consumer
 from .config import RabbitSettings
 from .utils import RoutingKeysSet
+from ..modules import AppContext
 
 settings = RabbitSettings()
 
@@ -53,7 +54,7 @@ class Eventory:
             del cls._channels[app_name]
 
     @classmethod
-    async def register_consumer(cls, app_name: str, routing_key: str, callback: Callable, *args, **kwargs):
+    async def register_consumer(cls, app_name: str, routing_key: str, callback: Callable, context: AppContext, *args, **kwargs):
         """
         Consumer is message receiver, can be declared for any function
         :param app_name:
@@ -71,7 +72,7 @@ class Eventory:
         queue = await channel.declare_queue(exclusive=True)
         await queue.bind(exchange)
         try:
-            receiver = cls._on_message_wrapper(callback, *args, **kwargs)
+            receiver = cls._on_message_wrapper(callback, context, *args, **kwargs)
             consumer = Consumer(queue, receiver, callback.__name__)
             return consumer
         except DuplicateConsumerTag:
@@ -105,6 +106,7 @@ class Eventory:
             content_encoding='utf-8'
         )
         prefixed_routing_key = f"{app_name}:{routing_key}"
+        prefixed_routing_key = f"{routing_key}"
         channel = await cls.get_channel(app_name)
         exchange = await channel.declare_exchange(
             prefixed_routing_key,
@@ -131,7 +133,7 @@ class Eventory:
         cls.start_listening()
 
     @staticmethod
-    def _on_message_wrapper(coro, *args, **kwargs):
+    def _on_message_wrapper(coro, context, *args, **kwargs):
         @functools.wraps(coro)
         async def _receive(message: AbstractIncomingMessage):
             async with message.process():
@@ -140,7 +142,7 @@ class Eventory:
                 json_data = ujson.loads(message.body.decode('utf-8'))
 
                 message.json = json_data
-                return await coro(message, *args, **kwargs)
+                return await coro(message=message, ctx=context, *args, **kwargs)
         return _receive
 
     @classmethod

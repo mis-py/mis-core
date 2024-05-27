@@ -97,16 +97,16 @@ async def check_fetch_replacement_group(replacement_group_id: int):
 
 @router.post(
     '/change_proxy',
-    response_model=MisResponse
+    response_model=MisResponse[dict]
 )
 async def change_proxy_domain(
     replacement_group_ids: ReplacementGroupChangeProxyIds,
     ctx: AppContextDep
 ):
-    await ReplacementGroupService().proxy_change(
+    change_result = await ReplacementGroupService().proxy_change(
         ctx,
         replacement_group_ids.replacement_group_ids,
         "Changed via endpoint"
     )
 
-    return MisResponse
+    return MisResponse[dict](result=change_result)

@@ -145,7 +145,8 @@ class TrackerInstanceService(BaseService):
         for off in json_data:
             offer_ids.append(off.get('id'))
             domain = urllib3.util.parse_url(off.get('url')).host
-            domains.add(domain)
+            if domain:
+                domains.add(domain)
 
         return offer_ids, list(domains)
 
@@ -171,13 +172,13 @@ class TrackerInstanceService(BaseService):
         for land in json_data:
             landing_ids.append(land.get('id'))
             domain = urllib3.util.parse_url(land.get('url')).host
-            domains.add(domain)
+            if domain:
+                domains.add(domain)
 
         return landing_ids, list(domains)
 
     async def change_offers_domain(self, offer_ids, new_domain: ProxyDomain, instance: TrackerInstance) -> str:
         if not offer_ids:
-            logger.debug(f'No offers to change')
             return ""
 
         json_data = await self.make_tracker_post_request(
@@ -195,7 +196,6 @@ class TrackerInstanceService(BaseService):
 
     async def change_landings_domain(self, landings_ids, new_domain: ProxyDomain, instance: TrackerInstance) -> str:
         if not landings_ids:
-            logger.debug(f'No landings to change')
             return ""
 
         json_data = await self.make_tracker_post_request(
@@ -243,7 +243,7 @@ class ReplacementGroupService(BaseService):
         active_groups = await self.get_groups_from_id(replacement_group_ids=replacement_group_ids)
 
         if len(active_groups) > 0:
-            await ProxyDomainService().change_domain(ctx, active_groups, reason)
+            return await ProxyDomainService().change_domain(ctx, active_groups, reason)
         else:
             logger.warning(f"Run replacement_group_proxy_change task ERROR: Nothing to run")
 
@@ -278,9 +278,12 @@ class ReplacementGroupService(BaseService):
         )
         return await self.repo.paginate(queryset=queryset, params=params)
 
-    async def get_with_history(self, history_limit: int, **filters):
+    async def get_with_history(self, history_limit: int, id:int, **filters):
         filters_without_none = exclude_none_values(filters)
-        return await self.repo.get_with_history(history_limit=history_limit, **filters_without_none)
+        return await self.repo.get_with_history(
+            replacement_group_id=id,
+            history_limit=history_limit, **filters_without_none
+        )
 
 
 class ProxyDomainService(BaseService):
@@ -312,7 +315,8 @@ class ProxyDomainService(BaseService):
             id__not_in=Subquery(subfilter_values),
             is_invalid=False,
             is_ready=True,
-            tracker_instance=group.tracker_instance
+            tracker_instance=group.tracker_instance,
+            prefetch_related=["tracker_instance"]
         )
 
         result = await query
@@ -401,47 +405,52 @@ class ProxyDomainService(BaseService):
 
             offer_response = await TrackerInstanceService().change_offers_domain(offers, new_domain, instance=instance)
             logger.debug(
-                f'Group: {group}, new domain: {new_domain}, offers: {offers}, result: {offer_response}'
+                f'Group: {group}, new domain: {new_domain}, offers: {offers}, result: {offer_response if len(offer_response) > 0 else "No offers to change"}'
             )
 
             landing_response = await TrackerInstanceService().change_landings_domain(
                 landings, new_domain, instance=instance
             )
             logger.debug(
-                f'Group: {group}, new domain: {new_domain}, landings: {landings}, result: {landing_response}'
+                f'Group: {group}, new domain: {new_domain}, landings: {landings}, result: {landing_response if len(landing_response) > 0 else "No landings to change"}'
             )
 
-            await Eventory.publish(
-                Message(body={
-                    'group_name': group.name,
-                    'new_domain': new_domain.name,
-                    'old_domains': old_offers_domains + old_land_domains
-                }),
-                ctx.routing_keys.DOMAIN_CHANGED,
-                ctx.app_name
+            if len(offer_response) or len(landing_response):
+                # make history record and eventory publish only if we actually changed something
+                await Eventory.publish(
+                    Message(body={
+                        'group_name': group.name,
+                        'new_domain': new_domain.name,
+                        'old_domains': old_offers_domains + old_land_domains
+                    }),
+                    ctx.routing_keys.DOMAIN_CHANGED,
+                    ctx.app_name
+                )
+
+                await self.add_history_record(
+                    new_domain=new_domain,
+                    previous_domains=old_offers_domains + old_land_domains,
+                    offers_list=offers,
+                    lands_list=landings,
+                    replaced_by=ctx.user,
+                    replacement_group=group,
+                    reason=reason
+                )
+
+            change_result["new_domain"] = new_domain.name
+
+            change_result["replacement_groups"] = list()
+
+            group_result = dict(
+                id=group.pk,
+                name=group.name,
+                offer_ids=offers,
+                offer_result=offer_response,
+                landing_ids=landings,
+                landing_result=landing_response
             )
 
-            await self.add_history_record(
-                new_domain=new_domain,
-                previous_domains=old_offers_domains + old_land_domains,
-                offers_list=offers,
-                lands_list=landings,
-                replaced_by=ctx.user,
-                replacement_group=group,
-                reason=reason
-            )
-
-            change_result['new_domain'] = new_domain.name
-
-            change_result[group.name] = dict()
-            change_result[group.name]['offers'] = {
-                'ids': offers,
-                'result': offer_response
-            }
-            change_result[group.name]['landings'] = {
-                'ids': landings,
-                'result': landing_response
-            }
+            change_result["replacement_groups"].append(group_result)
 
         return change_result
 
@@ -470,25 +479,45 @@ class ProxyDomainService(BaseService):
 
         await new_record.from_domains.add(*previous_domains_models)
 
-    async def create_bulk(self, proxy_domains_in: ProxyDomainCreateBulkModel) -> list[ProxyDomain]:
-        list_objects = [
-            await self.create_by_kwargs(
-                name=domain,
-                server_name=proxy_domains_in.server_name,
-                tracker_instance_id=proxy_domains_in.tracker_instance_id
-            ) for domain in proxy_domains_in.domain_names
-        ]
-        [await model.fetch_related("tracker_instance") for model in list_objects]
-        return list_objects
+    async def create_bulk(self, proxy_domains_in: ProxyDomainCreateBulkModel, ctx: AppContext) -> list[ProxyDomain]:
+        created_domains = []
+        for domain in proxy_domains_in.domain_names:
+            try:
+                created_domain = await self.create_by_kwargs(
+                    name=domain,
+                    server_name=proxy_domains_in.server_name,
+                    tracker_instance_id=proxy_domains_in.tracker_instance_id
+                )
+                await created_domain.fetch_related("tracker_instance")
+
+                await Eventory.publish(
+                    Message(
+                        body={"id": created_domain.pk, "name": created_domain.name},
+                    ),
+                    ctx.routing_keys.PROXY_DOMAIN_ADDED,
+                    ctx.app_name
+                )
+
+            except Exception as e:
+                # TODO notify in response if skipped some domains
+                logger.warning(f"Skipped creating domain: {domain}, exception: {e}")
+                continue
+
+        return created_domains
+
+    async def update_bulk(self, schema_in):
+        await self.repo.update_bulk(
+            schema_in.model_dump(exclude_unset=True)['proxy_domains'],
+            update_fields=['name', 'tracker_instance_id', 'server_name', 'is_invalid', 'is_ready'],
+        )
 
     async def get_server_names(self):
         base_query = await self.repo.filter_queryable()
         result = base_query.order_by("server_name").distinct().values_list('server_name', flat=True)
         return dict(server_names=await result)
 
-    async def set_invalid(self, domain_id: int):
-        return await self.repo.update(id=domain_id, data={'is_invalid': True})
-
+    async def set_is_valid(self, domain_id: int):
+        return await self.repo.update(id=domain_id, data={'is_invalid': False})
 
 
 class LeadRecordService(BaseService):

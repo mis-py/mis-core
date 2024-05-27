@@ -1,10 +1,20 @@
-from fastapi import APIRouter, Security, Query
+from fastapi import APIRouter, Security, Query, Depends
 from loguru import logger
+
 
 from core.utils.schema import PageResponse, MisResponse
 from core.dependencies.security import get_current_user
+from core.dependencies.misc import get_app_context
+from libs.modules import AppContext
 
-from ..schemas.proxy_domain import ProxyDomainModel, ProxyDomainCreateModel, ProxyDomainUpdateModel, ProxyDomainServerNameModels, ProxyDomainCreateBulkModel
+from ..schemas.proxy_domain import (
+    ProxyDomainModel,
+    ProxyDomainCreateModel,
+    ProxyDomainUpdateModel,
+    ProxyDomainServerNameModels,
+    ProxyDomainCreateBulkModel,
+    ProxyDomainBulkUpdateModel
+)
 from ..service import ProxyDomainService, ReplacementGroupService
 
 router = APIRouter(
@@ -33,8 +43,11 @@ async def create_proxy_domain(proxy_domain_in: ProxyDomainCreateModel):
 @router.post(
     '/add_bulk',
     response_model=MisResponse[list[ProxyDomainModel]])
-async def create_proxy_domain_bulk(proxy_domains_in: ProxyDomainCreateBulkModel):
-    proxy_domains = await ProxyDomainService().create_bulk(proxy_domains_in)
+async def create_proxy_domain_bulk(
+        proxy_domains_in: ProxyDomainCreateBulkModel,
+        ctx: AppContext = Depends(get_app_context)
+):
+    proxy_domains = await ProxyDomainService().create_bulk(proxy_domains_in, ctx)
 
     return MisResponse[list[ProxyDomainModel]](result=proxy_domains)
 
@@ -51,6 +64,18 @@ async def edit_proxy_domain(
         id=proxy_domain_id,
         schema_in=proxy_domain_in
     )
+
+    return MisResponse[ProxyDomainModel](result=proxy_domain)
+
+
+@router.put(
+    '/edit_bulk',
+    response_model=MisResponse[ProxyDomainModel]
+)
+async def edit_bulk_proxy_domain(
+        proxy_domains_in: ProxyDomainBulkUpdateModel,
+):
+    proxy_domain = await ProxyDomainService().update_bulk(proxy_domains_in)
 
     return MisResponse[ProxyDomainModel](result=proxy_domain)
 

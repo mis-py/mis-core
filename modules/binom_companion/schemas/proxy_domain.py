@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from tortoise.contrib.pydantic import PydanticModel
 
@@ -35,6 +36,19 @@ class ProxyDomainUpdateModel(PydanticModel):
     server_name: str
     is_invalid: bool
     is_ready: bool
+
+
+class ProxyDomainUpdatePartiallyModel(PydanticModel):
+    id: int
+    name: Optional[str] = None
+    tracker_instance_id: Optional[int] = None
+    server_name: Optional[str] = None
+    is_invalid: Optional[bool] = None
+    is_ready: Optional[bool] = None
+
+
+class ProxyDomainBulkUpdateModel(PydanticModel):
+    proxy_domains: list[ProxyDomainUpdatePartiallyModel]
 
 
 class ProxyDomainServerNameModels(PydanticModel):

@@ -85,7 +85,7 @@ class EventManager(Component):
                 app_name=self.module.name,
                 routing_key=template.route_key,
                 callback=template.func,
-                app_context=context
+                context=context
             )
             self.consumers.append(consumer)
 
