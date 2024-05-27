@@ -7,7 +7,7 @@ from libs.eventory import CustomIncomingMessage
 from libs.redis import RedisService
 
 from .message import Message, IncomingProcessedMessage
-from ...dependencies.services import get_user_service
+from ...dependencies.services import get_user_service, get_routing_key_service
 from ...services.user import UserService
 
 
@@ -74,7 +74,8 @@ async def get_or_set_routing_key_cache(cache, routing_key: str):
 
     # set
     key_instance = await RoutingKey.get_or_none(name=routing_key)
-    value = routing_key_to_dict(key_instance)
+    routing_key_service = get_routing_key_service()
+    value = routing_key_service.routing_key_to_dict(key_instance)
     await cache.set_json(
         cache_name=cache_name,
         key=routing_key,
@@ -83,9 +84,4 @@ async def get_or_set_routing_key_cache(cache, routing_key: str):
     return value
 
 
-def routing_key_to_dict(instance: RoutingKey) -> dict:
-    value = {
-        "key_verbose": instance.key_verbose,
-        "template": instance.template,
-    }
-    return value
+
