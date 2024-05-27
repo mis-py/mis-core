@@ -27,18 +27,6 @@ async def get_access_token(
 
 
 @router.post(
-    "/logout",
-    response_model=MisResponse
-)
-async def logout(
-        auth_service: Annotated[AuthService, Depends(get_auth_service)],
-        current_user: User = Depends(get_current_user),
-):
-    await auth_service.de_authenticate(current_user.pk)
-    return MisResponse()
-
-
-@router.post(
     "/change_password",
     response_model=MisResponse
 )

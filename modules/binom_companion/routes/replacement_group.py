@@ -1,4 +1,3 @@
-import loguru
 from fastapi import APIRouter, Security, Query
 
 from core.dependencies.misc import AppContextDep, PaginateParamsDep
@@ -22,10 +21,12 @@ router = APIRouter(
 async def get_replacement_groups(
         paginate_params: PaginateParamsDep,
         history_limit: int = Query(default=10),
+        is_active: bool | None = None,
 ):
     return await ReplacementGroupService().filter_with_history_and_paginate(
         history_limit=history_limit,
         params=paginate_params,
+        is_active=is_active
     )
 
 
@@ -36,7 +37,7 @@ async def get_replacement_groups(
 async def create_replacement_group(replacement_group_in: ReplacementGroupCreateModel):
     replacement_group = await ReplacementGroupService().create(replacement_group_in)
 
-    await replacement_group.fetch_related("replacement_history")
+    await replacement_group.fetch_related("tracker_instance")
 
     return MisResponse[ReplacementGroupModel](result=replacement_group)
 
@@ -69,7 +70,7 @@ async def edit_replacement_group(
         schema_in=replacement_group_in
     )
 
-    await replacement_group.fetch_related("replacement_history")
+    await replacement_group.fetch_related("tracker_instance")
 
     return MisResponse[ReplacementGroupModel](result=replacement_group)
 
@@ -96,16 +97,16 @@ async def check_fetch_replacement_group(replacement_group_id: int):
 
 @router.post(
     '/change_proxy',
-    response_model=MisResponse
+    response_model=MisResponse[dict]
 )
 async def change_proxy_domain(
     replacement_group_ids: ReplacementGroupChangeProxyIds,
     ctx: AppContextDep
 ):
-    await ReplacementGroupService().proxy_change(
+    change_result = await ReplacementGroupService().proxy_change(
         ctx,
         replacement_group_ids.replacement_group_ids,
         "Changed via endpoint"
     )
 
-    return MisResponse
+    return MisResponse[dict](result=change_result)

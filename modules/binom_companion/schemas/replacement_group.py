@@ -1,5 +1,7 @@
 from tortoise.contrib.pydantic import PydanticModel
 
+from .common import ReplacementHistoryBaseModel, TrackerInstanceBaseModel
+
 
 class ReplacementGroupBaseModel(PydanticModel):
     id: int
@@ -8,8 +10,7 @@ class ReplacementGroupBaseModel(PydanticModel):
 
 
 class ReplacementGroupShortModel(ReplacementGroupBaseModel):
-    tracker_instance_id: int
-    # tracker_instance: TrackerInstanceBaseModel
+    tracker_instance: TrackerInstanceBaseModel
 
 
 class ReplacementGroupModel(ReplacementGroupShortModel):

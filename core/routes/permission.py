@@ -66,7 +66,6 @@ async def get_granted_permissions(
 
         granted_permissions = await granted_permission_service.filter(
             user_id=user.pk,
-            # TODO create example with nested prefetch
             prefetch_related=['team', 'user', 'permission__app'],
         )
 

@@ -16,6 +16,7 @@ from core.utils.notification.message import Message
 from core.utils.notification.recipient import Recipient
 from core.utils.schema import PageResponse
 from core.services.base.base_service import BaseService
+from core.utils.common import exclude_none_values
 
 from libs.eventory import Eventory
 from libs.modules.AppContext import AppContext
@@ -35,7 +36,7 @@ from .db.models import (
     ReplacementHistory,
     LeadRecord
 )
-from .schemas.proxy_domain import ProxyDomainCreateModel
+from .schemas.proxy_domain import ProxyDomainCreateBulkModel
 from .util.util import regexp_match
 
 
@@ -44,16 +45,27 @@ class TrackerInstanceService(BaseService):
         super().__init__(repo=TrackerInstanceRepository(model=TrackerInstance))
 
     async def check_connection(self, tracker_instance_id: int):
-        tracker_instance = await self.get(id=tracker_instance_id)
+        tracker_instance: TrackerInstance = await self.get(id=tracker_instance_id)
 
-        json_data = await self.make_tracker_get_request(
-            page='Offers',
-            instance=tracker_instance
-        )
+        async with aiohttp.ClientSession() as session:
+            url = f"{tracker_instance.base_url}/{tracker_instance.edit_route}?api_key={tracker_instance.api_key}&action=monitor@get"
 
-        if json_data and len(json_data) > 0:
-            return True
-        return False
+            response = await session.get(url)
+
+            if not response.ok:
+                logger.error(f'Invalid response from Tracker {tracker_instance.name}: {response.status} {response.text}')
+                return None
+
+            try:
+                data = await response.json(loads=loads, content_type=None)
+
+            except JSONDecodeError:
+                logger.error(f'Invalid data from Tracker {tracker_instance.name}: {response.text}')
+                return None
+
+            if data and len(data) > 0:
+                return data.get("tracker_info")
+        return None
 
     @staticmethod
     async def make_tracker_get_request(
@@ -133,7 +145,8 @@ class TrackerInstanceService(BaseService):
         for off in json_data:
             offer_ids.append(off.get('id'))
             domain = urllib3.util.parse_url(off.get('url')).host
-            domains.add(domain)
+            if domain:
+                domains.add(domain)
 
         return offer_ids, list(domains)
 
@@ -159,13 +172,13 @@ class TrackerInstanceService(BaseService):
         for land in json_data:
             landing_ids.append(land.get('id'))
             domain = urllib3.util.parse_url(land.get('url')).host
-            domains.add(domain)
+            if domain:
+                domains.add(domain)
 
         return landing_ids, list(domains)
 
     async def change_offers_domain(self, offer_ids, new_domain: ProxyDomain, instance: TrackerInstance) -> str:
         if not offer_ids:
-            logger.debug(f'No offers to change')
             return ""
 
         json_data = await self.make_tracker_post_request(
@@ -183,7 +196,6 @@ class TrackerInstanceService(BaseService):
 
     async def change_landings_domain(self, landings_ids, new_domain: ProxyDomain, instance: TrackerInstance) -> str:
         if not landings_ids:
-            logger.debug(f'No landings to change')
             return ""
 
         json_data = await self.make_tracker_post_request(
@@ -204,9 +216,7 @@ class ReplacementGroupService(BaseService):
     def __init__(self):
         super().__init__(repo=ReplacementGroupRepository(model=ReplacementGroup))
 
-    async def proxy_change(self, ctx: AppContext, replacement_group_ids: list[int], reason: str):
-        """ Function to run domain replacement for specific replacement groups with group validation """
-
+    async def get_groups_from_id(self, replacement_group_ids: list[int], is_active: bool = True) -> list[ReplacementGroup]:
         groups: list[ReplacementGroup] = await self.repo.filter(
             id__in=replacement_group_ids,
             prefetch_related=['tracker_instance']
@@ -217,17 +227,23 @@ class ReplacementGroupService(BaseService):
         )
 
         if len(not_exist_groups) > 0:
-            logger.warning(f"Run replacement_group_proxy_change task ERROR: Group ids: {not_exist_groups} not exists")
+            logger.warning(f"Run replacement_group_proxy_change task ERROR: Group ids: {not_exist_groups} not exists and would not be used")
 
-        not_active_groups = [group.pk for group in groups if not group.is_active]
+        # not_active_groups = [group.pk for group in groups if not (group.is_active == is_active)]
+        #
+        # if len(not_active_groups) > 0:
+        #     logger.warning(f"Run replacement_group_proxy_change task ERROR: Group ids: {not_active_groups} not active")
 
-        if len(not_active_groups) > 0:
-            logger.warning(f"Run replacement_group_proxy_change task ERROR: Group ids: {not_active_groups} not active")
+        active_groups = [group for group in groups if (group.is_active == is_active)]
 
-        active_groups = [group for group in groups if group.is_active]
+        return active_groups
+
+    async def proxy_change(self, ctx: AppContext, replacement_group_ids: list[int], reason: str):
+        """ Function to run domain replacement for specific replacement groups with group validation """
+        active_groups = await self.get_groups_from_id(replacement_group_ids=replacement_group_ids)
 
         if len(active_groups) > 0:
-            await ProxyDomainService().change_domain(ctx, active_groups, reason)
+            return await ProxyDomainService().change_domain(ctx, active_groups, reason)
         else:
             logger.warning(f"Run replacement_group_proxy_change task ERROR: Nothing to run")
 
@@ -256,14 +272,19 @@ class ReplacementGroupService(BaseService):
             params: AbstractParams = None,
             **filters,
     ):
-        queryset = await self.repo.filter_queryable_with_history(**filters)
+        filters_without_none = exclude_none_values(filters)
+        queryset = await self.repo.filter_queryable_with_history(**filters_without_none)
         results = await self.repo.paginate(queryset=queryset, params=params)
         for item in results.result.items:
             item.replacement_history = item.replacement_history[:history_limit]
         return results
 
-    async def get_with_history(self, history_limit: int, **filters):
-        return await self.repo.get_with_history(history_limit=history_limit, **filters)
+    async def get_with_history(self, history_limit: int, id:int, **filters):
+        filters_without_none = exclude_none_values(filters)
+        return await self.repo.get_with_history(
+            replacement_group_id=id,
+            history_limit=history_limit, **filters_without_none
+        )
 
 
 class ProxyDomainService(BaseService):
@@ -281,6 +302,11 @@ class ProxyDomainService(BaseService):
         return await self.history.paginate(queryset=queryset, params=params)
 
     async def get_new_domains(self, group: ReplacementGroup):
+        """
+        Use this function to get only working and ready domains for replacement group!
+        :param group:
+        :return:
+        """
         # get all domains for specific group
         subfilter = await self.history.filter_queryable(replacement_group_id=group.pk)
         subfilter_values = subfilter.values('to_domain_id')
@@ -288,28 +314,48 @@ class ProxyDomainService(BaseService):
         # get domains except id that was used and is not invalid
         query = await self.repo.filter_queryable(
             id__not_in=Subquery(subfilter_values),
-            is_invalid=False
+            is_invalid=False,
+            is_ready=True,
+            tracker_instance=group.tracker_instance,
+            prefetch_related=["tracker_instance"]
         )
 
         result = await query
 
         return result
 
-    async def get_new_domain_for_selected_groups(self, groups: list[ReplacementGroup]) -> ProxyDomain:
-        group_ids = [group.pk for group in groups]
-
+    async def get_new_domains_for_selected_groups(self, groups: list[ReplacementGroup]) -> list[ProxyDomain]:
+        """
+        Use this function if you need to get new ready and working domains for specified replacement groups!
+        :param groups:
+        :return:
+        """
         # For every group we get available domains that was not used previously
-        available_domains_for_group = {}
+        available_domains_for_group: dict[str, ProxyDomain] = {}
         for group in groups:
             available_domains_for_group[group.name] = await self.get_new_domains(group=group)
 
-        group_items_sets = [set(item) for item in available_domains_for_group.values() if item]
+        filtered_items = [item for item in available_domains_for_group.values() if item]
 
-        if not group_items_sets:
+        return filtered_items
+
+    async def find_intersection(self, groups: list[ReplacementGroup]) -> set:
+        """Use this function if you need to find only domains available for all groups!"""
+        group_items = await self.get_new_domains_for_selected_groups(groups)
+
+        # In available domains find domain that available for all groups else return emty set
+        intersection = set.intersection(*[set(item) for item in group_items if item]) if group_items else set()
+
+        return intersection
+
+    async def get_new_domain_for_selected_groups(self, groups: list[ReplacementGroup]) -> ProxyDomain:
+        """Use this function if you need to get single ready and working domain for specified groups"""
+        group_ids = [group.pk for group in groups]
+
+        intersection = await self.find_intersection(groups)
+
+        if not intersection:
             raise NotFound(f"Not found available domains for groups: {group_ids}")
-
-        # In available domains find domain that available for all groups
-        intersection = set.intersection(*group_items_sets)
 
         # logger.debug(intersection)
 
@@ -360,47 +406,52 @@ class ProxyDomainService(BaseService):
 
             offer_response = await TrackerInstanceService().change_offers_domain(offers, new_domain, instance=instance)
             logger.debug(
-                f'Group: {group}, new domain: {new_domain}, offers: {offers}, result: {offer_response}'
+                f'Group: {group}, new domain: {new_domain}, offers: {offers}, result: {offer_response if len(offer_response) > 0 else "No offers to change"}'
             )
 
             landing_response = await TrackerInstanceService().change_landings_domain(
                 landings, new_domain, instance=instance
             )
             logger.debug(
-                f'Group: {group}, new domain: {new_domain}, landings: {landings}, result: {landing_response}'
+                f'Group: {group}, new domain: {new_domain}, landings: {landings}, result: {landing_response if len(landing_response) > 0 else "No landings to change"}'
             )
 
-            await Eventory.publish(
-                Message(body={
-                    'group_name': group.name,
-                    'new_domain': new_domain.name,
-                    'old_domains': old_offers_domains + old_land_domains
-                }),
-                ctx.routing_keys.DOMAIN_CHANGED,
-                ctx.app_name
+            if len(offer_response) or len(landing_response):
+                # make history record and eventory publish only if we actually changed something
+                await Eventory.publish(
+                    Message(body={
+                        'group_name': group.name,
+                        'new_domain': new_domain.name,
+                        'old_domains': old_offers_domains + old_land_domains
+                    }),
+                    ctx.routing_keys.DOMAIN_CHANGED,
+                    ctx.app_name
+                )
+
+                await self.add_history_record(
+                    new_domain=new_domain,
+                    previous_domains=old_offers_domains + old_land_domains,
+                    offers_list=offers,
+                    lands_list=landings,
+                    replaced_by=ctx.user,
+                    replacement_group=group,
+                    reason=reason
+                )
+
+            change_result["new_domain"] = new_domain.name
+
+            change_result["replacement_groups"] = list()
+
+            group_result = dict(
+                id=group.pk,
+                name=group.name,
+                offer_ids=offers,
+                offer_result=offer_response,
+                landing_ids=landings,
+                landing_result=landing_response
             )
 
-            await self.add_history_record(
-                new_domain=new_domain,
-                previous_domains=old_offers_domains + old_land_domains,
-                offers_list=offers,
-                lands_list=landings,
-                replaced_by=ctx.user,
-                replacement_group=group,
-                reason=reason
-            )
-
-            change_result['new_domain'] = new_domain.name
-
-            change_result[group.name] = dict()
-            change_result[group.name]['offers'] = {
-                'ids': offers,
-                'result': offer_response
-            }
-            change_result[group.name]['landings'] = {
-                'ids': landings,
-                'result': landing_response
-            }
+            change_result["replacement_groups"].append(group_result)
 
         return change_result
 
@@ -429,14 +480,45 @@ class ProxyDomainService(BaseService):
 
         await new_record.from_domains.add(*previous_domains_models)
 
-    async def create_bulk(self, proxy_domains_in: list[ProxyDomainCreateModel]) -> list[ProxyDomain]:
-        list_objects = [
-            await self.create(proxy_domain_in) for proxy_domain_in in proxy_domains_in
-        ]
-        return list_objects
+    async def create_bulk(self, proxy_domains_in: ProxyDomainCreateBulkModel, ctx: AppContext) -> list[ProxyDomain]:
+        created_domains = []
+        for domain in proxy_domains_in.domain_names:
+            try:
+                created_domain = await self.create_by_kwargs(
+                    name=domain,
+                    server_name=proxy_domains_in.server_name,
+                    tracker_instance_id=proxy_domains_in.tracker_instance_id
+                )
+                await created_domain.fetch_related("tracker_instance")
 
-    async def set_invalid(self, domain_id: int):
-        return await self.repo.update(id=domain_id, data={'is_invalid': True})
+                await Eventory.publish(
+                    Message(
+                        body={"id": created_domain.pk, "name": created_domain.name},
+                    ),
+                    ctx.routing_keys.PROXY_DOMAIN_ADDED,
+                    ctx.app_name
+                )
+
+            except Exception as e:
+                # TODO notify in response if skipped some domains
+                logger.warning(f"Skipped creating domain: {domain}, exception: {e}")
+                continue
+
+        return created_domains
+
+    async def update_bulk(self, schema_in):
+        await self.repo.update_bulk(
+            data_items=schema_in.model_dump(exclude_unset=True)['proxy_domains'],
+            update_fields=['name', 'tracker_instance_id', 'server_name', 'is_invalid', 'is_ready'],
+        )
+
+    async def get_server_names(self):
+        base_query = await self.repo.filter_queryable()
+        result = base_query.order_by("server_name").distinct().values_list('server_name', flat=True)
+        return dict(server_names=await result)
+
+    async def set_is_valid(self, domain_id: int):
+        return await self.repo.update(id=domain_id, data={'is_invalid': False})
 
 
 class LeadRecordService(BaseService):

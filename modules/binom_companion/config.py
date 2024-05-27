@@ -18,3 +18,4 @@ class RoutingKeys(BaseModel):
     PROXY_IP_CHANGED: str = 'proxy_ip_changed'
     DOMAIN_CHANGED: str = 'domain_changed'
     PROXY_DOMAIN_FAILED: str = 'proxy_domain_failed'
+    PROXY_DOMAIN_ADDED: str = 'proxy_domain_added'

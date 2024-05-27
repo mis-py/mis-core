@@ -13,17 +13,21 @@ class ReplacementGroupRepository(TortoiseORMRepository):
         history_queryset = ReplacementHistory.all().prefetch_related(
             'to_domain', 'replaced_by', 'from_domains'
         ).order_by('-date_changed')
+
         return self.model.filter(**filters).prefetch_related(
             Prefetch("replacement_history", queryset=history_queryset),
+            'tracker_instance'
         )
 
-    async def get_with_history(self, history_limit: int, **filters):
+    async def get_with_history(self, history_limit: int,  **filters):
         history_queryset = ReplacementHistory.all().prefetch_related(
             'to_domain', 'replaced_by', 'from_domains'
         ).limit(history_limit).order_by('-date_changed')
         return await self.model.get(**filters).prefetch_related(
             Prefetch("replacement_history", queryset=history_queryset),
+            'tracker_instance'
         )
+
 
 class ProxyDomainRepository(TortoiseORMRepository):
     pass

@@ -1,23 +1,12 @@
-from datetime import datetime
-
-from tortoise.contrib.pydantic import PydanticModel
-
-from core.schemas.common import UserModelShort
-
+from .common import ReplacementHistoryBaseModel
 from .proxy_domain import ProxyDomainBaseModel
 from .replacement_group import ReplacementGroupShortModel
 
 
-class ReplacementHistoryBaseModel(PydanticModel):
-    id: int
+class ReplacementHistoryModel(ReplacementHistoryBaseModel):
     from_domains: list[ProxyDomainBaseModel]
     to_domain: ProxyDomainBaseModel
     replacement_group: ReplacementGroupShortModel
-    replaced_by: UserModelShort
-    date_changed: datetime
+    offers: list[str]
+    lands: list[str]
 
-
-class ReplacementHistoryModel(ReplacementHistoryBaseModel):
-    offers: str
-    lands: str
-    reason: str

@@ -4,7 +4,7 @@ from libs.modules.components import Variables, ModuleLogs, TortoiseModels, Event
 from .config import UserSettings, RoutingKeys, ModuleSettings
 from .routes import router
 from .tasks import scheduled_tasks
-# from .consumers import event_consumers
+from .consumers import event_consumers
 
 
 app_settings = ModuleSettings()
@@ -26,7 +26,7 @@ module = GenericModule(
     ],
     components=[
         scheduled_tasks,
-        # event_consumers,
+        event_consumers,
         APIRoutes(router),
         Variables(app_settings, user_settings),
         ModuleLogs(),

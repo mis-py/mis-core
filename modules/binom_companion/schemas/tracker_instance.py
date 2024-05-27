@@ -1,11 +1,6 @@
 from tortoise.contrib.pydantic import PydanticModel
 from .replacement_group import ReplacementGroupBaseModel
-
-
-class TrackerInstanceBaseModel(PydanticModel):
-    id: int
-    name: str
-    description: str
+from .common import TrackerInstanceBaseModel
 
 
 class TrackerInstanceShortModel(TrackerInstanceBaseModel):

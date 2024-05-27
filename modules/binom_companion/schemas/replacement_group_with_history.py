@@ -1,11 +1,11 @@
-from typing import Any
 from datetime import datetime
 
 from tortoise.contrib.pydantic import PydanticModel
 
 from core.schemas.common import UserModelShort
-from modules.binom_companion.schemas.proxy_domain import ProxyDomainBaseModel
-from modules.binom_companion.schemas.replacement_group import ReplacementGroupModel
+
+from .proxy_domain import ProxyDomainBaseModel
+from .replacement_group import ReplacementGroupModel
 
 
 class ReplacementHistoryReadModel(PydanticModel):
@@ -14,9 +14,9 @@ class ReplacementHistoryReadModel(PydanticModel):
     to_domain: ProxyDomainBaseModel
     replaced_by: UserModelShort
     date_changed: datetime
-    offers: str
-    lands: str
-    reason: str
+    offers: list[str]
+    lands: list[str]
+    reason: str | None
 
 
 class ReplacementGroupWithHistory(ReplacementGroupModel):

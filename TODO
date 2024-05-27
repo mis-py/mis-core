@@ -15,10 +15,7 @@ if TYPE_CHECKING:
 def funct(self, master: 'MainMenu', **kwargs):
 
 TODOS
+TODO proper logging to dummy  https://github.com/Delgan/loguru
 TODO which services or modules will use websockets? properly introduce it via WS manager
-TODO introduce mongodb to dummy  https://www.mongodb.com/developer/languages/python/python-quickstart-fastapi/
-TODO introduce websockets to dummy  https://fastapi.tiangolo.com/advanced/websockets/#handling-disconnections-and-multiple-clients
-TODO introduce redis to dummy  https://github.com/redis/redis-py
-TODO introduce or verify proper logging to dummy  https://github.com/Delgan/loguru
 TODO implement clickhouse  https://clickhouse.com/docs/en/intro
 TODO scopes.py replace hardcode strings with class

@@ -25,9 +25,6 @@ class AuthService:
         if not verify_password(form_data.password, user.hashed_password):
             raise AuthError("Incorrect password")
 
-        # set status signed_in True
-        await self.user_repo.update(id=user.pk, data={'signed_in': True})
-
         access_token = create_access_token(user.username)
         return AccessToken(
             access_token=access_token,
@@ -35,10 +32,6 @@ class AuthService:
             user_id=user.id,
             username=user.username
         )
-
-    async def de_authenticate(self, user_id: int) -> bool:
-        await self.user_repo.update(id=user_id, data={'signed_in': False})
-        return True
 
     async def change_password(self, user, old_password: str, new_password: str) -> bool:
         """
