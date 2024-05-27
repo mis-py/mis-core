@@ -4,7 +4,6 @@ from tortoise.transactions import in_transaction
 from core.db.models import RoutingKey
 from core.repositories.routing_key import IRoutingKeyRepository, RoutingKeyRepository
 from core.repositories.routing_key_subscription import IRoutingKeySubscriptionRepository
-from core.utils.notification.utils import routing_key_to_dict
 from core.utils.schema import PageResponse
 from core.services.base.base_service import BaseService
 from core.exceptions import AlreadyExists, NotFound
@@ -40,8 +39,15 @@ class RoutingKeyService(BaseService):
         await RedisService.cache.set_json(
             cache_name="routing_key",
             key=rk.name,
-            value=routing_key_to_dict(rk),
+            value=self.routing_key_to_dict(rk),
         )
+
+    def routing_key_to_dict(self, instance: RoutingKey) -> dict:
+        value = {
+            "key_verbose": instance.key_verbose,
+            "template": instance.template,
+        }
+        return value
 
 
 class RoutingKeySubscriptionService(BaseService):
