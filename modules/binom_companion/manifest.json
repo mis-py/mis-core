@@ -2,8 +2,8 @@
   "name": "binom_companion",
   "display_name": "Binom Companion",
   "description": "Module for watching binom stats and replace offer domains",
-  "version": "0.4",
-  "author": "Jake Jameson",
+  "version": "0.5",
+  "author": "Kankuro, ADLR",
   "category": "companion",
   "dependencies": [],
   "permissions": {

@@ -2,8 +2,8 @@
   "name": "dummy",
   "display_name": "Dummy",
   "description": "Module with examples of core functions and libs extensions",
-  "version": "1.0",
-  "author": "Jake Jameson",
+  "version": "1.1",
+  "author": "Kankuro, ADLR",
   "category": "example",
   "dependencies": [],
   "permissions": {
