@@ -7,7 +7,11 @@
   "category": "companion",
   "dependencies": [],
   "permissions": {
-      "sudo": "Full module access"
+      "sudo": "Full module access",
+      "tracker_instance": "Full managing tracker instances",
+      "replacement_groups": "Full managing replacement groups",
+      "replacement_history": "View replacement history endpoint",
+      "proxy_domains": "Full managing proxy domains"
   },
   "auth_disabled": true
 }

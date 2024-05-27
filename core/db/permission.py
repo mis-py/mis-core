@@ -13,8 +13,8 @@ class GrantedPermission(Model):
 
 
 class Permission(Model):
-    name = fields.CharField(max_length=50)
-    scope = fields.CharField(max_length=30, unique=True)
+    name = fields.CharField(max_length=1024)
+    scope = fields.CharField(max_length=1024, unique=True)
     app = fields.ForeignKeyField('core.Module', related_name='permissions')
 
     class Meta:

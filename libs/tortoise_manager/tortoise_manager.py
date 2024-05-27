@@ -105,8 +105,7 @@ class TortoiseManager:
         backend = get_backend(cls._db_url)
 
         for migration in cls._migrations_to_apply.keys():
-
-            migrations = read_migrations(*cls._migrations_to_apply[migration])
+            migrations = read_migrations(cls._migrations_to_apply[migration])
 
             try:
                 with backend.lock():

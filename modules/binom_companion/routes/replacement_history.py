@@ -1,12 +1,18 @@
 import loguru
-from fastapi import APIRouter
+from fastapi import APIRouter, Security
 
+from core.dependencies.security import get_current_user
 from core.utils.schema import PageResponse
 
 from ..schemas.replacement_history import ReplacementHistoryModel
 from ..service import ProxyDomainService
 
-router = APIRouter()
+router = APIRouter(
+    dependencies=[Security(get_current_user, scopes=[
+        'binom_companion:sudo',
+        'binom_companion:replacement_history'
+    ])],
+)
 
 
 @router.get(

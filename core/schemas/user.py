@@ -15,9 +15,9 @@ class UserCreate(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    username: Optional[str] = Field(max_length=20, min_length=3)
+    username: Optional[str] = Field(None, max_length=20, min_length=3)
     team_id: int = None
-    password: str = ''
+    password: str = None
     disabled: bool = None
     position: Optional[str] = Field(None, max_length=100)
 

@@ -41,7 +41,8 @@ class UserService(BaseService):
     async def update_with_password(self, user: User, schema_in: UserUpdate) -> User:
         # TODO restrict admin(1) editing for .username, .disabled, .team properties
         user = await self.user_repo.update(pk=user.pk, data=schema_in.model_dump(exclude_unset=True))
-        set_password(user, schema_in.password)
+        if schema_in.password is not None:
+            set_password(user, schema_in.password)
         await self.user_repo.save(obj=user)
         return user
 
