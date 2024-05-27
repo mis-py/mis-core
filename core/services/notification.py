@@ -1,5 +1,5 @@
 from fastapi_pagination.bases import AbstractParams
-from tortoise.transactions import in_transaction
+from tortoise import transactions
 
 from core.db.models import RoutingKey
 from core.repositories.routing_key import IRoutingKeyRepository, RoutingKeyRepository
@@ -19,15 +19,15 @@ class RoutingKeyService(BaseService):
         queryset = await self.routing_key_repo.filter_by_user(user_id=user_id)
         return await self.routing_key_repo.paginate(queryset=queryset, params=params)
 
+    @transactions.atomic()
     async def recreate(self, module_id, key: str, name: str):
-        async with in_transaction():
-            # delete for remove user subscription relations
-            await self.routing_key_repo.delete(key=key)
-            await self.routing_key_repo.create(data={
-                'app_id': module_id,
-                'key': key,
-                'name': name,
-            })
+        # delete for remove user subscription relations
+        await self.routing_key_repo.delete(key=key)
+        await self.routing_key_repo.create(data={
+            'app_id': module_id,
+            'key': key,
+            'name': name,
+        })
 
     async def delete_unused(self, module_id: int, exist_keys: list[str]):
         return await self.routing_key_repo.delete_unused(

@@ -1,4 +1,4 @@
-from tortoise.transactions import in_transaction
+from tortoise import transactions
 
 from core.auth_backend import set_password
 from core.db.models import User
@@ -17,6 +17,7 @@ class UserService(BaseService):
         self.team_repo = team_repo
         super().__init__(repo=user_repo)
 
+    @transactions.atomic()
     async def create_with_pass(self, user_in: UserCreate) -> User:
         if user_in.team_id is not None:
             team = await self.team_repo.get(id=user_in.team_id)
@@ -27,14 +28,13 @@ class UserService(BaseService):
         if user is not None:
             raise AlreadyExists(f"User with username '{user_in.username}' already exists")
 
-        async with in_transaction():
-            new_user = User(
-                username=user_in.username,
-                team_id=user_in.team_id,
-                position=user_in.position,
-            )
-            set_password(new_user, user_in.password)
-            await self.user_repo.save(obj=new_user)
+        new_user = User(
+            username=user_in.username,
+            team_id=user_in.team_id,
+            position=user_in.position,
+        )
+        set_password(new_user, user_in.password)
+        await self.user_repo.save(obj=new_user)
 
         return new_user
 

@@ -1,5 +1,6 @@
+from tortoise import transactions
+
 from core.db.dataclass import AppState, StatusTask
-from tortoise.transactions import in_transaction
 
 from core.db.models import ScheduledJob, User, Team, Module
 from core.exceptions import NotFound, AlreadyExists, MISError
@@ -44,7 +45,7 @@ class ScheduledJobService(BaseService):
 
     # async def get_scheduler_service_jobs(self):
     #     return SchedulerService.get_jobs()
-
+    @transactions.atomic()
     async def create_scheduled_job(
             self,
             job_in: JobCreate,
@@ -79,82 +80,81 @@ class ScheduledJobService(BaseService):
             if scheduled_job:
                 raise AlreadyExists("Scheduled job already exists")
 
-        async with in_transaction():
-            job_db: ScheduledJob = ScheduledJob(
-                user=user,
-                team=team,
-                app=module._model,
-                task_name=task_name,
-                status=StatusTask.RUNNING if task.autostart else StatusTask.PAUSED,
-                extra_data=job_in.extra,
-                trigger={"data": job_in.trigger}
-            )
-            await self.scheduled_job_repo.save(obj=job_db)
+        job_db: ScheduledJob = ScheduledJob(
+            user=user,
+            team=team,
+            app=module._model,
+            task_name=task_name,
+            status=StatusTask.RUNNING if task.autostart else StatusTask.PAUSED,
+            extra_data=job_in.extra,
+            trigger={"data": job_in.trigger}
+        )
+        await self.scheduled_job_repo.save(obj=job_db)
 
-            job_instance = await SchedulerService.add_job(
-                task_name=task_name,
-                module_name=module_name,
-                db_id=job_db.pk,
-                user=user,
-                extra=job_in.extra,
-                trigger=trigger
-            )
+        job_instance = await SchedulerService.add_job(
+            task_name=task_name,
+            module_name=module_name,
+            db_id=job_db.pk,
+            user=user,
+            extra=job_in.extra,
+            trigger=trigger
+        )
 
-            return job_db
+        return job_db
 
+    @transactions.atomic()
     async def update_job_trigger(self, job_id: int, schedule_in: JobTrigger):
-        async with in_transaction():
-            job: ScheduledJob = await self.get(id=job_id, prefetch_related=['app'])
-            module: Module = await self.module_repo.get(id=job.app.pk)
+        job: ScheduledJob = await self.get(id=job_id, prefetch_related=['app'])
+        module: Module = await self.module_repo.get(id=job.app.pk)
 
-            task = SchedulerService.get_task(job.task_name, module.name)
+        task = SchedulerService.get_task(job.task_name, module.name)
 
-            trigger = get_trigger(schedule_in.trigger)
-            if not trigger and task.trigger:
-                trigger = task.trigger
+        trigger = get_trigger(schedule_in.trigger)
+        if not trigger and task.trigger:
+            trigger = task.trigger
 
-            await SchedulerService.reschedule_job(job_id, trigger=trigger)
+        await SchedulerService.reschedule_job(job_id, trigger=trigger)
 
-            updated_obj = await self.scheduled_job_repo.update(
-                id=job_id,
-                data={'trigger': {"data": schedule_in.trigger}}
-            )
+        updated_obj = await self.scheduled_job_repo.update(
+            id=job_id,
+            data={'trigger': {"data": schedule_in.trigger}}
+        )
 
-            await updated_obj.save()
+        await updated_obj.save()
 
-            return await self.get(id=job_id, prefetch_related=['user', 'team', 'app'])
+        return await self.get(id=job_id, prefetch_related=['user', 'team', 'app'])
 
+    @transactions.atomic()
     async def set_paused_status(self, job_id: int):
-        async with in_transaction():
-            await SchedulerService.pause_job(job_id)
+        await SchedulerService.pause_job(job_id)
 
-            updated_obj = await self.scheduled_job_repo.update(
-                id=job_id,
-                data={'status': StatusTask.PAUSED.value}
-            )
+        updated_obj = await self.scheduled_job_repo.update(
+            id=job_id,
+            data={'status': StatusTask.PAUSED.value}
+        )
 
-            await updated_obj.save()
+        await updated_obj.save()
 
-            return await self.scheduled_job_repo.get(id=job_id, prefetch_related=['user', 'team', 'app'])
+        return await self.scheduled_job_repo.get(id=job_id, prefetch_related=['user', 'team', 'app'])
 
+    @transactions.atomic()
     async def set_running_status(self, job_id: int):
-        async with in_transaction():
-            await SchedulerService.resume_job(job_id)
+        await SchedulerService.resume_job(job_id)
 
-            updated_obj = await self.scheduled_job_repo.update(
-                id=job_id,
-                data={'status': StatusTask.RUNNING.value}
-            )
+        updated_obj = await self.scheduled_job_repo.update(
+            id=job_id,
+            data={'status': StatusTask.RUNNING.value}
+        )
 
-            await updated_obj.save()
+        await updated_obj.save()
 
-            return await self.get(id=job_id, prefetch_related=['user', 'team', 'app'])
+        return await self.get(id=job_id, prefetch_related=['user', 'team', 'app'])
 
+    @transactions.atomic()
     async def cancel_job(self, job_id: int):
-        async with in_transaction():
-            await SchedulerService.remove_job(job_id)
+        await SchedulerService.remove_job(job_id)
 
-            await self.scheduled_job_repo.delete(id=job_id)
+        await self.scheduled_job_repo.delete(id=job_id)
 
     async def filter_by_module(self, module_name: str):
         return await self.scheduled_job_repo.filter_by_module(
