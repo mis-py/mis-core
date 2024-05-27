@@ -1,6 +1,4 @@
 from tortoise.query_utils import Prefetch
-from tortoise.expressions import Subquery
-from tortoise.expressions import F
 
 from core.repositories.base.repository import TortoiseORMRepository
 from modules.binom_companion.db.models import ReplacementHistory
@@ -11,19 +9,11 @@ class TrackerInstanceRepository(TortoiseORMRepository):
 
 
 class ReplacementGroupRepository(TortoiseORMRepository):
-    async def filter_queryable_with_history(self, history_limit: int, **filters):
-        # subfilter = await self.history.filter_queryable(replacement_group_id=group.pk)
-        # subfilter_values = subfilter.values('to_domain_id')
 
-        # subqry = Subquery(Comment.objects .filter(user_id=OuterRef('user_id')).values_list('id', flat=True)[:5])
-
+    async def filter_queryable_with_history(self, **filters):
         history_queryset = ReplacementHistory.all().prefetch_related(
             'to_domain', 'replaced_by', 'from_domains'
         ).order_by('-date_changed')
-
-        # history_queryset = ReplacementHistory.filter(replacement_group_id=F('id')).prefetch_related(
-        #     'to_domain', 'replaced_by', 'from_domains'
-        # ).limit(history_limit).order_by('-date_changed')
 
         return self.model.filter(**filters).prefetch_related(
             Prefetch("replacement_history", queryset=history_queryset),

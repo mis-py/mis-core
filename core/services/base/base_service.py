@@ -23,6 +23,20 @@ class BaseService:
     async def update(self, id: int, schema_in: BaseModel) -> ModelType:
         return await self.repo.update(id=id, data=schema_in.model_dump())
 
+    async def update_bulk(self, items: list[BaseModel]):
+        data_items = []
+        update_fields = set()
+
+        for item in items:
+            dict_data = item.model_dump(exclude_unset=True)
+            data_items.append(dict_data)
+            update_fields.update(dict_data.keys())
+
+        return await self.repo.update_bulk(
+            data_items=data_items,
+            update_fields=update_fields,
+        )
+
     async def delete(self, **filters) -> None:
         await self.repo.delete(**filters)
 

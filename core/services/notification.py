@@ -1,11 +1,13 @@
 from fastapi_pagination.bases import AbstractParams
 from tortoise.transactions import in_transaction
 
-from core.repositories.routing_key import IRoutingKeyRepository
+from core.db.models import RoutingKey
+from core.repositories.routing_key import IRoutingKeyRepository, RoutingKeyRepository
 from core.repositories.routing_key_subscription import IRoutingKeySubscriptionRepository
 from core.utils.schema import PageResponse
 from core.services.base.base_service import BaseService
 from core.exceptions import AlreadyExists, NotFound
+from libs.redis import RedisService
 
 
 class RoutingKeyService(BaseService):
@@ -33,6 +35,20 @@ class RoutingKeyService(BaseService):
             exist_keys=exist_keys,
         )
 
+    async def set_to_cache(self, rk: RoutingKey):
+        await RedisService.cache.set_json(
+            cache_name="routing_key",
+            key=rk.name,
+            value=self.routing_key_to_dict(rk),
+        )
+
+    def routing_key_to_dict(self, instance: RoutingKey) -> dict:
+        value = {
+            "key_verbose": instance.key_verbose,
+            "template": instance.template,
+        }
+        return value
+
 
 class RoutingKeySubscriptionService(BaseService):
     def __init__(self, routing_key_subscription_repo: IRoutingKeySubscriptionRepository):
@@ -50,7 +66,7 @@ class RoutingKeySubscriptionService(BaseService):
 
     async def unsubscribe(self, user_id: int, routing_key_id: int):
         subscription = await self.get(user_id=user_id, routing_key_id=routing_key_id)
-        if subscription is not None:
+        if subscription is None:
             raise NotFound("Not subscribed")
 
         await self.routing_key_subscription_repo.delete(
@@ -68,4 +84,3 @@ class RoutingKeySubscriptionService(BaseService):
     #             user_id=user_id,
     #             routing_key_ids=routing_key_ids,
     #         )
-

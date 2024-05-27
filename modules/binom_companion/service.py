@@ -273,10 +273,11 @@ class ReplacementGroupService(BaseService):
             **filters,
     ):
         filters_without_none = exclude_none_values(filters)
-        queryset = await self.repo.filter_queryable_with_history(
-            history_limit=history_limit, **filters_without_none
-        )
-        return await self.repo.paginate(queryset=queryset, params=params)
+        queryset = await self.repo.filter_queryable_with_history(**filters_without_none)
+        results = await self.repo.paginate(queryset=queryset, params=params)
+        for item in results.result.items:
+            item.replacement_history = item.replacement_history[:history_limit]
+        return results
 
     async def get_with_history(self, history_limit: int, id:int, **filters):
         filters_without_none = exclude_none_values(filters)
