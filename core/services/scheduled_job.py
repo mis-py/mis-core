@@ -124,29 +124,24 @@ class ScheduledJobService(BaseService):
 
         return await self.get(id=job_id, prefetch_related=['user', 'team', 'app'])
 
-    @transactions.atomic()
     async def set_paused_status(self, job_id: int):
         await SchedulerService.pause_job(job_id)
 
-        updated_obj = await self.scheduled_job_repo.update(
+        await self.scheduled_job_repo.update(
             id=job_id,
             data={'status': StatusTask.PAUSED.value}
         )
 
-        await updated_obj.save()
-
         return await self.scheduled_job_repo.get(id=job_id, prefetch_related=['user', 'team', 'app'])
 
-    @transactions.atomic()
+
     async def set_running_status(self, job_id: int):
         await SchedulerService.resume_job(job_id)
 
-        updated_obj = await self.scheduled_job_repo.update(
+        await self.scheduled_job_repo.update(
             id=job_id,
             data={'status': StatusTask.RUNNING.value}
         )
-
-        await updated_obj.save()
 
         return await self.get(id=job_id, prefetch_related=['user', 'team', 'app'])
 
