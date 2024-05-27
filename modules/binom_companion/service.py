@@ -508,7 +508,7 @@ class ProxyDomainService(BaseService):
 
     async def update_bulk(self, schema_in):
         await self.repo.update_bulk(
-            schema_in.model_dump(exclude_unset=True)['proxy_domains'],
+            data_items=schema_in.model_dump(exclude_unset=True)['proxy_domains'],
             update_fields=['name', 'tracker_instance_id', 'server_name', 'is_invalid', 'is_ready'],
         )
 

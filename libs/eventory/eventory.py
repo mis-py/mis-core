@@ -68,6 +68,7 @@ class Eventory:
         channel = await cls.get_channel(app_name)
 
         # declare exchange for specific event
+        # TODO issue possible here due to app_name not in exchange
         exchange = await channel.declare_exchange(routing_key, type=ExchangeType.FANOUT, auto_delete=True)
         queue = await channel.declare_queue(exclusive=True)
         await queue.bind(exchange)
@@ -78,6 +79,7 @@ class Eventory:
         except DuplicateConsumerTag:
             raise RuntimeError(f'Duplicated consumer_tag: "{callback.__name__}"')
 
+    # TODO unused function. does it suppose to be like that?
     @classmethod
     async def register_handler(cls, app_name: str, routing_keys: list[str, str], callback: Callable, *args, **kwargs):
         channel = await cls.get_channel(app_name)
@@ -105,6 +107,7 @@ class Eventory:
             content_type='application/json',
             content_encoding='utf-8'
         )
+        # TODO fix it
         prefixed_routing_key = f"{app_name}:{routing_key}"
         prefixed_routing_key = f"{routing_key}"
         channel = await cls.get_channel(app_name)
