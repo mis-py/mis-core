@@ -8,7 +8,10 @@ from ..schemas.tracker_instance import TrackerInstanceModel, TrackerInstanceCrea
 from ..service import TrackerInstanceService
 
 router = APIRouter(
-    dependencies=[Security(get_current_user, scopes=['core:sudo', 'binom_companion:replacement_groups'])],
+    dependencies=[Security(get_current_user, scopes=[
+        'binom_companion:sudo',
+        'binom_companion:tracker_instance'
+    ])],
 )
 
 

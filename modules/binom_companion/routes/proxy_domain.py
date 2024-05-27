@@ -18,7 +18,10 @@ from ..schemas.proxy_domain import (
 from ..service import ProxyDomainService, ReplacementGroupService
 
 router = APIRouter(
-    dependencies=[Security(get_current_user, scopes=['core:sudo', 'binom_companion:replacement_groups'])],
+    dependencies=[Security(get_current_user, scopes=[
+        'binom_companion:sudo',
+        'binom_companion:proxy_domains'
+    ])],
 )
 
 

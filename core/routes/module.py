@@ -113,7 +113,7 @@ async def stop_module(
 @router.post(
     '/shutdown',
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:modules'])],
-    response_model=MisResponse()
+    response_model=MisResponse
 )
 async def shutdown_application(
         module_service: Annotated[module.ModuleService, Depends(get_module_service)],
