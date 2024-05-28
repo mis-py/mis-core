@@ -37,6 +37,30 @@
             "state": {
               "type": "markdown",
               "state": {
+                "file": "Архитектура core.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "caf8a4150dd370ff",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "readme.md.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "e275bac4e25050ab",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
                 "file": "Changelog/pre v2 - v2.0.0.md",
                 "mode": "source",
                 "source": false
@@ -44,7 +68,7 @@
             }
           }
         ],
-        "currentTab": 2
+        "currentTab": 4
       }
     ],
     "direction": "vertical"
@@ -170,12 +194,23 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "015242bd56873268",
+  "active": "e275bac4e25050ab",
   "lastOpenFiles": [
-    "Changelog/Changelog - HOWTO.md",
-    "Changelog/pre v2 - v2.0.0.md",
+    "Packages.md",
     "Useful Info.md",
-    "Changelog",
-    "Packages.md"
+    "Roadmap.md",
+    "readme.md.md",
+    "Архитектура core.md",
+    "Changelog/pre v2 - v2.0.0.md",
+    "Модули/Webcatalog",
+    "Модули/StatusLoader",
+    "Модули/StataBot",
+    "Модули/AutoAdmin",
+    "Модули/ProxyRegistry",
+    "Модули/Binom Companion",
+    "Модули/Dummy",
+    "Модули",
+    "Changelog/Changelog - HOWTO.md",
+    "Changelog"
   ]
 }
