@@ -144,7 +144,9 @@ class Eventory:
 
                 json_data = ujson.loads(message.body.decode('utf-8'))
 
-                message.json = json_data
+                # TODO needs to be fixed properly
+                #message.json = json_data
+                message.body = json_data
                 return await coro(message=message, ctx=context, *args, **kwargs)
         return _receive
 

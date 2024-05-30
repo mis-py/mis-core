@@ -26,7 +26,7 @@ settings = CoreSettings()
 
 
 async def init_core_routes(app):
-    router = APIRouter(responses={401: {"description": "Authorization error"}}, prefix=settings.URL_ROOT_PATH)
+    router = APIRouter(responses={401: {"description": "Authorization error"}})
 
     router.include_router(auth.router, prefix='/auth', tags=['core | auth'])
     router.include_router(user.router, prefix='/users', tags=['core | users'])

@@ -1,0 +1,1 @@
+Use Obsidian app to look at this folder for project documentation.

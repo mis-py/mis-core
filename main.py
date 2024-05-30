@@ -66,13 +66,7 @@ logger.add(
 # }.items():
 #     logging.getLogger(name).setLevel(level)
 
-
-@lru_cache
-def get_settings():
-    return CoreSettings()
-
-
-settings = get_settings()
+settings = CoreSettings()
 
 origins = settings.ALLOW_ORIGINS.split(',')
 
@@ -113,12 +107,12 @@ async def lifespan(application: FastAPI):
 docs_url, openapi_url = None, None
 
 if ENVIRONMENT == DEV_ENVIRONMENT:
-    docs_url = settings.URL_ROOT_PATH + '/docs'
-    openapi_url = settings.URL_ROOT_PATH + '/openapi.json'
+    docs_url = '/docs'
+    openapi_url = '/openapi.json'
 
 app = FastAPI(
     title='MIS Project API',
-    version='0.2.0',
+    version='2.0.1',
     lifespan=lifespan,
     root_path=settings.URL_ROOT_PATH,
     docs_url=docs_url,

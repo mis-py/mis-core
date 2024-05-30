@@ -239,7 +239,7 @@ class APIRoutes(Component):
 
         self.application.include_router(
             self.router,
-            prefix=f"{core_settings.URL_ROOT_PATH}/{self.module.name}",
+            prefix=f"/{self.module.name}",
             dependencies=dependencies,
         )
 
