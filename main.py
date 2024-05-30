@@ -74,10 +74,7 @@ def get_settings():
 
 settings = get_settings()
 
-origins = [
-    "http://localhost:8080",
-    "http://10.10.102.3:8080",
-]
+origins = settings.ALLOW_ORIGINS.split(',')
 
 
 @asynccontextmanager
