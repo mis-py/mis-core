@@ -18,7 +18,7 @@ from starlette.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-from const import DEV_ENVIRONMENT, ENVIRONMENT
+from const import DEV_ENVIRONMENT, ENVIRONMENT, MIS_TITLE, MIS_VERSION
 from config import CoreSettings
 from loaders import (
     init_core,
@@ -111,8 +111,8 @@ if ENVIRONMENT == DEV_ENVIRONMENT:
     openapi_url = '/openapi.json'
 
 app = FastAPI(
-    title='MIS Project API',
-    version='2.0.1',
+    title=MIS_TITLE,
+    version=MIS_VERSION,
     lifespan=lifespan,
     root_path=settings.URL_ROOT_PATH,
     docs_url=docs_url,
