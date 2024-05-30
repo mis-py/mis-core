@@ -16,14 +16,14 @@ router = APIRouter()
 
 @router.post(
     "/token",
-    response_model=MisResponse[AccessToken]
+    response_model=AccessToken
 )
 async def get_access_token(
         auth_service: Annotated[AuthService, Depends(get_auth_service)],
         form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
 ):
     access_token = await auth_service.authenticate(form_data)
-    return MisResponse[AccessToken](result=access_token)
+    return access_token
 
 
 @router.post(
