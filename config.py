@@ -40,6 +40,8 @@ class CoreSettings(BaseSettings):
     LOG_ROTATION: str = "00:00"
     LOG_LEVEL: str = "DEBUG"
 
+    ALLOW_ORIGINS: str = ""
+
     model_config = SettingsConfigDict(
         env_file=str(ENV_FILE) + '.env',
         env_file_encoding='utf-8',
