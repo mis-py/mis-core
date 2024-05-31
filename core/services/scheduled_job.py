@@ -1,6 +1,5 @@
 from loguru import logger
 from tortoise import transactions
-
 from core.db.dataclass import AppState, StatusTask
 
 from core.db.models import ScheduledJob, User, Team, Module
@@ -11,6 +10,7 @@ from core.schemas.task import JobCreate, JobTrigger
 from core.services.base.base_service import BaseService
 from core.utils.task import get_trigger
 from libs.scheduler import SchedulerService
+from libs.variables.utils import type_convert
 
 
 class ScheduledJobService(BaseService):
@@ -80,6 +80,11 @@ class ScheduledJobService(BaseService):
             )
             if scheduled_job:
                 raise AlreadyExists("Scheduled job already exists")
+
+        # TODO need more validation mb
+        for extra_name, extra_type in task.extra_typed.items():
+            converted_value = type_convert(to_type=extra_type, value=job_in.extra[extra_name])
+            job_in.extra[extra_name] = converted_value
 
         job_db: ScheduledJob = ScheduledJob(
             user=user,
