@@ -2,10 +2,15 @@ import json
 import re
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
-
+import time
+import ssl
 import aiodns
 import aiohttp
 import urllib3
+from aiohttp import ClientSession
+from aiohttp_socks import ProxyConnector
+import asyncio
+from aiohttp import ClientHttpProxyError
 from fastapi_pagination.bases import AbstractParams
 from loguru import logger
 from ujson import loads, JSONDecodeError
@@ -37,7 +42,7 @@ from .db.models import (
     LeadRecord
 )
 from .schemas.proxy_domain import ProxyDomainCreateBulkModel
-from .util.util import regexp_match
+from .util.util import regexp_match, check_ssl_domain, SSLResponse
 
 
 class TrackerInstanceService(BaseService):
@@ -223,16 +228,20 @@ class ReplacementGroupService(BaseService):
         )
 
         not_exist_groups = list(
-            set.symmetric_difference(set(replacement_group_ids), set([group.pk for group in groups]))
+            set.symmetric_difference(set(replacement_group_ids), set([int(group.pk) for group in groups]))
         )
 
         if len(not_exist_groups) > 0:
-            logger.warning(f"Run replacement_group_proxy_change task ERROR: Group ids: {not_exist_groups} not exists and would not be used")
+            logger.warning(f"Run replacement_group_proxy_change task ERROR: "
+                           f"In requested ids: {replacement_group_ids} "
+                           f"next ids: {not_exist_groups} is not exists and would not be used")
 
-        # not_active_groups = [group.pk for group in groups if not (group.is_active == is_active)]
-        #
-        # if len(not_active_groups) > 0:
-        #     logger.warning(f"Run replacement_group_proxy_change task ERROR: Group ids: {not_active_groups} not active")
+        not_active_groups = [group.pk for group in groups if not (group.is_active == is_active)]
+
+        if len(not_active_groups) > 0:
+            logger.warning(f"Run replacement_group_proxy_change task ERROR: "
+                           f"In requested ids: {replacement_group_ids} "
+                           f"next ids: {not_active_groups} is not active and would not be used")
 
         active_groups = [group for group in groups if (group.is_active == is_active)]
 
@@ -358,8 +367,27 @@ class ProxyDomainService(BaseService):
             raise NotFound(f"Not found available domains for groups: {group_ids}")
 
         # logger.debug(intersection)
+        class Proxy:
+            name: str = 'without'
 
-        new_domain = intersection.pop()
+        proxy = Proxy()
+
+        new_domain = None
+
+        for domain in intersection:
+            domain_valid = await self.is_domain_ok_by_proxy(domain.name, proxy)
+
+            if not domain_valid:
+                # logger.warning(f'[{geo.name}] Skip {row_domain.domain} - due to proxy not work!')
+                # skip this proxy in case of it's down or broken
+                # TODO mark domain is invalid
+                await self.set_is_invalid(domain.pk)
+                continue
+
+            new_domain = domain
+            break
+
+        # new_domain = intersection.pop()
 
         # logger.debug(new_domain)
 
@@ -520,6 +548,77 @@ class ProxyDomainService(BaseService):
     async def set_is_valid(self, domain_id: int):
         return await self.repo.update(id=domain_id, data={'is_invalid': False})
 
+    async def set_is_invalid(self, domain_id: int):
+        return await self.repo.update(id=domain_id, data={'is_invalid': True})
+
+    async def check_domain_with_proxy(self, domain, proxy_url=None, retries=3):
+        # proxy_connector = ProxyConnector.from_url(proxy_url)
+
+        async with ClientSession(response_class=SSLResponse) as session:  # connector=proxy_connector,
+            last_exception = None
+            for retry in range(0, retries):
+                try:
+                    async with session.get(f'https://{domain}/') as response:
+                        if not check_ssl_domain(response.certificate):
+                            # TODO check with expired cert
+                            return ssl.SSLCertVerificationError(f"{domain} - {response.certificate}")
+
+                        response_text = await response.text()
+
+                        if response_text != 'ok':
+                            return ValueError(f"{domain} - {response_text}")
+
+                        return None
+
+                except ssl.SSLError as e:
+                    return ssl.SSLError(f"{domain} - {e}")
+
+                except Exception as e:
+                    await asyncio.sleep(5)
+                    last_exception = e
+
+        return last_exception
+
+    # TODO recreate it to aiohttp with concurrency in case of long check time (function exists in utils)
+    async def is_domain_ok_by_proxy(self, domain: str, proxy) -> bool | None:
+        start_time = time.time()
+        response = await self.check_domain_with_proxy(domain)  # , proxy.address)
+
+        if isinstance(response, ssl.SSLCertVerificationError):
+            logger.warning(f'[{domain}] {proxy.name}: Possible expired certificate {response}')
+            return False
+
+        if isinstance(response, ssl.SSLError):
+            logger.warning(f'[{domain}] {proxy.name}: Invalid SSL certificate {response}')
+            return False
+
+        elif isinstance(response, ValueError):
+            logger.warning(f'[{domain}] {proxy.name}: Response is not "ok" {response}')
+            return False
+
+        elif isinstance(response, ClientHttpProxyError):
+            logger.warning(f'[{domain}] {proxy.name}: ({response.__class__.__name__}) {response}')
+            return False
+
+        elif isinstance(response, ConnectionResetError):
+            logger.warning(
+                f'[{domain}] {proxy.name}: ({response.__class__.__name__}) {response} Possible block, check it manually')
+            return False
+
+        # commented coz work not as expected
+        # returns 502 instead or tunnel error
+        # elif isinstance(response, ProxyError):
+        #     logger.warning(f'[{domain}] {proxy.name}: Proxy is possible down or inaccessible {response}')
+        #     # return None because it is out of context domain validation, it is proxy down or broken
+        #     return None
+
+        elif isinstance(response, Exception):
+            logger.warning(f'[{domain}] {proxy.name}: ({response.__class__.__name__}) {response}')
+            return False
+
+        logger.info(f'[{domain}]: Proxy check passed! Verify took {round(time.time() - start_time, 2)}s')
+
+        return True
 
 class LeadRecordService(BaseService):
     def __init__(self):
