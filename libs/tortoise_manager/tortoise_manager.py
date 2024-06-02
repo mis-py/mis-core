@@ -80,7 +80,6 @@ class TortoiseManager:
             _create_db=settings.POSTGRES_CREATE_DB
         )
 
-        # TODO it should run only once on empty database, maybe out of MIS code
         if generate_schemas:
             logger.info("Tortoise-ORM generating schema")
             await Tortoise.generate_schemas()

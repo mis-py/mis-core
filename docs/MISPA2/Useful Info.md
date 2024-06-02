@@ -10,3 +10,20 @@ https://python-dependency-injector.ets-labs.org/examples/fastapi.html
 
 FastApi plugins interesting implementation
 https://github.com/madkote/fastapi-plugins
+
+MIGRATIONS
+https://ollycope.com/software/yoyo/latest/#postgresql-connections
+
+IMPORTS
+1. Standard library imports.
+2. Related third party imports.
+3. Local application/library specific imports.
+
+TYPE CHECKING
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from prog.ui.menus import MainMenu
+
+def funct(self, master: 'MainMenu', **kwargs):
+    pass

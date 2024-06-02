@@ -9,7 +9,6 @@ from core.db.dataclass import StatusTask
 class JobTrigger(MisModel):
     trigger: Optional[int | str | list[str]] = None
 
-    # TODO make it work
     # @field_validator('trigger')
     # @classmethod
     # def check_trigger(cls, value: int | str | list[str]):

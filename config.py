@@ -18,7 +18,6 @@ class CoreSettings(BaseSettings):
 
     AUTHORIZATION_ENABLED: bool = False
 
-    # TODO reintroduce it properly
     # HOSTS_WHITELIST: list = [
     #     "167.235.28.217"  # CRM (leads)
     # ]
