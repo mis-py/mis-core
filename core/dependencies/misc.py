@@ -42,11 +42,19 @@ async def get_app_context(
     return await ModuleService.make_module_context(module_name=module.name, user=user, team=user.team)
 
 
+async def get_userless_app_context(
+        module: Module = Depends(get_current_app)
+):
+    return await ModuleService.make_module_context(module_name=module.name)
+
+
 async def get_redis_service() -> RedisService:
     return RedisService()
 
 
 AppContextDep = Annotated[AppContext, Depends(get_app_context)]
+
+UserlessAppContextDep = Annotated[AppContext, Depends(get_userless_app_context)]
 
 PaginateParamsDep = Annotated[Params, Depends()]
 
