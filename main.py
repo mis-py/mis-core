@@ -17,7 +17,7 @@ from starlette.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-from const import MIS_TITLE, MIS_VERSION
+from const import MIS_TITLE, MIS_VERSION, ENVIRONMENT, ENV_FILE
 from config import CoreSettings
 from loaders import (
     init_core,
@@ -64,6 +64,8 @@ logger.add(
 #     'apscheduler': 'WARNING',
 # }.items():
 #     logging.getLogger(name).setLevel(level)
+
+logger.info(f'Version: {MIS_VERSION}, Environment: {ENVIRONMENT}, .env file: {ENV_FILE}')
 
 settings = CoreSettings()
 
