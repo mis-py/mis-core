@@ -14,7 +14,7 @@ from core.utils.security import verify_password, get_password_hash
 settings = CoreSettings()
 
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl=settings.URL_ROOT_PATH + "/auth/token",
+    tokenUrl=settings.ROOT_PATH + "/auth/token",
     auto_error=False,
     scopes={}
 )

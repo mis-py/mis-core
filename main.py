@@ -5,7 +5,6 @@ import uvicorn
 from fastapi_pagination import add_pagination
 from loguru import logger
 from contextlib import asynccontextmanager
-from functools import lru_cache
 # from log import setup_logger
 
 import traceback
@@ -18,7 +17,7 @@ from starlette.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-from const import DEV_ENVIRONMENT, ENVIRONMENT, MIS_TITLE, MIS_VERSION
+from const import MIS_TITLE, MIS_VERSION
 from config import CoreSettings
 from loaders import (
     init_core,
@@ -104,19 +103,13 @@ async def lifespan(application: FastAPI):
     logger.success('MIS Project API shutdown complete!')
 
 
-docs_url, openapi_url = None, None
-
-if ENVIRONMENT == DEV_ENVIRONMENT:
-    docs_url = '/docs'
-    openapi_url = '/openapi.json'
-
 app = FastAPI(
     title=MIS_TITLE,
     version=MIS_VERSION,
     lifespan=lifespan,
-    root_path=settings.URL_ROOT_PATH,
-    docs_url=docs_url,
-    openapi_url=openapi_url,
+    root_path=settings.ROOT_PATH,
+    docs_url=settings.DOCS_URL,
+    openapi_url=settings.OPEN_API_URL,
     redoc_url=None,  # disable it completely
     redirect_slashes=False,
     generate_unique_id_function=generate_unique_id,

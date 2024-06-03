@@ -3,18 +3,13 @@ from const import ENV_FILE
 
 
 class CoreSettings(BaseSettings):
-    URL_ROOT_PATH: str = "/api"
-
     DEFAULT_ADMIN_PASSWORD: str = "admin"
 
-    # SECRET_KEY: str = secrets.token_urlsafe(32)
     SECRET_KEY: str = "wherysecretshlyapa"
     ALGORITHM: str = "HS256"
 
     # 60 minutes * 24 hours * 2 days = 2 days
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 2
-
-    # GIT_API_TOKEN: str = ""
 
     AUTHORIZATION_ENABLED: bool = False
 
@@ -26,8 +21,6 @@ class CoreSettings(BaseSettings):
     #     "91.108.6.0/24",
     #     # "10.0.0.0/18",
     # ]
-
-    # ENVIRONMENT: str = os.getenv('ENVIRONMENT', DEV_ENVIRONMENT)
 
     # settings for ModuleLogs component
     LOGGER_FORMAT: str = (
@@ -41,8 +34,12 @@ class CoreSettings(BaseSettings):
 
     ALLOW_ORIGINS: str = ""
 
+    ROOT_PATH: str = "/api"
+    DOCS_URL: str = '/docs'
+    OPEN_API_URL: str = '/openapi.json'
+
     model_config = SettingsConfigDict(
-        env_file=str(ENV_FILE) + '.env',
+        env_file=ENV_FILE,
         env_file_encoding='utf-8',
         case_sensitive=True,
         extra='ignore'
