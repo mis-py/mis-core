@@ -26,7 +26,7 @@ from core.utils.common import exclude_none_values
 from libs.eventory import Eventory
 from libs.modules.AppContext import AppContext
 
-from .schemas.lead_record import LeadRecordModel
+from .schemas.lead_record import LeadRecordIn
 from .repository import (
     TrackerInstanceRepository,
     ReplacementGroupRepository,
@@ -624,7 +624,7 @@ class LeadRecordService(BaseService):
     def __init__(self):
         super().__init__(repo=LeadRecordRepository(model=LeadRecord))
 
-    async def add_new_record(self, ctx: AppContext, new_lead: LeadRecordModel):
+    async def add_new_record(self, ctx: AppContext, new_lead: LeadRecordIn):
         # if new_lead.id is None:
         #     return Response(status_code=400)
 
@@ -657,20 +657,20 @@ class LeadRecordService(BaseService):
         new_lead.origin = url.host
         new_lead.referer = url.host
 
-        await self.repo.create(
-            **new_lead
-        )
-
-        await Eventory.publish(
-            obj=Message(
-                source_type=Message.Source.EXTRA,
-                data_type=Message.Data.INFO,
-                recipient=Recipient(user_id=1),
-                body=new_lead.dict(),
-            ),
-            routing_key=ctx.routing_keys.NEW_LEAD,
-            app_name=ctx.app_name
-        )
+        # await self.create(
+        #     new_lead
+        # )
+        #
+        # await Eventory.publish(
+        #     obj=Message(
+        #         source_type=Message.Source.EXTRA,
+        #         data_type=Message.Data.INFO,
+        #         recipient=Recipient(user_id=1),
+        #         body=new_lead.dict(),
+        #     ),
+        #     routing_key=ctx.routing_keys.NEW_LEAD,
+        #     app_name=ctx.app_name
+        # )
 
     async def check_lead_rate(self, geo: str, last_period: int, previous_period: int, diff_percent: float) -> bool:
         now = datetime.now(timezone.utc)
