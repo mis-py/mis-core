@@ -11,4 +11,4 @@ router.include_router(tracker_instance, tags=["tracker"], prefix='/tracker_insta
 router.include_router(replacement_group, tags=["replacement_group"], prefix='/replacement_group')
 router.include_router(proxy_domains, tags=["proxy_domains"], prefix='/proxy_domains')
 router.include_router(replacement_history, tags=["replacement_history"], prefix='/replacement_history')
-router.include_router(lead_record, tags=["lead_record"], prefix='/lead_record')
+router.include_router(lead_record, tags=["lead_record"])

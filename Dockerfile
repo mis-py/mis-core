@@ -1,5 +1,7 @@
 FROM python:3.12
 
+RUN apt-get -y update; apt-get -y install curl
+
 COPY ./docker/start.sh /start.sh
 RUN chmod +x /start.sh
 
@@ -11,6 +13,9 @@ RUN chmod +x /start-reload.sh
 
 RUN mkdir ./app/
 RUN mkdir ./app/env_override
+
+RUN curl https://letsencrypt.org/certs/lets-encrypt-r3.pem -o /usr/local/share/ca-certificates/R3.crt
+RUN update-ca-certificates
 
 COPY ./requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
