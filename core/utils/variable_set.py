@@ -1,6 +1,6 @@
 from tortoise.expressions import Q
 
-from .utils import type_convert
+from core.utils.types import type_convert
 
 from core.db.models import User, Module, Team, VariableValue, Variable
 

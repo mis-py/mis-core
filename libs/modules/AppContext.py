@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from core.db.models import User, Team
-from libs.variables.variable_set import VariableSet
+from core.utils.variable_set import VariableSet
 # from libs.notifications.utils import Message
 # from libs.eventory import Eventory
 

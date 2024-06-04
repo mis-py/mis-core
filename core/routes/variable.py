@@ -18,7 +18,6 @@ from core.services.variable import VariableService
 from core.services.variable_value import VariableValueService
 from core.utils.schema import MisResponse, PageResponse
 from core.exceptions.exceptions import ValidationFailed, MISError
-from libs.variables.variables import VariablesManager
 
 router = APIRouter()
 
@@ -107,8 +106,7 @@ async def set_global_variables(
 
         module = await module_service.get_or_raise(id=module_id)
 
-        await variable_service.set_variables(variables=variables)
-        await VariablesManager.update_variables(app=module)
+        await variable_service.set_variables(module=module, variables=variables)
 
     return MisResponse()
 
@@ -132,14 +130,12 @@ async def set_local_variables(
     if team_id is not None:
         team = await team_service.get_or_raise(id=team_id, prefetch_related=['users'])
 
-        await variable_value_service.set_variables_values(team_id=team.pk, variables=variables)
-        await VariablesManager.update_variables(team=team)
+        await variable_value_service.set_variables_values(team=team, variables=variables)
 
     if user_id is not None:
         user = await user_service.get_or_raise(id=user_id)
 
-        await variable_value_service.set_variables_values(user_id=user.pk, variables=variables)
-        await VariablesManager.update_variables(user=user)
+        await variable_value_service.set_variables_values(user=user, variables=variables)
 
     return MisResponse()
 
@@ -167,7 +163,6 @@ async def edit_my_variables(
         variables: list[UpdateVariable],
         user: User = Depends(get_current_user)
 ):
-    await variable_value_service.set_variables_values(user_id=user.pk, variables=variables)
-    await VariablesManager.update_variables(user=user)
+    await variable_value_service.set_variables_values(user=user, variables=variables)
 
     return MisResponse()

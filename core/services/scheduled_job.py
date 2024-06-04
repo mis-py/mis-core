@@ -10,7 +10,7 @@ from core.schemas.task import JobCreate, JobTrigger
 from core.services.base.base_service import BaseService
 from core.utils.task import get_trigger
 from libs.scheduler import SchedulerService
-from libs.variables.utils import type_convert
+from core.utils.types import type_convert
 
 
 class ScheduledJobService(BaseService):

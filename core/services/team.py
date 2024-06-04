@@ -8,7 +8,7 @@ from core.repositories.variable import IVariableRepository
 from core.repositories.variable_value import IVariableValueRepository
 from core.schemas.team import TeamCreate, TeamUpdate
 from core.services.base.base_service import BaseService
-from libs.variables.utils import type_convert
+from core.utils.types import type_convert
 
 
 class TeamService(BaseService):

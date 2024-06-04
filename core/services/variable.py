@@ -1,17 +1,19 @@
-from core.db.models import Variable
+from core.db.models import Variable, Module
+from core.dependencies.services import get_variable_value_service
 from core.repositories.variable import IVariableRepository
 from core.schemas.variable import UpdateVariable
 from core.services.base.base_service import BaseService
-from libs.variables.utils import type_convert
+from core.utils.types import type_convert
 from core.exceptions import NotFound, ValidationFailed
 
 
 class VariableService(BaseService):
+
     def __init__(self, variable_repo: IVariableRepository):
         self.variable_repo = variable_repo
         super().__init__(repo=variable_repo)
 
-    async def set_variables(self, variables: list[UpdateVariable]):
+    async def set_variables(self, module: Module, variables: list[UpdateVariable]):
         for variable in variables:
 
             variable_obj = await self.get(id=variable.variable_id)
@@ -22,6 +24,9 @@ class VariableService(BaseService):
                 id=variable_obj.id,
                 data={'default_value': converted_value},
             )
+
+        variable_value_service = get_variable_value_service()
+        await variable_value_service.update_variable_sets(app=module)
 
     async def validate_variable(self, variable: UpdateVariable, variable_obj: Variable):
         if not variable_obj:
@@ -68,4 +73,3 @@ class VariableService(BaseService):
     async def delete_unused(self, module_id: int, exist_keys: list[str]) -> int:
         """Remove unused variables for app"""
         return await self.variable_repo.delete_unused(module_id=module_id, exist_keys=exist_keys)
-
