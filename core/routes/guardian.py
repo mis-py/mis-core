@@ -15,7 +15,7 @@ from core.services.guardian_service import GContentTypeService, GPermissionServi
     GUserPermissionService, GGroupPermissionService
 from core.utils.schema import MisResponse, PageResponse
 
-router = APIRouter(dependencies=[Security(get_current_user, scopes=['core:sudo'])])
+router = APIRouter(dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:guardian'])])
 
 
 @router.get(

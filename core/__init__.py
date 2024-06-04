@@ -1,1 +1,0 @@
-from .scopes import SCOPE

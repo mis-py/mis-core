@@ -13,7 +13,7 @@ from core.utils.task import format_trigger
 from core.utils.schema import MisResponse
 
 router = APIRouter(dependencies=[
-    Security(get_current_user, scopes=['core:sudo', 'core:tasks']),
+    Security(get_current_user, scopes=['core:sudo', 'core:jobs']),
 ])
 
 

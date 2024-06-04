@@ -30,12 +30,14 @@ async def setup_core():
         await permission_service.create_with_scope(name="Access for 'users' endpoints", scope="users", module=core)
         await permission_service.create_with_scope(name="Access for 'teams' endpoints", scope="teams", module=core)
         await permission_service.create_with_scope(name="Access for 'modules' endpoints", scope="modules", module=core)
-        await permission_service.create_with_scope(name="Access for 'groups' endpoints", scope="groups", module=core)
         await permission_service.create_with_scope(name="Access for 'notifications' endpoints", scope="notifications", module=core)
         await permission_service.create_with_scope(name="Access for 'logs' endpoints", scope="logs", module=core)
         await permission_service.create_with_scope(name="Access for 'tasks' endpoints", scope="tasks", module=core)
         await permission_service.create_with_scope(name="Access for 'consumers' endpoints", scope="consumers", module=core)
         await permission_service.create_with_scope(name="Access for 'permissions' endpoints", scope="permissions", module=core)
+        await permission_service.create_with_scope(name="Access for 'guardian' endpoints", scope="guardian", module=core)
+        await permission_service.create_with_scope(name="Access for 'jobs' endpoints", scope="jobs", module=core)
+        await permission_service.create_with_scope(name="Access for 'variables' endpoints", scope="variables", module=core)
 
     return core is None
 

@@ -17,7 +17,7 @@ router = APIRouter()
 # TODO logs needs to be properly introduced
 @router.get(
     "/download/app",
-    dependencies=[Security(get_current_user, scopes=['core:sudo'])]
+    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:logs'])]
 )
 async def download_app_log_file(app_id: int, date: datetime.date = None, hour: int = None, display: bool = True):
     app = await Module.get(id=app_id)
@@ -32,7 +32,7 @@ async def download_app_log_file(app_id: int, date: datetime.date = None, hour: i
 
 
 @router.get("/download/job",
-            dependencies=[Security(get_current_user, scopes=['core:sudo'])])
+            dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:logs'])])
 async def download_task_log_file(job_id: str, date: datetime.date = None, hour: int = None, display: bool = True):
     job_log_dir = TASK_LOGS_DIR / job_id
     return file_response(

@@ -88,7 +88,7 @@ async def remove_my_subscribe(
 
 @router.put(
     '/edit',
-    dependencies=[Security(get_current_user, scopes=['core:sudo'])],
+    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:notifications'])],
     response_model=MisResponse[RoutingKeyResponse]
 )
 async def edit_notification(
