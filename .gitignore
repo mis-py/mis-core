@@ -2,3 +2,5 @@
 __pycache__
 /docs/.obsidian
 /logs
+/envs/prod.env
+/envs/*local*.env

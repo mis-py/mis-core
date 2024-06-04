@@ -15,7 +15,7 @@ from aiormq import DuplicateConsumerTag
 # from core.utils import validate_task_extra
 
 from config import CoreSettings
-from const import DEFAULT_ADMIN_USERNAME, PROD_ENVIRONMENT, ENVIRONMENT, LOGS_DIR, MODULES_DIR
+from const import DEFAULT_ADMIN_USERNAME, LOGS_DIR, MODULES_DIR
 from core.db.dataclass import StatusTask
 from core.db.models import ScheduledJob
 from core.dependencies.services import get_permission_service, get_variable_service, get_routing_key_service, \
@@ -339,8 +339,7 @@ class Variables(Component):
                     type=setting_type
                 )
 
-            if ENVIRONMENT != PROD_ENVIRONMENT:
-                logger.debug(f'[Variables] Variable saved {key} ({default_value}) for {self.module.name}')
+            logger.debug(f'[Variables] Variable saved {key} ({default_value}) for {self.module.name}')
 
         deleted_count = await variable_service.delete_unused(
             module_id=app_model.pk, exist_keys=[*app_settings.keys(), *user_settings.keys()],

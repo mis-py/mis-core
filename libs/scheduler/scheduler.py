@@ -6,7 +6,6 @@ from pytz import utc
 
 from apscheduler.executors.asyncio import AsyncIOExecutor
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-# from apscheduler.jobstores.redis import RedisJobStore
 from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.job import Job
 from apscheduler.jobstores.base import ConflictingIdError
@@ -39,9 +38,8 @@ class SchedulerService:
     _tasks: dict[str, Task] = {}
 
     @classmethod
-    async def init(cls, redishost='redis'):
-        jobstores = {
-            # 'default': RedisJobStore(db=0, host=settings.REDIS_HOST)
+    async def init(cls):
+        job_stores = {
             'default': MemoryJobStore()
         }
         executors = {
@@ -53,7 +51,7 @@ class SchedulerService:
         }
 
         cls._scheduler = AsyncIOScheduler(
-            jobstores=jobstores,
+            jobstores=job_stores,
             executors=executors,
             job_defaults=job_defaults,
             timezone=utc

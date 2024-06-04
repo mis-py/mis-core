@@ -14,7 +14,7 @@ from core.utils.security import verify_password, get_password_hash
 settings = CoreSettings()
 
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl=settings.URL_ROOT_PATH + "/auth/token",
+    tokenUrl=settings.ROOT_PATH + "/auth/token",
     auto_error=False,
     scopes={}
 )
@@ -82,8 +82,7 @@ def create_access_token(
         )
     to_encode = {"exp": expire, "sub": str(subject)}
 
-    if ENVIRONMENT == DEV_ENVIRONMENT:
-        # in dev environment token never expires
+    if settings.ACCESS_TOKEN_EXPIRE_MINUTES == 0:
         to_encode.pop("exp")
 
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
