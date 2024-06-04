@@ -32,6 +32,10 @@ PROD_ENVIRONMENT = 'prod'  # for production
 TEST_ENVIRONMENT = 'test'  # for pytest setup
 LOCAL_ENVIRONMENT = 'local'  # for local running without containers
 
-ENVIRONMENT: str = os.getenv('ENVIRONMENT', DEV_ENVIRONMENT)
+ENVIRONMENT: str = os.getenv('ENVIRONMENT', None)
+
+# this is for assign correct local env name to variable
+if LOCAL_ENVIRONMENT in ENVIRONMENT:
+    LOCAL_ENVIRONMENT = ENVIRONMENT
 
 ENV_FILE = (BASE_DIR / 'envs' / ENVIRONMENT).with_suffix(".env")
