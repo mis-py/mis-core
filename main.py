@@ -209,4 +209,4 @@ if __name__ == "__main__":
         # https://github.com/saghul/aiodns?tab=readme-ov-file#note-for-windows-users
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    uvicorn.run(app, host="localhost", port=8000, log_level='error')
+    uvicorn.run(app, host=settings.SERVER_HOST, port=settings.SERVER_PORT, log_level=settings.SERVER_LOG_LEVEL)

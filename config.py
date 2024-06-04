@@ -38,6 +38,10 @@ class CoreSettings(BaseSettings):
     DOCS_URL: str = '/docs'
     OPEN_API_URL: str = '/openapi.json'
 
+    SERVER_HOST: str = "localhost"
+    SERVER_PORT: int = 8000
+    SERVER_LOG_LEVEL: str = "debug"
+
     model_config = SettingsConfigDict(
         env_file=ENV_FILE,
         env_file_encoding='utf-8',
