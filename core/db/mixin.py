@@ -69,8 +69,10 @@ class UserPermissionsMixin(PermissionsMixin):
         return {'user': self}
 
     async def get_granted_permissions(self, scopes_list=False) -> QuerySet['GrantedPermission'] | list[str]:
+        # team_id=0 in case user not have team to prevent unnecessary permissions
+        # if it has team_id then all permissions from team will be added to query
         query = GrantedPermission.filter(
-            Q(user_id=self.id) | Q(user_id=self.id, team_id=self.team_id)
+            Q(user_id=self.id) | Q(team_id=self.team_id if self.team_id else 0)
         )
 
         if scopes_list:

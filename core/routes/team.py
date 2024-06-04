@@ -16,7 +16,7 @@ router = APIRouter()
 
 @router.get(
     '',
-    dependencies=[Depends(get_current_user)],
+    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:teams'])],
     response_model=PageResponse[TeamListResponse],
 )
 async def get_teams(
@@ -27,7 +27,7 @@ async def get_teams(
 
 @router.get(
     '/get',
-    dependencies=[Depends(get_current_user)],
+    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:teams'])],
     response_model=MisResponse[TeamResponse]
 )
 

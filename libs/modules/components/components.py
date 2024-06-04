@@ -298,7 +298,10 @@ class Variables(Component):
             )
             logger.debug(f'[Variables] Created permission {scope} for {self.module.name}')
 
-            await admin_user.add_permission(f'{app_model.name}:{scope}')
+            # add only sudo scopes to admin user
+            if scope == 'sudo':
+                await admin_user.add_permission(f'{app_model.name}:{scope}')
+
             exist_permission_ids.append(perm.id)
 
         logger.debug(f'[Variables] Permissions saved for {self.module.name}')

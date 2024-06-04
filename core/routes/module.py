@@ -18,7 +18,7 @@ from libs.modules.module_service import ModuleService
 
 router = APIRouter()
 
-
+# TODO i dont like to give any user all modules available
 @router.get(
     '',
     dependencies=[Security(get_current_user)],

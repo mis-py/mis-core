@@ -38,7 +38,7 @@ router = APIRouter()
 
 @router.get(
     '/',
-    dependencies=[Security(get_current_user, scopes=['core:sudo'])],
+    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:variables'])],
     response_model=PageResponse[VariableResponse]
 )
 async def get_global_variables(
@@ -63,7 +63,7 @@ async def get_global_variables(
 
 @router.get(
     '/values',
-    dependencies=[Security(get_current_user, scopes=['core:sudo'])],
+    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:variables'])],
     response_model=PageResponse[VariableValueResponse],
     description="Returns all available variables by specified filter criteria"
 )
@@ -92,7 +92,7 @@ async def get_local_variables(
 
 @router.put(
     '/',
-    dependencies=[Security(get_current_user, scopes=['core:sudo'])],
+    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:variables'])],
     response_model=MisResponse
 )
 async def set_global_variables(
@@ -115,7 +115,7 @@ async def set_global_variables(
 
 @router.put(
     '/values',
-    dependencies=[Security(get_current_user, scopes=['core:sudo'])],
+    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:variables'])],
     response_model=MisResponse
 )
 async def set_local_variables(
