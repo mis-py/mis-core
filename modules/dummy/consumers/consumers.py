@@ -4,6 +4,7 @@ from core.utils.notification.message import Message
 from libs.modules.components import EventManager
 from libs.modules.AppContext import AppContext
 from ..config import RoutingKeys
+from ..db.schema import DummyResponse
 
 routing_keys = RoutingKeys()
 event_consumers = EventManager()
@@ -25,7 +26,7 @@ async def dummy_edit_consumer(ctx: AppContext, message: Message):
 
 
 @event_consumers.add_consumer(routing_keys.DUMMY_EDIT_EVENT)
-async def dummy_edit_consumer_with_pydantic_validation(ctx: AppContext, validated_body: dict):
+async def dummy_edit_consumer_with_pydantic_validation(ctx: AppContext, validated_body: DummyResponse):
     dummy_id = validated_body.id
     dummy_string = validated_body.dummy_string
     logger.debug(f"[{ctx.app_name}] Received event: Dummy edit - {dummy_id=} {dummy_string=}")
