@@ -1,5 +1,3 @@
-from types import SimpleNamespace
-
 from loguru import logger
 
 from core.utils.notification.message import Message
@@ -13,9 +11,22 @@ event_consumers = EventManager()
 
 @event_consumers.add_consumer(routing_keys.DUMMY_EVENT)
 async def template_consumer(ctx: AppContext, message: Message):
-    logger.debug(f"Received message: {message.json} for module: {ctx.app_name}")
+    logger.debug(f"Received message: {message.body} for module: {ctx.app_name}")
 
 
 @event_consumers.add_consumer(routing_keys.DUMMY_EDIT_EVENT)
-async def test_consumer(ctx: AppContext, message: Message, data: SimpleNamespace):
-    logger.warning(f"Dummy edit: '{data.body.dummy_string}' for module: {ctx.app_name}")
+async def dummy_edit_consumer(ctx: AppContext, message: Message):
+    try:
+        dummy_id = message.body['id']
+        dummy_string = message.body['dummy_string']
+        logger.debug(f"[{ctx.app_name}] Received event: Dummy edit - {dummy_id=} {dummy_string=}")
+    except KeyError as e:
+        logger.warning(f"[{ctx.app_name}] Received event error: KeyError {e}")
+
+
+@event_consumers.add_consumer(routing_keys.DUMMY_EDIT_EVENT)
+async def dummy_edit_consumer_with_pydantic_validation(ctx: AppContext, validated_body: dict):
+    dummy_id = validated_body.id
+    dummy_string = validated_body.dummy_string
+    logger.debug(f"[{ctx.app_name}] Received event: Dummy edit - {dummy_id=} {dummy_string=}")
+

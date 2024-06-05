@@ -85,9 +85,9 @@ class EventManager(Component):
 
             consumer = await eventory_service.register_consumer(
                 func=template.func,
-                key=template.route_key,
+                routing_key=template.route_key,
                 module_name=self.module.name,
-                params_to_inject={'ctx': context}
+                extra_kwargs={'ctx': context}
             )
             self.consumers.append(consumer)
 

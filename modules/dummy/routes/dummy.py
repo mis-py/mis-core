@@ -56,7 +56,7 @@ async def edit_dummy(
 ):
     edited_dummy = await dummy_model_service.update(dummy_id, dummy_in)
     await eventory_service.publish(
-        schema=dummy_in,
+        body={'id': dummy_id, 'dummy_string': dummy_in.dummy_string},
         routing_key=routing_keys.DUMMY_EDIT_EVENT,
         module_name=ctx.app_name,
     )
