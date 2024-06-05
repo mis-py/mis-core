@@ -14,6 +14,7 @@ from core.repositories.user import UserRepository
 from core.repositories.variable import VariableRepository
 from core.repositories.variable_value import VariableValueRepository
 from core.services.auth import AuthService
+from core.services.eventory import EventoryService
 from core.services.granted_permission import GrantedPermissionService
 from core.services.guardian_service import GContentTypeService, GPermissionService, GAccessGroupService, \
     GUserPermissionService, GGroupPermissionService, GuardianService
@@ -25,6 +26,7 @@ from core.services.team import TeamService
 from core.services.user import UserService
 from core.services.variable import VariableService
 from core.services.variable_value import VariableValueService
+from libs.eventory import Eventory
 
 
 def get_user_service() -> UserService:
@@ -198,3 +200,7 @@ def get_guardian_service() -> GuardianService:
         g_access_group_repo=g_access_group_repo,
     )
     return guardian_service
+
+
+def get_eventory_service() -> EventoryService:
+    return EventoryService(Eventory)

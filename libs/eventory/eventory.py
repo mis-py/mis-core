@@ -1,12 +1,13 @@
 import asyncio
 import functools
 from asyncio import Task
+from collections import defaultdict
 from typing import Callable
 
 from loguru import logger
 import ujson
 from aio_pika import connect_robust, Message
-from aio_pika.abc import AbstractChannel, AbstractIncomingMessage, ExchangeType, AbstractRobustConnection
+from aio_pika.abc import AbstractChannel, ExchangeType, AbstractRobustConnection
 from aiormq import DuplicateConsumerTag, AMQPConnectionError
 
 from core.repositories.routing_key import RoutingKeyRepository
@@ -27,7 +28,8 @@ class Eventory:
     # Channel per module preferred
     _channels: dict[str, AbstractChannel] = {}
 
-    _listener_task: Task
+    # Registered consumers
+    _consumers: dict[str, list[Consumer]] = defaultdict(list)
 
     @classmethod
     async def init(cls):
@@ -42,134 +44,74 @@ class Eventory:
         await cls._connection.close()
 
     @classmethod
-    async def get_channel(cls, app_name):
-        if app_name not in cls._channels:
-            cls._channels[app_name] = await cls._connection.channel()
-        return cls._channels[app_name]
+    async def get_channel(cls, name: str) -> AbstractChannel:
+        if name not in cls._channels:
+            cls._channels[name] = await cls._connection.channel()
+        return cls._channels[name]
 
     @classmethod
-    async def remove_channel(cls, app_name):
-        if app_name in cls._channels:
-            await cls._channels[app_name].close()
-            del cls._channels[app_name]
+    async def remove_channel(cls, name: str) -> None:
+        if name in cls._channels:
+            await cls._channels[name].close()
+            del cls._channels[name]
 
     @classmethod
-    async def register_consumer(cls, app_name: str, routing_key: str, callback: Callable, context: AppContext, *args, **kwargs):
+    async def register_consumer(cls, receiver: Callable, routing_key: str, channel_name: str, tag: str) -> Consumer:
         """
         Consumer is message receiver, can be declared for any function
-        :param app_name:
+        :param channel_name:
         :param routing_key:
-        :param callback:
-        :param args:
-        :param kwargs:
+        :param receiver:
+        :param tag: - Tag for consumer
         :return:
         """
-        # reuse chanel for app
-        channel = await cls.get_channel(app_name)
-
-        # declare exchange for specific event
-        # TODO issue possible here due to app_name not in exchange
-        exchange = await channel.declare_exchange(routing_key, type=ExchangeType.FANOUT, auto_delete=True)
+        channel = await cls.get_channel(channel_name)
+        exchange = await channel.declare_exchange("eventory", type=ExchangeType.DIRECT, auto_delete=True)
         queue = await channel.declare_queue(exclusive=True)
-        await queue.bind(exchange)
-        try:
-            receiver = cls._on_message_wrapper(callback, context, *args, **kwargs)
-            consumer = Consumer(queue, receiver, callback.__name__)
-            return consumer
-        except DuplicateConsumerTag:
-            raise RuntimeError(f'Duplicated consumer_tag: "{callback.__name__}"')
-
-    # TODO unused function. does it suppose to be like that?
-    @classmethod
-    async def register_handler(cls, app_name: str, routing_keys: list[str, str], callback: Callable, *args, **kwargs):
-        channel = await cls.get_channel(app_name)
-        queue = await channel.declare_queue(exclusive=True)
-
-        # bind all routing_keys
-        for key, key_app_name in routing_keys:
-            prefixed_routing_key = f"{key_app_name}:{key}"
-            exchange = await channel.declare_exchange(
-                prefixed_routing_key, type=ExchangeType.FANOUT, auto_delete=True,
-            )
-            await queue.bind(exchange)
+        await queue.bind(exchange, routing_key=routing_key)
 
         try:
-            receiver = cls._on_message_wrapper(callback, *args, **kwargs)
-            consumer = Consumer(queue, receiver, callback.__name__)
+            consumer = Consumer(queue, receiver, tag)
+            cls._consumers[channel_name].append(consumer)
             return consumer
         except DuplicateConsumerTag:
-            raise RuntimeError(f'Duplicated consumer_tag: "{callback.__name__}"')
+            raise RuntimeError(f'Duplicated consumer_tag: "{tag}"')
 
     @classmethod
-    async def publish(cls, obj, routing_key, app_name):
+    async def publish(cls, data: dict, routing_key: str, channel_name: str):
         message = Message(
-            body=ujson.dumps(obj.to_dict(), ensure_ascii=False).encode('utf-8'),
+            body=ujson.dumps(data, ensure_ascii=False).encode('utf-8'),
             content_type='application/json',
             content_encoding='utf-8'
         )
-        # TODO fix it
-        prefixed_routing_key = f"{app_name}:{routing_key}"
-        prefixed_routing_key = f"{routing_key}"
-        channel = await cls.get_channel(app_name)
+        channel = await cls.get_channel(channel_name)
         exchange = await channel.declare_exchange(
-            prefixed_routing_key,
-            type=ExchangeType.FANOUT,
+            name="eventory",
+            type=ExchangeType.DIRECT,
             auto_delete=True,
         )
         return await exchange.publish(
             message=message,
-            routing_key=prefixed_routing_key,
+            routing_key=routing_key,
         )
 
     @classmethod
-    def start_listening(cls):
-        cls._listener_task = asyncio.ensure_future(asyncio.Future())
-
-    @classmethod
-    def stop_listening(cls):
-        if cls._listener_task:
-            cls._listener_task.cancel()
-
-    @classmethod
-    def restart_listening(cls):
-        cls.stop_listening()
-        cls.start_listening()
-
-    @staticmethod
-    def _on_message_wrapper(coro, context, *args, **kwargs):
-        @functools.wraps(coro)
-        async def _receive(message: AbstractIncomingMessage):
-            async with message.process():
-                #logger.debug(f'Received message; consumer_tag={message.consumer_tag}  exchange={message.exchange}')
-
-                json_data = ujson.loads(message.body.decode('utf-8'))
-
-                # TODO needs to be fixed properly
-                #message.json = json_data
-                message.body = json_data
-                return await coro(message=message, ctx=context, *args, **kwargs)
-        return _receive
-
-    @classmethod
     def iter_consumers(cls):
-        # core consumer
-        yield "core", cls._core_consumer
-
         # module consumers
-        for app_name, module in cls._loaded_modules.items():
-            for consumer in module.consumers:
-                yield app_name, consumer
+        for channel_name, consumers in cls._consumers.items():
+            for consumer in consumers:
+                yield channel_name, consumer
 
     @classmethod
     def get_consumer(cls, consumer_tag: str) -> tuple[str, Consumer] | tuple[None, None]:
-        for app_name, consumer in cls.iter_consumers():
+        for channel_name, consumer in cls.iter_consumers():
             if consumer.consumer_tag == consumer_tag:
-                return app_name, consumer
+                return channel_name, consumer
         return None, None
 
     @classmethod
     async def pause_consumer(cls, consumer_tag: str) -> bool:
-        app_name, consumer = cls.get_consumer(consumer_tag)
+        channel_name, consumer = cls.get_consumer(consumer_tag)
         if consumer:
             await consumer.stop()
             return True
@@ -177,7 +119,7 @@ class Eventory:
 
     @classmethod
     async def resume_consumer(cls, consumer_tag: str) -> bool:
-        app_name, consumer = cls.get_consumer(consumer_tag)
+        channel_name, consumer = cls.get_consumer(consumer_tag)
         if consumer:
             await consumer.start()
             return True
