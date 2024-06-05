@@ -9,6 +9,9 @@ from core.db.models import User
 from core.utils.common import get_log_levels_above
 
 from typing import TYPE_CHECKING
+
+from core.utils.notification.message import IncomingProcessedMessage
+
 if TYPE_CHECKING:
     from .sockets import WSManager
 

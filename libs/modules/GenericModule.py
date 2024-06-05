@@ -1,7 +1,7 @@
 from loguru import logger
 
 from core.db.dataclass import AppState
-from core.dependencies.services import get_variable_value_service
+from core.dependencies.services import get_variable_service
 from core.exceptions import MISError
 
 from libs.eventory import Eventory
@@ -170,13 +170,13 @@ class GenericModule(BaseModule):
     async def get_context(self, user=None, team=None) -> AppContext:
         """Context for jobs and other services.
         If user or team is defined then variables will be available in context along with module variables"""
-        variable_value_service = get_variable_value_service()
+        variable_service = get_variable_service()
 
         return AppContext(
             module=self,
             user=user,
             team=team,
-            variables=await variable_value_service.make_variable_set(user=user, team=team, app=self._model),
+            variables=await variable_service.make_variable_set(user=user, team=team, app=self._model),
             routing_keys=await Eventory.make_routing_keys_set(app=self._model)
         )
 

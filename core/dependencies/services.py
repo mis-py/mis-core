@@ -24,7 +24,6 @@ from core.services.scheduled_job import ScheduledJobService
 from core.services.team import TeamService
 from core.services.user import UserService
 from core.services.variable import VariableService
-from core.services.variable_value import VariableValueService
 
 
 def get_user_service() -> UserService:
@@ -58,21 +57,14 @@ def get_auth_service() -> AuthService:
 
 
 def get_variable_service() -> VariableService:
-    variable_repo = VariableRepository()
-
-    variable_service = VariableService(variable_repo=variable_repo)
-    return variable_service
-
-
-def get_variable_value_service() -> VariableValueService:
     variable_value_repo = VariableValueRepository()
     variable_repo = VariableRepository()
 
-    variable_value_service = VariableValueService(
+    variable_service = VariableService(
         variable_value_repo=variable_value_repo,
-        variable_repo=variable_repo,
+        variable_repo=variable_repo
     )
-    return variable_value_service
+    return variable_service
 
 
 def get_module_service() -> ModuleService:

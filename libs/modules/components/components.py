@@ -260,9 +260,9 @@ class APIRoutes(Component):
 
 
 class Variables(Component):
-    def __init__(self, module_settings, user_settings):
-        self.module_settings = module_settings
-        self.user_settings = user_settings
+    def __init__(self, module_variables, user_variables):
+        self.module_variables = module_variables
+        self.user_variables = user_variables
 
     async def pre_init(self):
         pass
@@ -313,36 +313,36 @@ class Variables(Component):
     async def save_variables(self, app_model):
         variable_service: VariableService = get_variable_service()
 
-        app_settings, user_settings = dict(self.module_settings), dict(self.user_settings)
-        settings = itertools.chain(app_settings.items(), user_settings.items())
+        app_variables, user_variables = dict(self.module_variables), dict(self.user_variables)
+        variables = itertools.chain(app_variables.items(), user_variables.items())
 
-        typed_settings = {
-            **pydatic_model_to_dict(self.user_settings),
-            **pydatic_model_to_dict(self.module_settings),
+        typed_variables = {
+            **pydatic_model_to_dict(self.user_variables),
+            **pydatic_model_to_dict(self.module_variables),
         }
 
-        for key, default_value in settings:
-            setting_type = typed_settings[key]["type"]
-            is_global = key in app_settings
-            setting, is_created = await variable_service.get_or_create(
+        for key, default_value in variables:
+            variable_type = typed_variables[key]["type"]
+            is_global = key in app_variables
+            variable, is_created = await variable_service.get_or_create_variable(
                 module_id=app_model.pk,
                 key=key,
                 default_value=default_value,
                 is_global=is_global,
-                type=setting_type
+                variable_type=variable_type
             )
             if not is_created:
-                await variable_service.update_params(
-                    variable=setting,
+                await variable_service.update_variable(
+                    variable=variable,
                     default_value=default_value,
                     is_global=is_global,
-                    type=setting_type
+                    type=variable_type
                 )
 
             logger.debug(f'[Variables] Variable saved {key} ({default_value}) for {self.module.name}')
 
-        deleted_count = await variable_service.delete_unused(
-            module_id=app_model.pk, exist_keys=[*app_settings.keys(), *user_settings.keys()],
+        deleted_count = await variable_service.delete_unused_variables(
+            module_id=app_model.pk, exist_keys=[*app_variables.keys(), *user_variables.keys()],
         )
         logger.debug(f'[Variables] Deleted {deleted_count} unused variables for {self.module.name}')
 
