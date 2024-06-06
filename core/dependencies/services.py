@@ -20,7 +20,7 @@ from core.services.guardian_service import GContentTypeService, GPermissionServi
 from core.services.module import ModuleService
 from core.services.notification import RoutingKeyService, RoutingKeySubscriptionService
 from core.services.permission import PermissionService
-from core.services.scheduled_job import ScheduledJobService
+from core.services.scheduler import SchedulerService
 from core.services.team import TeamService
 from core.services.user import UserService
 from core.services.variable import VariableService
@@ -74,15 +74,15 @@ def get_module_service() -> ModuleService:
     return module_service
 
 
-def get_scheduled_job_service() -> ScheduledJobService:
+def get_scheduler_service() -> SchedulerService:
     scheduled_job_repo = ScheduledJobRepository()
     module_repo = ModuleRepository()
 
-    scheduled_job_service = ScheduledJobService(
+    scheduler_service = SchedulerService(
         scheduled_job_repo=scheduled_job_repo,
         module_repo=module_repo,
     )
-    return scheduled_job_service
+    return scheduler_service
 
 
 def get_permission_service() -> PermissionService:

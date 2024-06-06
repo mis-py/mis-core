@@ -3,7 +3,7 @@ from loguru import logger
 from libs.eventory import Eventory
 from libs.mongo.mongo import MongoService
 from libs.redis import RedisService
-from libs.scheduler import SchedulerService
+from libs.schedulery import Schedulery
 from libs.modules.module_service import ModuleService
 from libs.tortoise_manager import TortoiseManager
 
@@ -98,12 +98,12 @@ async def init_guardian():
 
 
 async def init_scheduler():
-    await SchedulerService.init()
+    await Schedulery.init()
     logger.success('Scheduler started')
 
 
 async def shutdown_scheduler():
-    await SchedulerService.close()
+    await Schedulery.close()
     logger.info('SchedulerService shutdown')
 
 

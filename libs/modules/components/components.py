@@ -19,17 +19,17 @@ from const import DEFAULT_ADMIN_USERNAME, LOGS_DIR, MODULES_DIR
 from core.db.dataclass import StatusTask
 from core.db.models import ScheduledJob
 from core.dependencies.services import get_permission_service, get_variable_service, get_routing_key_service, \
-    get_user_service, get_scheduled_job_service
+    get_user_service, get_scheduler_service
 from core.services.notification import RoutingKeyService
 from core.services.permission import PermissionService
-from core.services.scheduled_job import ScheduledJobService
+from core.services.scheduler import SchedulerService
 from core.services.user import UserService
 from core.services.variable import VariableService
 from core.utils.common import pydatic_model_to_dict, signature_to_dict
 from libs.modules.AppContext import AppContext
 
-from libs.scheduler.scheduler import SchedulerService
-from libs.scheduler.utils import Task
+from libs.schedulery.schedulery import Schedulery
+from core.utils.scheduler import TaskTemplate
 from libs.eventory.eventory import Eventory
 from libs.eventory.consumer import Consumer
 from libs.eventory.utils import EventTemplate
@@ -116,7 +116,7 @@ class EventManager(Component):
 class ScheduledTasks(Component):
     def __init__(self):
         # list of all declared tasks on init
-        self._tasks: list[Task] = []
+        self._tasks: list[TaskTemplate] = []
 
     def schedule_task(
             self,
@@ -145,7 +145,7 @@ class ScheduledTasks(Component):
         def _wrapper(func):
             extra_typed = signature_to_dict(func)
             extra_typed.pop("ctx", False)
-            self._tasks.append(Task(
+            self._tasks.append(TaskTemplate(
                 type=task_type,
                 func=func,
                 trigger=trigger,
@@ -156,7 +156,7 @@ class ScheduledTasks(Component):
             return func
         return _wrapper
 
-    def extend(self, tasks: list[Task]):
+    def extend(self, tasks: list[TaskTemplate]):
         self._tasks.extend(tasks)
 
     async def pre_init(self):
@@ -168,41 +168,35 @@ class ScheduledTasks(Component):
         :return:
         """
         # register in SchedulerService all declared tasks and provide module for them
+        scheduler_service: SchedulerService = get_scheduler_service()
+
         for task in self._tasks:
             task.module = self.module
-            SchedulerService.add_task(task, self.module.name)
+            scheduler_service.add_task(task=task, module_name=self.module.name)
 
-        scheduled_job_service: ScheduledJobService = get_scheduled_job_service()
-
-        saved_scheduled_jobs = await scheduled_job_service.filter_by_module(module_name=self.module.name)
-        for saved_job in saved_scheduled_jobs:
-            await SchedulerService.restore_job(
-                saved_job=saved_job,
-                module=self.module,
-                run_at_startup=False
-            )
+        await scheduler_service.restore_jobs(module_name=self.module.name)
 
     async def start(self):
         """
         Run tasks that saved in DB and was in StatusTask.RUNNING state
         :return:
         """
-        scheduled_job_service: ScheduledJobService = get_scheduled_job_service()
+        scheduler_service: SchedulerService = get_scheduler_service()
 
-        saved_scheduled_jobs = await scheduled_job_service.filter_by_module(module_name=self.module.name)
+        saved_scheduled_jobs = await scheduler_service.filter_by_module(module_name=self.module.name)
         for saved_job in saved_scheduled_jobs:
             if saved_job.status == StatusTask.RUNNING:
-                await SchedulerService.resume_job(saved_job.pk)
+                await Schedulery.resume_job(saved_job.pk)
 
     async def stop(self):
         """
         Set pause for all tasks that saved in DB
         :return:
         """
-        scheduled_job_service: ScheduledJobService = get_scheduled_job_service()
-        saved_scheduled_jobs = await scheduled_job_service.filter_by_module(module_name=self.module.name)
+        scheduler_service: SchedulerService = get_scheduler_service()
+        saved_scheduled_jobs = await scheduler_service.filter_by_module(module_name=self.module.name)
         for saved_job in saved_scheduled_jobs:
-            await SchedulerService.pause_job(saved_job.pk)
+            await Schedulery.pause_job(saved_job.pk)
 
         # I'm not pushing any changes to database, left this responsibility to other layer
         # await crud_jobs.set_pause_all_app_jobs(self.module.name)
