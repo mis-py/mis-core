@@ -10,7 +10,7 @@ from core.utils.schema import Params
 from libs.eventory import Eventory
 from libs.eventory.utils import RoutingKeysSet
 from libs.modules.AppContext import AppContext
-from libs.modules.module_service import ModuleService
+from libs.modules.module_service import Modulery
 from libs.redis import RedisService
 
 settings = CoreSettings()
@@ -39,13 +39,13 @@ async def get_app_context(
         module: Module = Depends(get_current_app)
 ):
     await user.fetch_related('team')
-    return await ModuleService.make_module_context(module_name=module.name, user=user, team=user.team)
+    return await Modulery.make_module_context(module_name=module.name, user=user, team=user.team)
 
 
 async def get_userless_app_context(
         module: Module = Depends(get_current_app)
 ):
-    return await ModuleService.make_module_context(module_name=module.name)
+    return await Modulery.make_module_context(module_name=module.name)
 
 
 async def get_redis_service() -> RedisService:

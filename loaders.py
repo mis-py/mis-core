@@ -4,7 +4,7 @@ from libs.eventory import Eventory
 from libs.mongo.mongo import MongoService
 from libs.redis import RedisService
 from libs.schedulery import Schedulery
-from libs.modules.module_service import ModuleService
+from libs.modules.module_service import Modulery
 from libs.tortoise_manager import TortoiseManager
 
 from config import CoreSettings
@@ -128,22 +128,22 @@ async def shutdown_mongo():
 
 
 async def manifest_init_modules():
-    await ModuleService.manifest_init()
+    await Modulery.manifest_init()
     logger.success('Modules manifest initialized')
 
 
-async def pre_init_modules():
-    await ModuleService.pre_init()
+async def pre_init_modules(application):
+    await Modulery.pre_init(application)
     logger.success('Modules pre initialized')
 
 
-async def init_modules(app):
-    await ModuleService.init(app)
+async def init_modules():
+    await Modulery.init()
     logger.success('Modules initialized')
 
 
 async def shutdown_modules():
-    await ModuleService.shutdown()
+    await Modulery.shutdown()
     logger.info("Modules shutdown complete")
 
 
@@ -155,5 +155,6 @@ async def init_settings():
 
 
 async def init_modules_root_model():
-    await ModuleService.init_modules_root_model()
-    logger.success('Modules root model initialized')
+    # await Modulery.init_modules_root_model()
+    # logger.success('Modules root model initialized')
+    logger.error('Modules models not initialized!!')

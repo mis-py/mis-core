@@ -5,7 +5,7 @@ from core.dependencies.services import get_user_service, get_team_service, get_m
     get_g_access_group_service
 from core.exceptions import NotFound, ValidationFailed
 from core.services.guardian_service import GAccessGroupService
-from core.services.module import ModuleService
+from core.services.module import Modulery
 from core.services.user import UserService
 from core.services.team import TeamService
 from core.services.notification import RoutingKeyService
@@ -26,7 +26,7 @@ async def get_team_by_id(team_service: Annotated[TeamService, Depends(get_team_s
 
 
 async def get_module_by_id(
-        module_service: Annotated[ModuleService, Depends(get_module_service)],
+        module_service: Annotated[Modulery, Depends(get_module_service)],
         module_id: Optional[int] = None,
         module_name: Optional[str] = None,
 ):
@@ -43,7 +43,7 @@ async def get_module_by_id(
 
 
 async def get_routing_key_by_id(
-        routing_key_service: Annotated[ModuleService, Depends(get_routing_key_service)],
+        routing_key_service: Annotated[Modulery, Depends(get_routing_key_service)],
         key_id: int
 ):
     rk = await routing_key_service.get(id=key_id)

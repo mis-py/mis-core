@@ -1,6 +1,8 @@
+from dataclasses import dataclass
 import types
 from loguru import logger
 import os
+from typing import Optional
 
 from core.db.dataclass import AppState
 from core.db.models import Module
@@ -11,30 +13,26 @@ from .utils import manifests_sort_by_dependency, import_module, unload_module, r
 from ..GenericModule import GenericModule
 from const import MODULES_DIR, MODULES_DIR_NAME
 from ..utils.ModuleManifest import ModuleManifest
-from core.services import module
 
 
 # from modules.core.notifications.handlers import eventory_message_handler
 # from core.utils import async_partial
 # from core.websockets.actions import Action
 
+@dataclass
+class LoadedModule:
+    manifest: ModuleManifest
+    instance: Optional[GenericModule] = None
 
-class ModuleService:
+
+class Modulery:
     _modules_manifests: dict[str, ModuleManifest] = {}
-    _loaded_modules: dict[str, GenericModule] = {}
-    _service: module.ModuleService = get_module_service()
+    _loaded_modules: dict[str, LoadedModule] = {}
 
     # _core_consumer: Optional[Consumer]
 
     @classmethod
-    def loaded_modules(cls) -> types.MappingProxyType:
-        """
-        MappingProxyType will allow to access members of dict but restrict their modifying
-        """
-        return types.MappingProxyType(cls._loaded_modules)
-
-    @classmethod
-    def _get_module(cls, module_name: str) -> GenericModule:
+    def get_module(cls, module_name: str) -> LoadedModule:
         if module_name == 'core':
             raise MISError("Operations on 'core' module not allowed from 'module_service'")
 
@@ -71,59 +69,44 @@ class ModuleService:
             if not is_valid_dependency_version:
                 continue
 
-            cls._modules_manifests[manifest.name] = manifest
+            cls._loaded_modules[manifest.name] = LoadedModule(manifest=manifest)
 
     @classmethod
-    async def pre_init(cls):
+    async def pre_init(cls, application):
         """
         Method called by system loader!
         Import modules by sorted manifests and run pre init for each module
         """
-        for manifest in cls._modules_manifests.values():
-            package = import_module(manifest.name, MODULES_DIR_NAME)
-            module = package.module
-            module.set_manifest(manifest)
+        for module_name, loaded_module in cls._loaded_modules.items():
+            package = import_module(module_name, MODULES_DIR_NAME)
+            instance = package.module
+            instance.set_manifest(loaded_module.manifest)
 
-            logger.debug(f'[ModuleService] Module: {module.name} pre_init started!')
-            await module.pre_init()
-            cls._loaded_modules[module.name] = module
-            logger.debug(f"[ModuleService] Module: '{module.name}' pre_init finished!")
-
-    @classmethod
-    async def init_modules_root_model(cls):
-        """
-        Method called by system loader!
-        Creates DB model instance and bind it to module instance and module components
-        """
-        module_uow_service = get_module_service()
-        for module_name, module in cls._loaded_modules.items():
-            module_model, is_created = await module_uow_service.get_or_create(name=module_name)
-            if is_created:
-                module_model.state = AppState.PRE_INITIALIZED
-            logger.debug(f"[ModuleService] Module: {module.name} DB instance received")
-            await module.bind_model(module_model, is_created)
-            logger.debug(f"[ModuleService] Module: {module.name} DB instance binded")
+            logger.debug(f'[ModuleService] Module: {module_name} pre_init started!')
+            await instance.pre_init(application)
+            cls._loaded_modules[module_name].instance = instance
+            logger.debug(f"[ModuleService] Module: '{module_name}' pre_init finished!")
 
     @classmethod
-    async def init(cls, application):
+    async def init(cls):
         """
         Method called by system loader!
         Run module init and start if module is enabled
         """
-        for module_name, module in cls._loaded_modules.items():
-            if module.is_enabled():
+        for module_name, loaded_module in cls._loaded_modules.items():
+            if loaded_module.instance.is_enabled():
                 try:
-                    await cls.init_module(application, module.name, from_system=True)
+                    await cls.init_module(module_name, from_system=True)
                 except Exception as e:
-                    logger.error(f'[ModuleService] Module: {module.name} system init failed ({e}), skip...')
+                    logger.error(f'[ModuleService] Module: {module_name} system init failed ({e}), skip...')
                     continue
 
-                logger.debug(f'[ModuleService] Module: {module.name} auto-start is enabled starting...')
+                logger.debug(f'[ModuleService] Module: {module_name} auto-start is enabled starting...')
 
                 try:
-                    await cls.start_module(module.name, from_system=True)
+                    await cls.start_module(module_name, from_system=True)
                 except Exception as e:
-                    logger.error(f'[ModuleService] Module: {module.name} system init failed ({e}), skip...')
+                    logger.error(f'[ModuleService] Module: {module_name} system init failed ({e}), skip...')
                     continue
 
         # need for start consumer for core websocket sender
@@ -136,13 +119,13 @@ class ModuleService:
         Executes when application shutdowns.
         Calls stop_module for every enabled app if enabled and then shutdown
         """
-        for module_name, module in cls._loaded_modules.copy().items():
-            if module.is_enabled():
+        for module_name, loaded_module in cls._loaded_modules.copy().items():
+            if loaded_module.instance.is_enabled():
                 await cls.stop_module(module_name, from_system=True)
             await cls.shutdown_module(module_name, from_system=True)
 
     @classmethod
-    async def init_module(cls, application, module_name: str, from_system=False) -> GenericModule:
+    async def init_module(cls, module_name: str) -> GenericModule:
 
         # except ModuleNotFoundError as e:
         #     logger.exception(e)
@@ -157,71 +140,53 @@ class ModuleService:
         # logger.exception(e)
         # raise LoadModuleError(f"Error while loading app. Details: {str(e)}")
 
-        module = cls._get_module(module_name)
+        loaded_module = cls.get_module(module_name)
         logger.debug(f'[ModuleService] Module: {module_name} init started!')
 
-        init_result = await module.init(application, from_system)
+        init_result = await loaded_module.instance.init()
 
         logger.debug(f'[ModuleService] Module: {module_name} init finished: {init_result}!')
 
-        return module
+        return loaded_module.instance
 
     @classmethod
     async def start_module(cls, module_name: str, from_system=False) -> GenericModule:
-        module = cls._get_module(module_name)
+        loaded_module = cls.get_module(module_name)
 
-        await module.start(from_system)
+        await loaded_module.instance.start(from_system)
 
-        if not from_system:
-            # if call come not from system then we can change it state in DB
-            new_model = await cls._service.set_enabled(module_id=module.get_id())
-            # rebind new model to module after update
-            await module.bind_model(new_model, False)
-
-        logger.debug(f'[ModuleService] Module: {module.name} started!')
+        logger.debug(f'[ModuleService] Module: {module_name} started!')
 
         # if app.sender:
         #     await cls._restart_core_consumer()
 
-        return module
+        return loaded_module.instance
 
     @classmethod
     async def stop_module(cls, module_name: str, from_system=False) -> GenericModule:
-        module = cls._get_module(module_name)
+        loaded_module = cls.get_module(module_name)
 
-        await module.stop(from_system)
+        await loaded_module.instance.stop(from_system)
 
-        if not from_system:
-            # if call come not from system then we can change it state in DB
-            new_model = await cls._service.set_disabled(module_id=module.get_id())
-            # rebind new model to module after update
-            await module.bind_model(new_model, False)
-
-        logger.debug(f"[ModuleService] Module: {module.name} stopped")
+        logger.debug(f"[ModuleService] Module: {module_name} stopped")
 
         # if module.sender:
         #     await cls._restart_core_consumer()
 
-        return module
+        return loaded_module.instance
 
     @classmethod
     async def shutdown_module(cls, module_name: str, from_system=False):
-        module = cls._get_module(module_name)
-        await module.shutdown(from_system)
+        loaded_module = cls.get_module(module_name)
+        await loaded_module.instance.shutdown(from_system)
 
         if from_system:
             # correctly unload and delete module from system call
-            unload_module(module.name)
+            unload_module(module_name)
             del cls._loaded_modules[module_name]
 
-        logger.debug(f"[ModuleService] Module: {module.name} shutdown complete")
+        logger.debug(f"[ModuleService] Module: {module_name} shutdown complete")
 
-    @classmethod
-    async def make_module_context(cls, module_name: str, user=None, team=None):
-        return await cls._get_module(module_name).get_context(
-            user=user,
-            team=team
-        )
 
     # @classmethod
     # async def _restart_core_consumer(cls):

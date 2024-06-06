@@ -68,23 +68,7 @@ class BaseModule(ABC):
         self.components = components
 
     @abstractmethod
-    async def _set_state(self, state: AppState) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_state(self) -> AppState:
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_id(self) -> int:
-        raise NotImplementedError
-
-    @abstractmethod
-    def is_enabled(self) -> bool:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def pre_init(self) -> bool:
+    async def pre_init(self, application) -> bool:
         raise NotImplementedError
 
     @abstractmethod
@@ -92,23 +76,19 @@ class BaseModule(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def init(self, application, from_system=False) -> bool:
+    async def init(self) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    async def start(self, from_system=False) -> bool:
+    async def start(self) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    async def stop(self, from_system=False) -> bool:
+    async def stop(self) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    async def shutdown(self, from_system=False) -> bool:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def get_context(self, user=None, team=None) -> AppContext:
+    async def shutdown(self) -> bool:
         raise NotImplementedError
 
     @abstractmethod

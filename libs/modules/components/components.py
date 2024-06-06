@@ -210,11 +210,11 @@ class APIRoutes(Component):
         self.router: APIRouter = router
         self.application = None
 
-    async def pre_init(self):
-        pass
-
-    async def init(self, application, app_db_model, is_created: bool):
+    async def pre_init(self, application):
         self.application = application
+
+    async def init(self, app_db_model, is_created: bool):
+        pass
 
     async def start(self):
         # dependencies = [Depends(inject_context)]

@@ -14,19 +14,20 @@ class Component(ABC):
         return self
 
     @abstractmethod
-    async def pre_init(self):
+    async def pre_init(self, application):
         """
         Use it for early initialization of module.
         At this stage there is no DB connection.
         Examples: TortoiseModel component must be initialized at this stage
+        :application: FastAPI instance
         """
 
     @abstractmethod
-    async def init(self, application, app_db_model, is_created: bool):
+    async def init(self, app_db_model, is_created: bool):
         """
         Runs when a module is installed or every time the module is init
+        :app_db_model db instance of module
         :is_created: true when app model created first time
-        :application: FastAPI instance
         """
 
     @abstractmethod

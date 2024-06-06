@@ -8,7 +8,7 @@ from core.db.guardian import GuardianPermission, GuardianContentType
 from core.db.mixin import GuardianMixin
 from core.db.models import Module, User, Team
 from core.dependencies.services import get_module_service, get_permission_service
-from core.services.module import ModuleService
+from core.services.module import Modulery
 from core.services.permission import PermissionService
 from core.utils.common import camel_to_spaces
 from core.utils.security import get_password_hash
@@ -18,7 +18,7 @@ settings = CoreSettings()
 
 
 async def setup_core():
-    module_service: ModuleService = get_module_service()
+    module_service: Modulery = get_module_service()
     permission_service: PermissionService = get_permission_service()
 
     core = await module_service.get(name='core')

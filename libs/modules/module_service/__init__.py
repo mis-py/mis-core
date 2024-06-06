@@ -1,1 +1,1 @@
-from .module_service import ModuleService
+from .modulery import Modulery

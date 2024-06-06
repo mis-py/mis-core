@@ -145,3 +145,4 @@ def read_module_manifest(module_name: str) -> ModuleManifest | None:
     except ValidationError as error:
         logger.error(f"[{module_name}] Invalid manifest.json content! {error}")
         return None
+

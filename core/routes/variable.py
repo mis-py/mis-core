@@ -10,7 +10,7 @@ from core.dependencies.services import get_variable_service, get_team_service, \
 from core.dependencies.path import get_module_by_id
 from core.schemas.variable import VariableResponse, VariableValueResponse
 from core.schemas.variable import UpdateVariable
-from core.services.module import ModuleService
+from core.services.module import Modulery
 from core.services.team import TeamService
 from core.services.user import UserService
 
@@ -41,7 +41,7 @@ router = APIRouter()
 )
 async def get_global_variables(
         variable_service: Annotated[VariableService, Depends(get_variable_service)],
-        module_service: Annotated[ModuleService, Depends(get_module_service)],
+        module_service: Annotated[Modulery, Depends(get_module_service)],
         # is_global: bool = Query(default=None),
         module_id: int = Query(default=None),
         module_name: str = Query(default=None),
@@ -99,7 +99,7 @@ async def get_local_variables(
 )
 async def set_global_variables(
         variable_service: Annotated[VariableService, Depends(get_variable_service)],
-        module_service: Annotated[ModuleService, Depends(get_module_service)],
+        module_service: Annotated[Modulery, Depends(get_module_service)],
         variables: list[UpdateVariable],
         module_id: int = Query(default=None)
 ):

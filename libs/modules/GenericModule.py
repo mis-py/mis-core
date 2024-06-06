@@ -1,7 +1,7 @@
 from loguru import logger
 
 from core.db.dataclass import AppState
-from core.dependencies.services import get_variable_service
+
 from core.exceptions import MISError
 
 from libs.eventory import Eventory
@@ -30,26 +30,13 @@ class GenericModule(BaseModule):
     # ):
     # self.sender: Optional[Callable] = notification_sender
 
-    async def _set_state(self, state: AppState) -> None:
-        self._model.state = state
-        await self._model.save()
-
-    def get_state(self) -> AppState:
-        return self._model.state
-
-    def get_id(self) -> int:
-        return self._model.pk
-
-    def is_enabled(self) -> bool:
-        return self._model.enabled
-
-    async def pre_init(self) -> bool:
+    async def pre_init(self, application) -> bool:
         """
         pre_init calls automatically on system startup
         """
         try:
             for component in self.pre_init_components:
-                await component.bind(self).pre_init()
+                await component.bind(self).pre_init(application)
                 logger.debug(f'[{self.name}] component {component.__class__.__name__} pre_init finished')
 
             # if all components pre_init success
@@ -73,22 +60,14 @@ class GenericModule(BaseModule):
 
         return True
 
-    async def init(self, application, from_system=False) -> bool:
-        if not from_system and self._model.state not in [AppState.SHUTDOWN, AppState.PRE_INITIALIZED]:
-            raise MISError("Can not init module that is not in 'SHUTDOWN' or 'PRE_INITIALIZED' or 'ERROR' state")
-
+    async def init(self) -> bool:
         try:
             for component in self.components:
-                await component.init(application, self._model, self._is_created)
+                await component.init(self._model, self._is_created)
                 logger.debug(f'[{self.name}] component {component.__class__.__name__} init finished')
 
-            # if all components init success
             if self.init_event:
                 await self.init_event(self)
-
-            # not change state if it is system call
-            if not from_system:
-                await self._set_state(AppState.INITIALIZED)
 
             return True
 
@@ -96,28 +75,16 @@ class GenericModule(BaseModule):
             logger.exception(error)
             logger.error(f"[{self.name}] Component and module init failed. {error.__class__.__name__}")
 
-            # await self._set_state(Module.AppState.ERROR)
-
         return False
 
-    async def start(self, from_system=False) -> bool:
-        # if self._model.state == Module.AppState.ERROR:
-        #     raise MISError("Can not start module that is in 'ERROR' state")
-        if not from_system and self._model.state not in [AppState.STOPPED, AppState.INITIALIZED]:
-            raise MISError("Can not start module that not in 'STOPPED' or 'INITIALIZED' state ")
-
+    async def start(self) -> bool:
         try:
             for component in self.components:
                 await component.start()
                 logger.debug(f'[{self.name}] component {component.__class__.__name__} started')
 
-            # if all components start success
             if self.start_event:
                 await self.start_event(self)
-
-            # not change state if it is system call
-            if not from_system:
-                await self._set_state(AppState.RUNNING)
 
             return True
 
@@ -125,16 +92,9 @@ class GenericModule(BaseModule):
             logger.exception(error)
             logger.error(f"[{self.name}] Component and module start failed. {error.__class__.__name__}")
 
-            # await self._set_state(Module.AppState.ERROR)
-
         return False
 
-    async def stop(self, from_system=False) -> bool:
-        # if self._model.state == Module.AppState.ERROR:
-        #     raise MISError("Can not stop module that is in 'ERROR' state")
-        if not from_system and self._model.state != AppState.RUNNING:
-            raise MISError("Can not stop module that not in 'RUNNING' state ")
-
+    async def stop(self) -> bool:
         for component in self.components:
             await component.stop()
             logger.debug(f'[{self.name}] component {component.__class__.__name__} stopped')
@@ -142,18 +102,9 @@ class GenericModule(BaseModule):
         if self.stop_event:
             await self.stop_event(self)
 
-        # not change state if it is system call
-        if not from_system:
-            await self._set_state(AppState.STOPPED)
-
         return True
 
-    async def shutdown(self, from_system=False) -> bool:
-        # if self._model.state == Module.AppState.ERROR:
-        #     raise MISError("Can not shutdown module that is in 'ERROR' state")
-        if not from_system and self._model.state not in [AppState.STOPPED, AppState.INITIALIZED, AppState.PRE_INITIALIZED]:
-            raise MISError("Can not shutdown module that not in 'STOPPED', 'INITIALIZED', 'PRE_INITIALIZED' state")
-
+    async def shutdown(self) -> bool:
         for component in self.components:
             await component.shutdown()
             logger.debug(f'[{self.name}] component {component.__class__.__name__} shutdown finished')
@@ -161,24 +112,7 @@ class GenericModule(BaseModule):
         if self.shutdown_event:
             await self.shutdown_event(self)
 
-        # not change state if it is system call
-        if not from_system:
-            await self._set_state(AppState.SHUTDOWN)
-
         return True
-
-    async def get_context(self, user=None, team=None) -> AppContext:
-        """Context for jobs and other services.
-        If user or team is defined then variables will be available in context along with module variables"""
-        variable_service = get_variable_service()
-
-        return AppContext(
-            module=self,
-            user=user,
-            team=team,
-            variables=await variable_service.make_variable_set(user=user, team=team, app=self._model),
-            routing_keys=await Eventory.make_routing_keys_set(app=self._model)
-        )
 
     def set_manifest(self, manifest: 'ModuleManifest'):
         self.name = manifest.name
