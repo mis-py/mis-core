@@ -18,7 +18,7 @@ router = APIRouter()
 )
 async def lead_endpoint(
         new_lead: LeadRecordIn,
-        ctx: AppContext = Annotated[AppContext, Depends(get_userless_app_context)]
+        ctx: Annotated[AppContext, Depends(get_userless_app_context)]
 ):
     await LeadRecordService().add_new_record(ctx=ctx, new_lead=new_lead)
 

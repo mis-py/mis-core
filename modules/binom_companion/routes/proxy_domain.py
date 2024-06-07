@@ -50,7 +50,7 @@ async def create_proxy_domain(proxy_domain_in: ProxyDomainCreateModel):
     response_model=MisResponse[list[ProxyDomainModel]])
 async def create_proxy_domain_bulk(
         proxy_domains_in: ProxyDomainCreateBulkModel,
-        ctx: AppContext = Annotated[AppContext, Depends(get_app_context)]
+        ctx: Annotated[AppContext, Depends(get_app_context)]
 ):
     proxy_domains = await ProxyDomainService().create_bulk(proxy_domains_in, ctx)
 

@@ -1,5 +1,5 @@
 from core.utils.module import AppContext
-from libs.modules.components import ScheduledTasks
+from core.utils.module.components import ScheduledTasks
 from ..service import ReplacementGroupService
 
 scheduled_tasks = ScheduledTasks()

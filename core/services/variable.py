@@ -179,14 +179,16 @@ class VariableService(BaseService):
         VariableValuesSet = create_model(
             'VariableValuesSet',
             __base__=VariableSet,
-            _app=app,
-            _user=user,
-            _team=team,
             **fields
         )
 
         # Initialize model with data
-        variable_set = VariableValuesSet(**values)
+        variable_set = VariableValuesSet(
+            app=app,
+            user=user,
+            team=team,
+            **values
+        )
 
         self._variables.append(variable_set)
 

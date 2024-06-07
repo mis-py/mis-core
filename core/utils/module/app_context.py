@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Any
 
 from core.db.models import User, Team
 from core.utils.variable_set import VariableSet
@@ -11,10 +11,10 @@ class AppContext:
     app_name: str
 
     # TODO try to pass type reference of actual module variable set
-    variables: 'VariableSet'
-    routing_keys: 'object'
-    user: Optional['User'] = None
-    team: Optional['Team'] = None
+    variables: VariableSet
+    routing_keys: Any
+    user: Optional[User] = None
+    team: Optional[Team] = None
 
     # async def publish_event(self, obj: Message, routing_key: str):
     #     # import it here due to partial initialized import error

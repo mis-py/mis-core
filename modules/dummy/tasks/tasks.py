@@ -1,11 +1,12 @@
 from loguru import logger
 
 from core.utils.notification.message import Message
-from ..config import ModuleSettings
-from libs.modules.components import ScheduledTasks
+from core.utils.module.components import ScheduledTasks
 from core.utils.module import AppContext
+
 from libs.eventory import Eventory
 
+from ..config import ModuleSettings
 
 scheduled_tasks = ScheduledTasks()
 config = ModuleSettings()

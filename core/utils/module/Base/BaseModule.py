@@ -5,9 +5,9 @@ from tortoise.models import Model
 
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from .BaseComponent import BaseComponent
-    from core.schemas.module import ModuleManifest, ModuleDependency
+# if TYPE_CHECKING:
+from .BaseComponent import BaseComponent
+from core.schemas.module import ModuleManifest, ModuleDependency
 
 
 class BaseModule(ABC):
@@ -58,8 +58,8 @@ class BaseModule(ABC):
             shutdown_event: Callable = None,
             start_event: Callable = None,
             stop_event: Callable = None,
-            pre_init_components: list[BaseComponent] = None,
-            components: list[BaseComponent] = None
+            pre_init_components: list['BaseComponent'] = None,
+            components: list['BaseComponent'] = None
     ):
         self.pre_init_event = pre_init_event
         self.init_event = init_event

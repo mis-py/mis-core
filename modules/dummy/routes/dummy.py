@@ -71,7 +71,7 @@ async def delete_dummy(
 async def get_dummy_data(
         dummy_model_service: Annotated[DummyService, Depends(get_dummy_model_service)],
         routing_keys: RoutingKeysDep,
-        ctx: AppContext = Annotated[AppContext, Depends(get_app_context)],
+        ctx: Annotated[AppContext, Depends(get_app_context)],
 ):
     dummy_list = await dummy_model_service.filter()
 

@@ -1,8 +1,6 @@
 from typing import Optional
 from loguru import logger
 
-from core.dependencies.module import get_app_context
-from core.services.module import ModuleService
 from core.utils.common import validate_task_extra
 from core.db.dataclass import AppState, StatusTask
 from core.db.models import ScheduledJob, User, Team, Module
@@ -12,7 +10,6 @@ from core.repositories.scheduled_job import IScheduledJobRepository
 from core.schemas.task import JobCreate, JobTrigger, TaskResponse
 from core.services.base.base_service import BaseService
 from core.utils.task import get_trigger, format_trigger
-from core.utils.types import type_convert
 from core.utils.scheduler import TaskTemplate
 from libs.schedulery import Schedulery
 
@@ -218,7 +215,8 @@ class SchedulerService(BaseService):
         )
         await self.scheduled_job_repo.save(obj=job_db)
 
-        context = await ModuleService.get_app_context(user=user, team=await user.team, app=task.module._model)
+        from core.dependencies.services import get_app_context
+        context = await get_app_context(user=user, team=await user.team, app=task.module._model)
 
         job = Schedulery.add_job(
             task_template=task,
@@ -241,7 +239,7 @@ class SchedulerService(BaseService):
                 run_at_startup=False
             )
 
-    async def restore_job(self, saved_job, module_name, run_at_startup):
+    async def restore_job(self, saved_job: ScheduledJob, module_name, run_at_startup):
         # TODO in case of saved job has no task then do nothing?
         task = self.get_task(saved_job.task_name, module_name)
 
@@ -251,7 +249,8 @@ class SchedulerService(BaseService):
             logger.warning(f"[SchedulerService] Unknown trigger used in {saved_job.job_id}, using default one.")
             trigger = task.trigger
 
-        context = await ModuleService.get_app_context(user=saved_job.user, team=saved_job.team, app=task.module._model)
+        from core.dependencies.services import get_app_context
+        context = await get_app_context(user=saved_job.user, team=saved_job.team, app=task.module._model)
 
         job = Schedulery.add_job(
             task_template=task,
@@ -259,6 +258,6 @@ class SchedulerService(BaseService):
             run_at_startup=run_at_startup,
             context=context,
             trigger=trigger,
-            kwargs=saved_job.extra,
+            kwargs=saved_job.extra_data,
         )
         logger.info(f'[SchedulerService]: Restored job [{saved_job.id}]{job.name}')

@@ -2,7 +2,6 @@ from loguru import logger
 
 from core.db.dataclass import AppState
 from core.db.models import Module
-from core.dependencies.services import get_variable_service
 from core.exceptions import MISError
 from core.repositories.module import IModuleRepository
 from core.schemas.module import ModuleManifestResponse, ModuleManifest
@@ -267,14 +266,3 @@ class ModuleService(BaseService):
             'enabled': True,
             'state': AppState.RUNNING,
         })
-
-    @staticmethod
-    async def get_app_context(app: Module, user=None, team=None):
-        variable_service = get_variable_service()
-        return AppContext(
-            user=user,
-            team=team,
-            variables=await variable_service.make_variable_set(user=user, team=user.team, app=app),
-            app_name=app.name,
-            routing_keys=await Eventory.make_routing_keys_set(app=app)
-        )

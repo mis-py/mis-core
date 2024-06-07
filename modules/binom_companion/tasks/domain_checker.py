@@ -1,7 +1,7 @@
 from loguru import logger
 
 from core.utils.module import AppContext
-from libs.modules.components import ScheduledTasks
+from core.utils.module.components import ScheduledTasks
 from ..service import YandexBrowserCheckService, ReplacementGroupService, TrackerInstanceService
 
 scheduled_tasks = ScheduledTasks()

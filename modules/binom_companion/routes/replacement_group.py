@@ -108,7 +108,7 @@ async def check_fetch_replacement_group(replacement_group_id: int):
 )
 async def change_proxy_domain(
     replacement_group_ids: ReplacementGroupChangeProxyIds,
-    ctx: AppContext = Annotated[AppContext, Depends(get_app_context)]
+    ctx: Annotated[AppContext, Depends(get_app_context)]
 ):
     change_result = await ReplacementGroupService().proxy_change(
         ctx,

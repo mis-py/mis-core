@@ -78,7 +78,8 @@ class EventManager(BaseComponent):
             logger.debug(f'[EventManager]: Register consumer {template.func.__name__} from {self.module.name}')
 
             # # consumers has only app context coz no user or team is running consumer
-            context = await ModuleService.get_app_context(app=app_db_model)
+            from core.dependencies.services import get_app_context
+            context = await get_app_context(app=app_db_model)
 
             consumer = await Eventory.register_consumer(
                 app_name=self.module.name,
@@ -210,9 +211,12 @@ class APIRoutes(BaseComponent):
         self.application = None
 
     async def pre_init(self, application):
+        logger.debug(application)
         self.application = application
 
     async def init(self, app_db_model, is_created: bool):
+        logger.debug(app_db_model)
+        logger.debug(is_created)
         pass
 
     async def start(self):
@@ -353,7 +357,9 @@ class ModuleLogs(BaseComponent):
             matched = re.match('modules\\.(.+?(?=\\.))', x['name'])
             if matched:
                 return matched.group(1) == self.module.name
-        ctx: AppContext = await ModuleService.get_app_context(app=app_db_model)
+
+        from core.dependencies.services import get_app_context
+        ctx: AppContext = await get_app_context(app=app_db_model)
 
         logger.add(
             LOGS_DIR / f"{self.module.name}/{self.module.name}.log",
