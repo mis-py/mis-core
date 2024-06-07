@@ -1,11 +1,13 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Security, Query, Depends
 from loguru import logger
 
 
 from core.utils.schema import PageResponse, MisResponse
 from core.dependencies.security import get_current_user
-from core.dependencies.misc import get_app_context
-from libs.modules import AppContext
+from core.dependencies.module import get_app_context
+from core.utils.module import AppContext
 
 from ..schemas.proxy_domain import (
     ProxyDomainModel,
@@ -48,7 +50,7 @@ async def create_proxy_domain(proxy_domain_in: ProxyDomainCreateModel):
     response_model=MisResponse[list[ProxyDomainModel]])
 async def create_proxy_domain_bulk(
         proxy_domains_in: ProxyDomainCreateBulkModel,
-        ctx: AppContext = Depends(get_app_context)
+        ctx: AppContext = Annotated[AppContext, Depends(get_app_context)]
 ):
     proxy_domains = await ProxyDomainService().create_bulk(proxy_domains_in, ctx)
 

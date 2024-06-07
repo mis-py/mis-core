@@ -1,7 +1,8 @@
 from typing import Optional
 from loguru import logger
-from tortoise import transactions
 
+from core.dependencies.module import get_app_context
+from core.services.module import ModuleService
 from core.utils.common import validate_task_extra
 from core.db.dataclass import AppState, StatusTask
 from core.db.models import ScheduledJob, User, Team, Module
@@ -127,7 +128,6 @@ class SchedulerService(BaseService):
 
         return await self.get(id=job_id, prefetch_related=['user', 'team', 'app'])
 
-    @transactions.atomic()
     async def cancel_job(self, job_id: int):
         Schedulery.remove_job(job_id)
 
@@ -160,7 +160,6 @@ class SchedulerService(BaseService):
                 ))
         return res
 
-    @transactions.atomic()
     async def create_scheduled_job(
             self,
             job_in: JobCreate,
@@ -219,7 +218,7 @@ class SchedulerService(BaseService):
         )
         await self.scheduled_job_repo.save(obj=job_db)
 
-        context = await task.module.get_context(user=user, team=await user.team)
+        context = await ModuleService.get_app_context(user=user, team=await user.team, app=task.module._model)
 
         job = Schedulery.add_job(
             task_template=task,
@@ -252,7 +251,7 @@ class SchedulerService(BaseService):
             logger.warning(f"[SchedulerService] Unknown trigger used in {saved_job.job_id}, using default one.")
             trigger = task.trigger
 
-        context = await task.module.get_context(user=saved_job.user, team=saved_job.team)
+        context = await ModuleService.get_app_context(user=saved_job.user, team=saved_job.team, app=task.module._model)
 
         job = Schedulery.add_job(
             task_template=task,

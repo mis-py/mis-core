@@ -1,4 +1,4 @@
-from libs.modules.AppContext import AppContext
+from core.utils.module import AppContext
 from libs.modules.components import ScheduledTasks
 from ..service import ReplacementGroupService
 

@@ -3,13 +3,13 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .GenericModule import GenericModule
+    from .BaseModule import BaseModule
 
 
-class Component(ABC):
-    module: 'GenericModule'
+class BaseComponent(ABC):
+    module: 'BaseModule'
 
-    def bind(self, module: 'GenericModule'):
+    def bind(self, module: 'BaseModule'):
         self.module = module
         return self
 

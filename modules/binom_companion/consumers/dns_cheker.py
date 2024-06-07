@@ -3,7 +3,7 @@ import asyncio
 from loguru import logger
 from core.utils.notification.message import Message
 
-from libs.modules.AppContext import AppContext
+from core.utils.module import AppContext
 from libs.modules.components import EventManager
 from ..service import ProxyDomainService, DNSCheckerService
 from ..config import RoutingKeys

@@ -3,14 +3,11 @@ from typing import Annotated
 from fastapi import Request, Depends
 
 from config import CoreSettings
-from core.db.models import Module, User
-from core.dependencies.security import get_current_user
+from core.db.models import Module
 from core.exceptions import NotFound
 from core.utils.schema import Params
 from libs.eventory import Eventory
 from libs.eventory.utils import RoutingKeysSet
-from libs.modules.AppContext import AppContext
-from libs.modules.module_service import Modulery
 from libs.redis import RedisService
 
 settings = CoreSettings()
@@ -34,27 +31,9 @@ async def get_routing_keys(
     return await Eventory.make_routing_keys_set(app=module)
 
 
-async def get_app_context(
-        user: User = Depends(get_current_user),
-        module: Module = Depends(get_current_app)
-):
-    await user.fetch_related('team')
-    return await Modulery.make_module_context(module_name=module.name, user=user, team=user.team)
-
-
-async def get_userless_app_context(
-        module: Module = Depends(get_current_app)
-):
-    return await Modulery.make_module_context(module_name=module.name)
-
-
 async def get_redis_service() -> RedisService:
     return RedisService()
 
-
-AppContextDep = Annotated[AppContext, Depends(get_app_context)]
-
-UserlessAppContextDep = Annotated[AppContext, Depends(get_userless_app_context)]
 
 PaginateParamsDep = Annotated[Params, Depends()]
 

@@ -1,15 +1,8 @@
-from loguru import logger
-
-from const import DEFAULT_ADMIN_USERNAME
-from core.dependencies.services import get_g_access_group_service, get_user_service, get_guardian_service
-from core.services.guardian_service import GAccessGroupService, GuardianService
-from core.services.user import UserService
-from libs.modules.GenericModule import GenericModule
+from core.utils.module.generic_module import GenericModule
 from libs.modules.components import Variables, ModuleLogs, TortoiseModels, EventRoutingKeys, APIRoutes
 
 from .config import UserSettings, RoutingKeys, ModuleSettings
 from .consumers import event_consumers
-from .db.models import DummyModel
 from .routes import router
 from .tasks import scheduled_tasks
 

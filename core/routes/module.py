@@ -9,12 +9,11 @@ from core.dependencies.misc import  PaginateParamsDep
 from core.dependencies.services import get_module_service
 from core.dependencies.path import get_module_by_id
 from core.schemas.module import ModuleManifestResponse
-from core.services import module
+from core.services.module import ModuleService
 from core.utils.schema import PageResponse, MisResponse
 # from .schema import BundleAppModel
 
-from libs.modules.exceptions import LoadModuleError, StartModuleError
-from libs.modules.module_service import Modulery
+from core.exceptions.exceptions import StartModuleError, LoadModuleError
 
 router = APIRouter()
 
@@ -25,7 +24,7 @@ router = APIRouter()
     response_model=PageResponse[ModuleManifestResponse]
 )
 async def get_modules(
-        module_service: Annotated[module.Modulery, Depends(get_module_service)],
+        module_service: Annotated[ModuleService, Depends(get_module_service)],
         paginate_params: PaginateParamsDep, module_id: int = None, module_name: str = None,
 ):
     if module_id:
@@ -49,18 +48,19 @@ async def get_modules(
     response_model=MisResponse[ModuleManifestResponse]
 )
 async def init_module(
-        module_service: Annotated[module.Modulery, Depends(get_module_service)],
-        request: Request,
+        module_service: Annotated[ModuleService, Depends(get_module_service)],
         module: Module = Depends(get_module_by_id),
 ):
-    inited_module = await Modulery.init_module(request.app, module.name)
+    await module_service.init(module.id)
+
+    await module.refresh_from_db()
 
     module_response = ModuleManifestResponse(
-        id=inited_module.get_id(),
-        name=inited_module.name,
-        enabled=inited_module.is_enabled(),
-        state=inited_module.get_state(),
-        manifest=module_service.get_manifest(inited_module.name)
+        id=module.id,
+        name=module.name,
+        enabled=module.enabled,
+        state=module.state,
+        manifest=module_service.get_manifest(module.name)
     )
 
     return MisResponse[ModuleManifestResponse](result=module_response)
@@ -72,17 +72,19 @@ async def init_module(
     response_model=MisResponse[ModuleManifestResponse]
 )
 async def start_module(
-        module_service: Annotated[module.Modulery, Depends(get_module_service)],
+        module_service: Annotated[ModuleService, Depends(get_module_service)],
         module: Module = Depends(get_module_by_id),
 ):
-    started_module = await Modulery.start_module(module.name)
+    await module_service.start(module.id)
+
+    await module.refresh_from_db()
 
     module_response = ModuleManifestResponse(
-        id=started_module.get_id(),
-        name=started_module.name,
-        enabled=started_module.is_enabled(),
-        state=started_module.get_state(),
-        manifest=module_service.get_manifest(started_module.name)
+        id=module.id,
+        name=module.name,
+        enabled=module.enabled,
+        state=module.state,
+        manifest=module_service.get_manifest(module.name)
     )
 
     return MisResponse[ModuleManifestResponse](result=module_response)
@@ -94,17 +96,19 @@ async def start_module(
     response_model=MisResponse[ModuleManifestResponse]
 )
 async def stop_module(
-        module_service: Annotated[module.Modulery, Depends(get_module_service)],
+        module_service: Annotated[ModuleService, Depends(get_module_service)],
         module: Module = Depends(get_module_by_id)
 ):
-    stopped_module = await Modulery.stop_module(module.name)
+    await module_service.stop(module.id)
+
+    await module.refresh_from_db()
 
     module_response = ModuleManifestResponse(
-        id=stopped_module.get_id(),
-        name=stopped_module.name,
-        enabled=stopped_module.is_enabled(),
-        state=stopped_module.get_state(),
-        manifest=module_service.get_manifest(stopped_module.name)
+        id=module.id,
+        name=module.name,
+        enabled=module.enabled,
+        state=module.state,
+        manifest=module_service.get_manifest(module.name)
     )
 
     return MisResponse[ModuleManifestResponse](result=module_response)
@@ -116,10 +120,10 @@ async def stop_module(
     response_model=MisResponse
 )
 async def shutdown_application(
-        module_service: Annotated[module.Modulery, Depends(get_module_service)],
+        module_service: Annotated[ModuleService, Depends(get_module_service)],
         module: Module = Depends(get_module_by_id),
 ):
-    await Modulery.shutdown_module(module.name)
+    await module_service.shutdown(module.id)
 
     return MisResponse()
 

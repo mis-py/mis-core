@@ -3,7 +3,7 @@ from loguru import logger
 from core.utils.notification.message import Message
 from ..config import ModuleSettings
 from libs.modules.components import ScheduledTasks
-from libs.modules.AppContext import AppContext
+from core.utils.module import AppContext
 from libs.eventory import Eventory
 
 

@@ -1,8 +1,12 @@
-from fastapi import APIRouter, Security, Query
+from typing import Annotated
 
-from core.dependencies.misc import AppContextDep, PaginateParamsDep
+from fastapi import APIRouter, Security, Query, Depends
+
+from core.dependencies.misc import PaginateParamsDep
+from core.dependencies.module import get_app_context
 from core.dependencies.security import get_current_user
 from core.utils.schema import PageResponse, MisResponse
+from core.utils.module import AppContext
 
 from ..schemas.replacement_group import ReplacementGroupModel, ReplacementGroupCreateModel, ReplacementGroupUpdateModel, \
     ReplacementGroupChangeProxyIds
@@ -104,7 +108,7 @@ async def check_fetch_replacement_group(replacement_group_id: int):
 )
 async def change_proxy_domain(
     replacement_group_ids: ReplacementGroupChangeProxyIds,
-    ctx: AppContextDep
+    ctx: AppContext = Annotated[AppContext, Depends(get_app_context)]
 ):
     change_result = await ReplacementGroupService().proxy_change(
         ctx,

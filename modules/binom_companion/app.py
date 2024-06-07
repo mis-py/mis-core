@@ -1,4 +1,4 @@
-from libs.modules.GenericModule import GenericModule
+from core.utils.module.generic_module import GenericModule
 from libs.modules.components import Variables, ModuleLogs, TortoiseModels, EventRoutingKeys, APIRoutes
 
 from .config import UserSettings, RoutingKeys, ModuleSettings

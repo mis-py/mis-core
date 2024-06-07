@@ -2,7 +2,7 @@ from loguru import logger
 
 from datetime import datetime, timedelta, timezone
 
-from libs.modules.AppContext import AppContext
+from core.utils.module import AppContext
 from libs.modules.components import ScheduledTasks
 from ..service import LeadRecordService
 

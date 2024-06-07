@@ -5,10 +5,9 @@ from typing import Literal
 from apscheduler.triggers.base import BaseTrigger
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
-from fastapi import Depends
 from fastapi.routing import APIRoute, APIRouter
 from loguru import logger
-from tortoise.exceptions import DoesNotExist, IntegrityError
+from tortoise.exceptions import IntegrityError
 from aiormq import DuplicateConsumerTag
 
 # from core.db import ScheduledJob
@@ -17,16 +16,16 @@ from aiormq import DuplicateConsumerTag
 from config import CoreSettings
 from const import DEFAULT_ADMIN_USERNAME, LOGS_DIR, MODULES_DIR
 from core.db.dataclass import StatusTask
-from core.db.models import ScheduledJob
 from core.dependencies.services import get_permission_service, get_variable_service, get_routing_key_service, \
     get_user_service, get_scheduler_service
+from core.services.module import ModuleService
 from core.services.notification import RoutingKeyService
 from core.services.permission import PermissionService
 from core.services.scheduler import SchedulerService
 from core.services.user import UserService
 from core.services.variable import VariableService
 from core.utils.common import pydatic_model_to_dict, signature_to_dict
-from libs.modules.AppContext import AppContext
+from core.utils.module import AppContext
 
 from libs.schedulery.schedulery import Schedulery
 from core.utils.scheduler import TaskTemplate
@@ -34,20 +33,20 @@ from libs.eventory.eventory import Eventory
 from libs.eventory.consumer import Consumer
 from libs.eventory.utils import EventTemplate
 from libs.tortoise_manager import TortoiseManager
-from libs.modules.Component import Component
+from core.utils.module.Base.BaseComponent import BaseComponent
 
 core_settings = CoreSettings()
 
 
-class TortoiseModels(Component):
+class TortoiseModels(BaseComponent):
 
-    async def pre_init(self):
+    async def pre_init(self, application):
         logger.debug(f"[{self.module.name}] Pre-Initialising models")
 
         await TortoiseManager.add_models(self.module.name, [f'modules.{self.module.name}.db.models'])
         await TortoiseManager.add_migrations(self.module.name, str(MODULES_DIR / self.module.name / "migrations"))
 
-    async def init(self, application, app_db_model, is_created: bool):
+    async def init(self, app_db_model, is_created: bool):
         pass
 
     async def start(self):
@@ -60,7 +59,7 @@ class TortoiseModels(Component):
         pass
 
 
-class EventManager(Component):
+class EventManager(BaseComponent):
     def __init__(self):
         self.events: list[EventTemplate] = []
         self.consumers: list[Consumer] = []
@@ -71,15 +70,15 @@ class EventManager(Component):
             return func
         return _wrapper
 
-    async def pre_init(self):
+    async def pre_init(self, application):
         pass
 
-    async def init(self, application, app_db_model, is_created: bool):
+    async def init(self, app_db_model, is_created: bool):
         for template in self.events:
             logger.debug(f'[EventManager]: Register consumer {template.func.__name__} from {self.module.name}')
 
-            # consumers has only app context coz no user or team is running consumer
-            context = await self.module.get_context()
+            # # consumers has only app context coz no user or team is running consumer
+            context = await ModuleService.get_app_context(app=app_db_model)
 
             consumer = await Eventory.register_consumer(
                 app_name=self.module.name,
@@ -113,7 +112,7 @@ class EventManager(Component):
         self.consumers.clear()
 
 
-class ScheduledTasks(Component):
+class ScheduledTasks(BaseComponent):
     def __init__(self):
         # list of all declared tasks on init
         self._tasks: list[TaskTemplate] = []
@@ -159,10 +158,10 @@ class ScheduledTasks(Component):
     def extend(self, tasks: list[TaskTemplate]):
         self._tasks.extend(tasks)
 
-    async def pre_init(self):
+    async def pre_init(self, application):
         pass
 
-    async def init(self, application, app_db_model, is_created: bool):
+    async def init(self, app_db_model, is_created: bool):
         """
         Add all tasks to SchedulerService and restore jobs saved in db always in paused state.
         :return:
@@ -205,7 +204,7 @@ class ScheduledTasks(Component):
         pass
 
 
-class APIRoutes(Component):
+class APIRoutes(BaseComponent):
     def __init__(self, router: APIRouter):
         self.router: APIRouter = router
         self.application = None
@@ -253,15 +252,15 @@ class APIRoutes(Component):
         self.application.setup()
 
 
-class Variables(Component):
+class Variables(BaseComponent):
     def __init__(self, module_variables, user_variables):
         self.module_variables = module_variables
         self.user_variables = user_variables
 
-    async def pre_init(self):
+    async def pre_init(self, application):
         pass
 
-    async def init(self, application, app_db_model, is_created: bool):
+    async def init(self, app_db_model, is_created: bool):
         logger.debug(f'[Variables] Connecting variables for {self.module.name}')
 
         await self.save_permissions(app_db_model)
@@ -341,20 +340,20 @@ class Variables(Component):
         logger.debug(f'[Variables] Deleted {deleted_count} unused variables for {self.module.name}')
 
 
-class ModuleLogs(Component):
+class ModuleLogs(BaseComponent):
     """
     Module creating separate handler for save module logs to file on disk
     """
 
-    def pre_init(self):
+    def pre_init(self, application):
         pass
 
-    async def init(self, application, app_db_model, is_created: bool):
+    async def init(self, app_db_model, is_created: bool):
         def filter_module_logs(x):
             matched = re.match('modules\\.(.+?(?=\\.))', x['name'])
             if matched:
                 return matched.group(1) == self.module.name
-        ctx: AppContext = await self.module.get_context()
+        ctx: AppContext = await ModuleService.get_app_context(app=app_db_model)
 
         logger.add(
             LOGS_DIR / f"{self.module.name}/{self.module.name}.log",
@@ -375,14 +374,14 @@ class ModuleLogs(Component):
         pass
 
 
-class EventRoutingKeys(Component):
-    async def pre_init(self):
+class EventRoutingKeys(BaseComponent):
+    async def pre_init(self, application):
         pass
 
     def __init__(self, routing_keys):
         self.routing_keys = routing_keys
 
-    async def init(self, application, app_db_model, is_created: bool):
+    async def init(self, app_db_model, is_created: bool):
         await self.save_routing_keys(app_db_model)
         logger.debug(f'[RoutingKey] Routing keys saved for {self.module.name}')
 

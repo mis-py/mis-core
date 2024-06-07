@@ -1,17 +1,10 @@
 from loguru import logger
 
-from core.db.dataclass import AppState
-
-from core.exceptions import MISError
-
-from libs.eventory import Eventory
-
-from .utils.BaseModule import BaseModule
-from .AppContext import AppContext
-
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from .utils.ModuleManifest import ModuleManifest
+    from core.schemas.module import ModuleManifest
+
+from .Base.BaseModule import BaseModule
 
 
 class GenericModule(BaseModule):
@@ -112,6 +105,10 @@ class GenericModule(BaseModule):
         if self.shutdown_event:
             await self.shutdown_event(self)
 
+        return True
+
+    async def refresh_from_db(self) -> bool:
+        await self._model.refresh_from_db()
         return True
 
     def set_manifest(self, manifest: 'ModuleManifest'):

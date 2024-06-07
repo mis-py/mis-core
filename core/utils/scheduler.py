@@ -5,7 +5,7 @@ from loguru import logger
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 
-from libs.modules.GenericModule import GenericModule
+from core.utils.module.generic_module import GenericModule
 
 
 def job_wrapper(func):

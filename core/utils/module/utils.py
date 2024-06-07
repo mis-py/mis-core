@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+from typing import Optional
+
 from loguru import logger
 import importlib
 import sys
@@ -7,7 +10,8 @@ from packaging.version import Version
 from pydantic import ValidationError
 
 from const import MODULES_DIR
-from libs.modules.utils.ModuleManifest import ModuleManifest, ModuleDependency
+from core.schemas.module import ModuleManifest, ModuleDependency
+from core.utils.module import GenericModule
 
 
 def import_module(app_name: str, package: str = 'modules'):
@@ -146,3 +150,8 @@ def read_module_manifest(module_name: str) -> ModuleManifest | None:
         logger.error(f"[{module_name}] Invalid manifest.json content! {error}")
         return None
 
+
+@dataclass
+class LoadedModule:
+    manifest: ModuleManifest
+    instance: Optional[GenericModule] = None
