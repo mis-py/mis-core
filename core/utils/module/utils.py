@@ -1,6 +1,3 @@
-from dataclasses import dataclass
-from typing import Optional
-
 from loguru import logger
 import importlib
 import sys
@@ -10,8 +7,11 @@ from packaging.version import Version
 from pydantic import ValidationError
 
 from const import MODULES_DIR
+from core.db.models import Module
+from core.dependencies.variable_service import get_variable_service
 from core.schemas.module import ModuleManifest, ModuleDependency
-from core.utils.module import GenericModule
+from core.utils.app_context import AppContext
+from libs.eventory import Eventory
 
 
 def import_module(app_name: str, package: str = 'modules'):
@@ -151,7 +151,12 @@ def read_module_manifest(module_name: str) -> ModuleManifest | None:
         return None
 
 
-@dataclass
-class LoadedModule:
-    manifest: ModuleManifest
-    instance: Optional[GenericModule] = None
+async def get_app_context(app: Module, user=None, team=None):
+    variable_service = get_variable_service()
+    return AppContext(
+        user=user,
+        team=team,
+        variables=await variable_service.make_variable_set(user=user, team=await user.team if user else None, app=app),
+        app_name=app.name,
+        routing_keys=await Eventory.make_routing_keys_set(app=app)
+    )

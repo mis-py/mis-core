@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from core.dependencies.module import get_userless_app_context
+from core.dependencies.context import get_userless_app_context
 from core.utils.schema import MisResponse
 from core.utils.app_context import AppContext
 

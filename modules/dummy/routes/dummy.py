@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Security, Depends
 
 from core.dependencies.misc import RoutingKeysDep
-from core.dependencies.module import get_app_context
+from core.dependencies.context import get_app_context
 from core.dependencies.security import get_current_user
 from core.utils.schema import MisResponse, PageResponse
 from core.utils.app_context import AppContext

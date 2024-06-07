@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+from typing import Optional
+
 from loguru import logger
 
 from core.db.dataclass import AppState
@@ -6,14 +9,18 @@ from core.exceptions import MISError
 from core.repositories.module import IModuleRepository
 from core.schemas.module import ModuleManifestResponse, ModuleManifest
 from core.services.base.base_service import BaseService
-from core.utils.module import LoadedModule, GenericModule
-from core.utils.app_context import AppContext
+from core.utils.module import GenericModule
 from core.utils.module.utils import unload_module
 from core.utils.schema import PageResponse
-from libs.eventory import Eventory
 
 
 class ModuleService(BaseService):
+    # Class-container for internal use only
+    @dataclass
+    class LoadedModule:
+        manifest: ModuleManifest
+        instance: Optional[GenericModule] = None
+
     _loaded_modules: dict[str, LoadedModule] = {}
     _manifests: dict[str, ModuleManifest]
     # _core_consumer: Optional[Consumer]
@@ -25,7 +32,7 @@ class ModuleService(BaseService):
     @classmethod
     def add_manifest(cls, module_name: str, manifest: ModuleManifest):
         if module_name not in cls._loaded_modules:
-            cls._loaded_modules[module_name] = LoadedModule(manifest=manifest)
+            cls._loaded_modules[module_name] = cls.LoadedModule(manifest=manifest)
 
     @classmethod
     def add_instance(cls, module_name: str, instance: GenericModule):

@@ -11,7 +11,7 @@ from core.schemas.task import JobCreate, JobTrigger, TaskResponse
 from core.services.base.base_service import BaseService
 from core.utils.task import get_trigger, format_trigger
 from core.utils.scheduler import TaskTemplate
-from core.utils.module.app_context import get_app_context
+from core.utils.module import get_app_context
 from libs.schedulery import Schedulery
 
 
