@@ -1,22 +1,19 @@
-import asyncio
 import functools
-from asyncio import Task
 from collections import defaultdict
-from typing import Callable
+from typing import Callable, Optional, get_type_hints
 
 from loguru import logger
 import ujson
 from aio_pika import connect_robust, Message
-from aio_pika.abc import AbstractChannel, ExchangeType, AbstractRobustConnection
+from aio_pika.abc import AbstractChannel, ExchangeType, AbstractRobustConnection, AbstractIncomingMessage
 from aiormq import DuplicateConsumerTag, AMQPConnectionError
+from pydantic import BaseModel
 
-from core.repositories.routing_key import RoutingKeyRepository
-from core.services.notification import RoutingKeyService
+from core.utils.notification.message import EventMessage
+from core.utils.notification.recipient import Recipient
 
 from .consumer import Consumer
 from .config import RabbitSettings
-from .utils import RoutingKeysSet
-from ..modules import AppContext
 
 settings = RabbitSettings()
 
@@ -30,6 +27,9 @@ class Eventory:
 
     # Registered consumers
     _consumers: dict[str, list[Consumer]] = defaultdict(list)
+
+    # RabbitMQ exchange name
+    _exchange_name: str = 'eventory'
 
     @classmethod
     async def init(cls):
@@ -56,17 +56,35 @@ class Eventory:
             del cls._channels[name]
 
     @classmethod
-    async def register_consumer(cls, receiver: Callable, routing_key: str, channel_name: str, tag: str) -> Consumer:
+    async def register_consumer(
+            cls,
+            func: Callable,
+            routing_key: str,
+            channel_name: str,
+            tag: str = None,
+            extra_kwargs: dict = None,
+    ) -> Consumer:
         """
         Consumer is message receiver, can be declared for any function
         :param channel_name:
         :param routing_key:
-        :param receiver:
-        :param tag: - Tag for consumer
+        :param func: Consumer func
+        :param tag: Tag for consumer
+        :param extra_kwargs: Keyword arguments which will inject to func
         :return:
         """
+        if extra_kwargs is None:
+            extra_kwargs = {}
+
+        if tag is None:
+            # channel_name + func_name to avoid duplication
+            tag = f"{channel_name}:{func.__name__}"
+
+        # inject params to func
+        receiver = cls._inject_and_process_wrapper(func, extra_kwargs)
+
         channel = await cls.get_channel(channel_name)
-        exchange = await channel.declare_exchange("eventory", type=ExchangeType.DIRECT, auto_delete=True)
+        exchange = await channel.declare_exchange(cls._exchange_name, type=ExchangeType.DIRECT, auto_delete=True)
         queue = await channel.declare_queue(exclusive=True)
         await queue.bind(exchange, routing_key=routing_key)
 
@@ -78,17 +96,44 @@ class Eventory:
             raise RuntimeError(f'Duplicated consumer_tag: "{tag}"')
 
     @classmethod
-    async def publish(cls, data: dict, routing_key: str, channel_name: str):
-        message = Message(
-            body=ujson.dumps(data, ensure_ascii=False).encode('utf-8'),
-            content_type='application/json',
-            content_encoding='utf-8'
+    async def publish(
+            cls,
+            body: dict,
+            routing_key: str,
+            channel_name: str,
+            source_type: EventMessage.Source = EventMessage.Source.INTRA,
+            data_type: EventMessage.Data = EventMessage.Data.INFO,
+            recipient: Optional[Recipient] = None,
+            is_force_send: bool = False,
+    ):
+        """Make custom event message and publish event"""
+        event_message = EventMessage(
+            body=body,
+            source_type=source_type,
+            data_type=data_type,
+            recipient=recipient,
+            is_force_send=is_force_send,
         )
+
+        await cls._publish_event(
+            body=event_message.to_dict(),
+            routing_key=routing_key,
+            channel_name=channel_name,
+        )
+
+    @classmethod
+    async def _publish_event(cls, body: dict, routing_key: str, channel_name: str):
         channel = await cls.get_channel(channel_name)
         exchange = await channel.declare_exchange(
-            name="eventory",
+            name=cls._exchange_name,
             type=ExchangeType.DIRECT,
             auto_delete=True,
+        )
+
+        message = Message(
+            body=ujson.dumps(body, ensure_ascii=False).encode('utf-8'),
+            content_type='application/json',
+            content_encoding='utf-8'
         )
         return await exchange.publish(
             message=message,
@@ -126,9 +171,49 @@ class Eventory:
         return False
 
     @classmethod
-    async def make_routing_keys_set(cls, app):
-        routing_key_service = RoutingKeyService(routing_key_repo=RoutingKeyRepository())
+    def _inject_and_process_wrapper(cls, func: Callable, extra_kwargs: dict):
+        """
+        Process message (decode/validate data) before run func (consumer)
+        And inject arguments to func (consumer)
+        """
 
-        routing_keys = await routing_key_service.filter(app_id=app.pk)
+        @functools.wraps(func)
+        async def receiver(incoming_message: AbstractIncomingMessage, **kwargs):
+            async with incoming_message.process():
+                dict_data = cls._body_decode(incoming_message.body)
 
-        return RoutingKeysSet(routing_keys)
+                try:
+                    validated_body = cls._validate_message_body(func, dict_data['body'])
+                except ValueError as e:
+                    logger.warning(f"Validation error event receiving for consumer={incoming_message.consumer_tag}: {e}")
+                    return
+
+                kwargs['incoming_message'] = incoming_message  # AbstractIncomingMessage (aio_pika object)
+                kwargs['message'] = EventMessage.from_dict(dict_data)  # Message (custom dataclass)
+                kwargs['validated_body'] = validated_body  # valid pydantic model object
+                kwargs.update(extra_kwargs)  # another keyword arguments (ex: AppContext)
+
+                # make keyword argument optional for using in func
+                kwargs = cls._filter_only_using_kwargs(func, kwargs)
+                return await func(**kwargs)
+
+        return receiver
+
+    @classmethod
+    def _filter_only_using_kwargs(cls, func, kwargs) -> dict:
+        valid_keys = func.__code__.co_varnames
+        return {k: v for k, v in kwargs.items() if k in valid_keys}
+
+    @classmethod
+    def _body_decode(cls, body: bytes) -> dict:
+        json_data = ujson.loads(body.decode('utf-8'))
+        return json_data
+
+    @classmethod
+    def _validate_message_body(cls, func, body: dict) -> BaseModel | dict:
+        type_hints = get_type_hints(func)
+        if issubclass(type_hints.get('validated_body', dict), BaseModel):
+            PydanticModel = type_hints['validated_body']
+            return PydanticModel(**body)
+        else:
+            return body

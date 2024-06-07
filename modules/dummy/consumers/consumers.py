@@ -1,6 +1,6 @@
 from loguru import logger
 
-from core.utils.notification.message import Message
+from core.utils.notification.message import EventMessage
 from libs.modules.components import EventManager
 from libs.modules.AppContext import AppContext
 from ..config import RoutingKeys
@@ -11,12 +11,12 @@ event_consumers = EventManager()
 
 
 @event_consumers.add_consumer(routing_keys.DUMMY_EVENT)
-async def template_consumer(ctx: AppContext, message: Message):
+async def template_consumer(ctx: AppContext, message: EventMessage):
     logger.debug(f"Received message: {message.body} for module: {ctx.app_name}")
 
 
 @event_consumers.add_consumer(routing_keys.DUMMY_EDIT_EVENT)
-async def dummy_edit_consumer(ctx: AppContext, message: Message):
+async def dummy_edit_consumer(ctx: AppContext, message: EventMessage):
     try:
         dummy_id = message.body['id']
         dummy_string = message.body['dummy_string']

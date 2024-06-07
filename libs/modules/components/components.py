@@ -19,7 +19,7 @@ from const import DEFAULT_ADMIN_USERNAME, LOGS_DIR, MODULES_DIR
 from core.db.dataclass import StatusTask
 from core.db.models import ScheduledJob
 from core.dependencies.services import get_permission_service, get_variable_service, get_routing_key_service, \
-    get_user_service, get_scheduled_job_service, get_eventory_service
+    get_user_service, get_scheduled_job_service
 from core.services.notification import RoutingKeyService
 from core.services.permission import PermissionService
 from core.services.scheduled_job import ScheduledJobService
@@ -75,19 +75,17 @@ class EventManager(Component):
         pass
 
     async def init(self, application, app_db_model, is_created: bool):
-        eventory_service = get_eventory_service()
-
         for template in self.events:
             logger.debug(f'[EventManager]: Register consumer {template.func.__name__} from {self.module.name}')
 
             # consumers has only app context coz no user or team is running consumer
             context = await self.module.get_context()
 
-            consumer = await eventory_service.register_consumer(
+            consumer = await Eventory.register_consumer(
                 func=template.func,
                 routing_key=template.route_key,
-                module_name=self.module.name,
-                extra_kwargs={'ctx': context}
+                channel_name=self.module.name,
+                extra_kwargs={'ctx': context},
             )
             self.consumers.append(consumer)
 
