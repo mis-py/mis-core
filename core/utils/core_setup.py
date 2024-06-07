@@ -170,7 +170,7 @@ async def setup_modules_init():
         module_model = await module_service.get_or_raise(name=module_name)
         if module_model.enabled:
             try:
-                await ModuleService.init_module(module_name)
+                await module_model.init_module(module_name)
             except Exception as e:
                 logger.error(f'[ModuleService] Module: {module_name} system init failed ({e}), skip...')
                 continue
@@ -178,7 +178,7 @@ async def setup_modules_init():
             logger.debug(f'[ModuleService] Module: {module_name} auto-start is enabled starting...')
 
             try:
-                await ModuleService.start_module(module_name)
+                await module_model.start_module(module_name)
             except Exception as e:
                 logger.error(f'[ModuleService] Module: {module_name} system init failed ({e}), skip...')
                 continue
@@ -197,6 +197,6 @@ async def setup_modules_shutdown():
     for module_name in ModuleService.get_loaded_module_names():
         module_model = await module_service.get_or_raise(name=module_name)
         if module_model.enabled:
-            await ModuleService.stop_module(module_name)
-        await ModuleService.shutdown_module(module_name, from_system=True)
+            await module_service.stop_module(module_name)
+        await module_service.shutdown_module(module_name, from_system=True)
 

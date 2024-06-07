@@ -21,6 +21,7 @@ class ModuleService(BaseService):
         manifest: ModuleManifest
         instance: Optional[GenericModule] = None
 
+    # Those in class variables to store them in between class instantiation
     _loaded_modules: dict[str, LoadedModule] = {}
     _manifests: dict[str, ModuleManifest]
     # _core_consumer: Optional[Consumer]
@@ -59,10 +60,7 @@ class ModuleService(BaseService):
     def get_loaded_module_names(cls) -> list[str]:
         return list(cls._loaded_modules.keys())
 
-    @classmethod
-    async def init_module(cls, module_name: str) -> GenericModule:
-
-
+    async def init_module(self, module_name: str) -> GenericModule:
         # except ModuleNotFoundError as e:
         #     logger.exception(e)
         #     raise LoadModuleError(
@@ -76,7 +74,7 @@ class ModuleService(BaseService):
         # logger.exception(e)
         # raise LoadModuleError(f"Error while loading app. Details: {str(e)}")
 
-        loaded_module = cls.get_loaded_module(module_name)
+        loaded_module = self.get_loaded_module(module_name)
         logger.debug(f'[ModuleService] Module: {module_name} init started!')
 
         init_result = await loaded_module.instance.init()
@@ -85,9 +83,8 @@ class ModuleService(BaseService):
 
         return loaded_module.instance
 
-    @classmethod
-    async def start_module(cls, module_name: str) -> GenericModule:
-        loaded_module = cls.get_loaded_module(module_name)
+    async def start_module(self, module_name: str) -> GenericModule:
+        loaded_module = self.get_loaded_module(module_name)
 
         await loaded_module.instance.start()
 
@@ -98,9 +95,8 @@ class ModuleService(BaseService):
 
         return loaded_module.instance
 
-    @classmethod
-    async def stop_module(cls, module_name: str) -> GenericModule:
-        loaded_module = cls.get_loaded_module(module_name)
+    async def stop_module(self, module_name: str) -> GenericModule:
+        loaded_module = self.get_loaded_module(module_name)
 
         await loaded_module.instance.stop()
 
@@ -111,21 +107,19 @@ class ModuleService(BaseService):
 
         return loaded_module.instance
 
-    @classmethod
-    async def shutdown_module(cls, module_name: str, from_system=False):
-        loaded_module = cls.get_loaded_module(module_name)
+    async def shutdown_module(self, module_name: str, from_system=False):
+        loaded_module = self.get_loaded_module(module_name)
         await loaded_module.instance.shutdown()
 
         if from_system:
             # correctly unload and delete module from system call
             unload_module(module_name)
-            del cls._loaded_modules[module_name]
+            del self._loaded_modules[module_name]
 
         logger.debug(f"[ModuleService] Module: {module_name} shutdown complete")
 
-    @classmethod
-    async def refresh_from_db(cls, module_name: str,):
-        loaded_module = cls.get_loaded_module(module_name)
+    async def refresh_from_db(self, module_name: str,):
+        loaded_module = self.get_loaded_module(module_name)
         await loaded_module.instance.refresh_from_db()
 
     # @classmethod
