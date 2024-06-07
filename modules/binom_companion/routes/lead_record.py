@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 
 from core.dependencies.module import get_userless_app_context
 from core.utils.schema import MisResponse
-from core.utils.module import AppContext
+from core.utils.app_context import AppContext
 
 from modules.binom_companion.schemas.lead_record import LeadRecordIn
 from ..service import LeadRecordService

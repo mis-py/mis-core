@@ -6,7 +6,8 @@ from core.exceptions import MISError
 from core.repositories.module import IModuleRepository
 from core.schemas.module import ModuleManifestResponse, ModuleManifest
 from core.services.base.base_service import BaseService
-from core.utils.module import LoadedModule, GenericModule, AppContext
+from core.utils.module import LoadedModule, GenericModule
+from core.utils.app_context import AppContext
 from core.utils.module.utils import unload_module
 from core.utils.schema import PageResponse
 from libs.eventory import Eventory

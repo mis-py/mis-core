@@ -7,7 +7,7 @@ from loguru import logger
 from core.utils.schema import PageResponse, MisResponse
 from core.dependencies.security import get_current_user
 from core.dependencies.module import get_app_context
-from core.utils.module import AppContext
+from core.utils.app_context import AppContext
 
 from ..schemas.proxy_domain import (
     ProxyDomainModel,

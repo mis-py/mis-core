@@ -1,6 +1,6 @@
 from loguru import logger
 
-from core.utils.module import AppContext
+from core.utils.app_context import AppContext
 from core.utils.module.components import ScheduledTasks
 from ..service import YandexBrowserCheckService, ReplacementGroupService, TrackerInstanceService
 

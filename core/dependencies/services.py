@@ -1,4 +1,3 @@
-from core.db.models import Module
 from core.repositories.granted_permission import GrantedPermissionRepository
 from core.repositories.guardian_access_group import GAccessGroupRepository
 from core.repositories.guardian_content_type import GContentTypeRepository
@@ -23,10 +22,7 @@ from core.services.notification import RoutingKeyService, RoutingKeySubscription
 from core.services.permission import PermissionService
 from core.services.team import TeamService
 from core.services.user import UserService
-from core.services.variable import VariableService
 from core.services.scheduler import SchedulerService
-from core.utils.module import AppContext
-from libs.eventory import Eventory
 
 
 def get_user_service() -> UserService:
@@ -57,17 +53,6 @@ def get_auth_service() -> AuthService:
 
     auth_service = AuthService(user_repo=user_repo)
     return auth_service
-
-
-def get_variable_service() -> VariableService:
-    variable_value_repo = VariableValueRepository()
-    variable_repo = VariableRepository()
-
-    variable_service = VariableService(
-        variable_value_repo=variable_value_repo,
-        variable_repo=variable_repo
-    )
-    return variable_service
 
 
 def get_module_service() -> ModuleService:
@@ -193,14 +178,3 @@ def get_guardian_service() -> GuardianService:
         g_access_group_repo=g_access_group_repo,
     )
     return guardian_service
-
-
-async def get_app_context(app: Module, user=None, team=None):
-    variable_service = get_variable_service()
-    return AppContext(
-        user=user,
-        team=team,
-        variables=await variable_service.make_variable_set(user=user, team=await user.team if user else None, app=app),
-        app_name=app.name,
-        routing_keys=await Eventory.make_routing_keys_set(app=app)
-    )

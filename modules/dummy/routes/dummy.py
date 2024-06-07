@@ -6,7 +6,7 @@ from core.dependencies.misc import RoutingKeysDep
 from core.dependencies.module import get_app_context
 from core.dependencies.security import get_current_user
 from core.utils.schema import MisResponse, PageResponse
-from core.utils.module import AppContext
+from core.utils.app_context import AppContext
 
 from ..db.schema import DummyResponse, DummyCreate, DummyEdit, DummyDataResponse
 from ..dependencies.services import get_dummy_model_service

@@ -1,28 +1,15 @@
-from dataclasses import dataclass
-from typing import Optional, Any
+from core.db.models import Module
+from core.dependencies.variable_service import get_variable_service
+from core.utils.app_context import AppContext
+from libs.eventory import Eventory
 
-from core.db.models import User, Team
-from core.utils.variable_set import VariableSet
 
-
-@dataclass
-class AppContext:
-    """Context data for modules"""
-    app_name: str
-
-    # TODO try to pass type reference of actual module variable set
-    variables: VariableSet
-    routing_keys: Any
-    user: Optional[User] = None
-    team: Optional[Team] = None
-
-    # async def publish_event(self, obj: Message, routing_key: str):
-    #     # import it here due to partial initialized import error
-    #
-    #     message = obj.to_dict()
-    #     await Eventory.publish(message, routing_key, self.name)
-
-    # def __getattr__(self, item):
-    #     if item.startswith('_'):
-    #         raise AttributeError(f"ModuleProxy doesnt allow access to private attributes")
-    #     return getattr(self.__module, item)
+async def get_app_context(app: Module, user=None, team=None):
+    variable_service = get_variable_service()
+    return AppContext(
+        user=user,
+        team=team,
+        variables=await variable_service.make_variable_set(user=user, team=await user.team if user else None, app=app),
+        app_name=app.name,
+        routing_keys=await Eventory.make_routing_keys_set(app=app)
+    )

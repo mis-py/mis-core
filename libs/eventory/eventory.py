@@ -11,7 +11,7 @@ from aiormq import DuplicateConsumerTag, AMQPConnectionError
 
 from core.repositories.routing_key import RoutingKeyRepository
 from core.services.notification import RoutingKeyService
-from core.utils.module import AppContext
+from core.utils.app_context import AppContext
 
 from .consumer import Consumer
 from .config import RabbitSettings

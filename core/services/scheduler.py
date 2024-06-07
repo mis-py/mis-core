@@ -11,6 +11,7 @@ from core.schemas.task import JobCreate, JobTrigger, TaskResponse
 from core.services.base.base_service import BaseService
 from core.utils.task import get_trigger, format_trigger
 from core.utils.scheduler import TaskTemplate
+from core.utils.module.app_context import get_app_context
 from libs.schedulery import Schedulery
 
 
@@ -215,7 +216,6 @@ class SchedulerService(BaseService):
         )
         await self.scheduled_job_repo.save(obj=job_db)
 
-        from core.dependencies.services import get_app_context
         context = await get_app_context(user=user, team=await user.team, app=task.module._model)
 
         job = Schedulery.add_job(
@@ -249,7 +249,6 @@ class SchedulerService(BaseService):
             logger.warning(f"[SchedulerService] Unknown trigger used in {saved_job.job_id}, using default one.")
             trigger = task.trigger
 
-        from core.dependencies.services import get_app_context
         context = await get_app_context(user=saved_job.user, team=saved_job.team, app=task.module._model)
 
         job = Schedulery.add_job(

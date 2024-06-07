@@ -6,7 +6,7 @@ from core.dependencies.misc import PaginateParamsDep
 from core.dependencies.module import get_app_context
 from core.dependencies.security import get_current_user
 from core.utils.schema import PageResponse, MisResponse
-from core.utils.module import AppContext
+from core.utils.app_context import AppContext
 
 from ..schemas.replacement_group import ReplacementGroupModel, ReplacementGroupCreateModel, ReplacementGroupUpdateModel, \
     ReplacementGroupChangeProxyIds

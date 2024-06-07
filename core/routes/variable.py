@@ -5,8 +5,9 @@ from fastapi import Depends, APIRouter, Security, Query
 from core.db.models import Team, User, Module
 from core.dependencies.security import get_current_user
 from core.dependencies.path import get_team_by_id, get_user_by_id
-from core.dependencies.services import get_variable_service, get_team_service, \
+from core.dependencies.services import get_team_service, \
     get_user_service, get_module_service
+from core.dependencies.variable_service import get_variable_service
 from core.dependencies.path import get_module_by_id
 from core.schemas.variable import VariableResponse, VariableValueResponse
 from core.schemas.variable import UpdateVariable

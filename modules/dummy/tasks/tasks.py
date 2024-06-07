@@ -2,7 +2,7 @@ from loguru import logger
 
 from core.utils.notification.message import Message
 from core.utils.module.components import ScheduledTasks
-from core.utils.module import AppContext
+from core.utils.app_context import AppContext
 
 from libs.eventory import Eventory
 

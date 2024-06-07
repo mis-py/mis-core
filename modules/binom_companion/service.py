@@ -24,7 +24,7 @@ from core.services.base.base_service import BaseService
 from core.utils.common import exclude_none_values
 
 from libs.eventory import Eventory
-from core.utils.module import AppContext
+from core.utils.app_context import AppContext
 
 from .schemas.lead_record import LeadRecordIn
 from .repository import (

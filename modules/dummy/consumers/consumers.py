@@ -2,7 +2,7 @@ from loguru import logger
 
 from core.utils.notification.message import Message
 from core.utils.module.components import EventManager
-from core.utils.module import AppContext
+from core.utils.app_context import AppContext
 from ..config import RoutingKeys
 
 routing_keys = RoutingKeys()
