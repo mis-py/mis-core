@@ -38,7 +38,7 @@ router = APIRouter()
 @router.get(
     '/',
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:variables'])],
-    response_model=MisResponse[VariableResponse]
+    response_model=MisResponse[list[VariableResponse]]
 )
 async def get_global_variables(
         variable_service: Annotated[VariableService, Depends(get_variable_service)],
@@ -59,13 +59,13 @@ async def get_global_variables(
         app_id=module_instance.pk if module_instance else None,
     )
 
-    return MisResponse[VariableResponse](result=variables)
+    return MisResponse[list[VariableResponse]](result=variables)
 
 
 @router.get(
     '/values',
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:variables'])],
-    response_model=MisResponse[VariableValueResponse],
+    response_model=MisResponse[list[VariableValueResponse]],
     description="Returns all available variables by specified filter criteria"
 )
 async def get_local_variables(
@@ -90,7 +90,7 @@ async def get_local_variables(
         prefetch_related=['variable']
     )
 
-    return MisResponse[VariableValueResponse](result=variable_values)
+    return MisResponse[list[VariableValueResponse]](result=variable_values)
 
 
 @router.put(
@@ -146,7 +146,7 @@ async def set_local_variables(
 
 @router.get(
     '/my',
-    response_model=MisResponse[VariableValueResponse]
+    response_model=MisResponse[list[VariableValueResponse]]
 )
 async def get_my_variables(
         variable_service: Annotated[VariableService, Depends(get_variable_service)],
@@ -157,7 +157,7 @@ async def get_my_variables(
         prefetch_related=['variable']
     )
 
-    return MisResponse[VariableValueResponse](result=variable_values)
+    return MisResponse[list[VariableValueResponse]](result=variable_values)
 
 
 @router.put(

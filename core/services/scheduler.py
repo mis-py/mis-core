@@ -27,8 +27,18 @@ class SchedulerService(BaseService):
     def add_task(self, task: TaskTemplate, module_name: str):
         if f"{module_name}:{task.name}" in self._tasks:
             logger.warning(f"[SchedulerService] Task already registered: {module_name}:{task.name}")
+            return
+
         self._tasks[f"{module_name}:{task.name}"] = task
         logger.debug(f"[SchedulerService] Added scheduled task: {task.name} from module: {module_name}")
+
+    def remove_task(self, task: TaskTemplate, module_name: str):
+        if f"{module_name}:{task.name}" not in self._tasks:
+            logger.debug(f"[SchedulerService] Task not registered: {task.name} from module: {module_name}")
+            return
+
+        del self._tasks[f"{module_name}:{task.name}"]
+        logger.debug(f"[SchedulerService] Task removed: {module_name}:{task.name}")
 
     def get_task(self, task_name: str, module_name: str) -> TaskTemplate | None:
         if f"{module_name}:{task_name}" in self._tasks:
@@ -144,7 +154,7 @@ class SchedulerService(BaseService):
             if task_id and task_name != task_id:
                 continue
 
-            #founded_jobs = Schedulery.get_jobs()
+            # founded_jobs = Schedulery.get_jobs()
 
             res.append(
                 TaskResponse(
@@ -178,15 +188,11 @@ class SchedulerService(BaseService):
         if task.trigger is None and trigger is None:
             raise ValidationFailed(f"Argument 'trigger' required for this task!")
 
-        module = task.module
         task_name = task.name
-
-        if module._model.state != AppState.RUNNING:
-            raise MISError("Not allowed creating job for module that is not running")
 
         if task.single_instance:
             scheduled_job = await self.scheduled_job_repo.get(
-                task_name=task_name, app=module._model, user=user, team=team
+                task_name=task_name, app=task.app, user=user, team=team
             )
             if scheduled_job:
                 raise AlreadyExists("Scheduled job already exists")
@@ -208,7 +214,7 @@ class SchedulerService(BaseService):
         job_db: ScheduledJob = ScheduledJob(
             user=user,
             team=team,
-            app=module._model,
+            app=task.app,
             task_name=task_name,
             status=StatusTask.RUNNING if task.autostart else StatusTask.PAUSED,
             extra_data=kwargs,
@@ -216,7 +222,7 @@ class SchedulerService(BaseService):
         )
         await self.scheduled_job_repo.save(obj=job_db)
 
-        context = await get_app_context(user=user, team=await user.team, app=task.module._model)
+        context = await get_app_context(user=user, team=await user.team, app=task.app)
 
         job = Schedulery.add_job(
             task_template=task,
@@ -249,7 +255,7 @@ class SchedulerService(BaseService):
             logger.warning(f"[SchedulerService] Unknown trigger used in {saved_job.job_id}, using default one.")
             trigger = task.trigger
 
-        context = await get_app_context(user=saved_job.user, team=saved_job.team, app=task.module._model)
+        context = await get_app_context(user=saved_job.user, team=saved_job.team, app=task.app)
 
         job = Schedulery.add_job(
             task_template=task,

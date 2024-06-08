@@ -23,7 +23,6 @@ class ModuleService(BaseService):
 
     # Those in class variables to store them in between class instantiation
     _loaded_modules: dict[str, LoadedModule] = {}
-    _manifests: dict[str, ModuleManifest]
     # _core_consumer: Optional[Consumer]
 
     def __init__(self, module_repo: IModuleRepository):
@@ -43,8 +42,7 @@ class ModuleService(BaseService):
 
     @classmethod
     def get_manifest(cls, module_name):
-        # return read_module_manifest(module_name)
-        return cls._manifests[module_name]
+        return cls._loaded_modules[module_name].manifest
 
     @classmethod
     def get_loaded_module(cls, module_name: str) -> LoadedModule:
@@ -60,7 +58,7 @@ class ModuleService(BaseService):
     def get_loaded_module_names(cls) -> list[str]:
         return list(cls._loaded_modules.keys())
 
-    async def init_module(self, module_name: str) -> GenericModule:
+    async def init_module(self, module_name: str) -> bool:
         # except ModuleNotFoundError as e:
         #     logger.exception(e)
         #     raise LoadModuleError(
@@ -81,42 +79,45 @@ class ModuleService(BaseService):
 
         logger.debug(f'[ModuleService] Module: {module_name} init finished: {init_result}!')
 
-        return loaded_module.instance
+        return init_result
 
-    async def start_module(self, module_name: str) -> GenericModule:
+    async def start_module(self, module_name: str) -> bool:
         loaded_module = self.get_loaded_module(module_name)
 
-        await loaded_module.instance.start()
+        start_result = await loaded_module.instance.start()
 
-        logger.debug(f'[ModuleService] Module: {module_name} started!')
+        logger.debug(f'[ModuleService] Module: {module_name} started: {start_result}!')
 
         # if app.sender:
         #     await cls._restart_core_consumer()
 
-        return loaded_module.instance
+        return start_result
 
-    async def stop_module(self, module_name: str) -> GenericModule:
+    async def stop_module(self, module_name: str) -> bool:
         loaded_module = self.get_loaded_module(module_name)
 
-        await loaded_module.instance.stop()
+        stop_result = await loaded_module.instance.stop()
 
-        logger.debug(f"[ModuleService] Module: {module_name} stopped")
+        logger.debug(f"[ModuleService] Module: {module_name} stopped: {stop_result}")
 
         # if module.sender:
         #     await cls._restart_core_consumer()
 
-        return loaded_module.instance
+        return stop_result
 
-    async def shutdown_module(self, module_name: str, from_system=False):
+    async def shutdown_module(self, module_name: str, from_system=False) -> bool:
         loaded_module = self.get_loaded_module(module_name)
-        await loaded_module.instance.shutdown()
+
+        shutdown_result = await loaded_module.instance.shutdown()
 
         if from_system:
             # correctly unload and delete module from system call
             unload_module(module_name)
             del self._loaded_modules[module_name]
 
-        logger.debug(f"[ModuleService] Module: {module_name} shutdown complete")
+        logger.debug(f"[ModuleService] Module: {module_name} shutdown complete: {shutdown_result}")
+
+        return shutdown_result
 
     async def refresh_from_db(self, module_name: str,):
         loaded_module = self.get_loaded_module(module_name)
@@ -161,29 +162,13 @@ class ModuleService(BaseService):
     #
     #     return senders
 
-    async def set_manifest_in_response(self, paginated_modules: PageResponse[ModuleManifestResponse]):
-        for module in paginated_modules.result.items:
-            if module.name == 'core':  # skip module without manifest
-                continue
-
-            module.manifest = self.get_manifest(module.name)
-        return paginated_modules
-
-    async def set_state(self, module_id: int, state: AppState) -> None:
-        updated_obj = await self.module_repo.update(
-            id=module_id,
-            data={'state': state},
-        )
-
-        await updated_obj.save()
-
     async def init(self, module_id: int):
         module_obj: Module = await self.module_repo.get(id=module_id)
 
         if module_obj.state not in [AppState.SHUTDOWN, AppState.PRE_INITIALIZED]:
             raise MISError("Can not init module that is not in 'SHUTDOWN' or 'PRE_INITIALIZED' or 'ERROR' state")
 
-        success = self.init_module(module_obj.name)
+        success = await self.init_module(module_obj.name)
 
         if not success:
             # await self.set_state(module_id=module_id, state=AppState.ERROR)
@@ -202,7 +187,7 @@ class ModuleService(BaseService):
         if module_obj.state not in [AppState.STOPPED, AppState.INITIALIZED]:
             raise MISError("Can not start module that not in 'STOPPED' or 'INITIALIZED' state ")
 
-        success = self.start_module(module_obj.name)
+        success = await self.start_module(module_obj.name)
 
         if not success:
             # await self._set_state(Module.AppState.ERROR)
@@ -220,7 +205,7 @@ class ModuleService(BaseService):
         if module_obj.state != AppState.RUNNING:
             raise MISError("Can not stop module that not in 'RUNNING' state ")
 
-        success = self.stop_module(module_obj.name)
+        success = await self.stop_module(module_obj.name)
 
         await self.set_state(module_id=module_id, state=AppState.STOPPED)
         await self.set_disabled(module_id=module_id)
@@ -234,11 +219,27 @@ class ModuleService(BaseService):
         if module_obj.state not in [AppState.STOPPED, AppState.INITIALIZED, AppState.PRE_INITIALIZED]:
             raise MISError("Can not shutdown module that not in 'STOPPED', 'INITIALIZED', 'PRE_INITIALIZED' state")
 
-        success = self.shutdown_module(module_obj.name)
+        success = await self.shutdown_module(module_obj.name)
 
         await self.set_state(module_id=module_id, state=AppState.SHUTDOWN)
 
         await self.refresh_from_db(module_obj.name)
+
+    async def set_manifest_in_response(self, paginated_modules: PageResponse[ModuleManifestResponse]):
+        for module in paginated_modules.result.items:
+            if module.name == 'core':  # skip module without manifest
+                continue
+
+            module.manifest = ModuleService.get_manifest(module.name)
+        return paginated_modules
+
+    async def set_state(self, module_id: int, state: AppState):
+        updated_obj = await self.module_repo.update(
+            id=module_id,
+            data={'state': state},
+        )
+
+        await updated_obj.save()
 
     async def set_enabled(self, module_id: int):
         updated_obj = await self.module_repo.update(

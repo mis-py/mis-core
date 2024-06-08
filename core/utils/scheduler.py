@@ -5,6 +5,7 @@ from loguru import logger
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 
+from core.db.models import Module
 from core.utils.module.generic_module import GenericModule
 
 
@@ -36,8 +37,7 @@ class TaskTemplate:
     func: Callable
     extra_typed: dict
     trigger: IntervalTrigger | CronTrigger | None
-    # module: BaseModule = None
-    module: GenericModule = None
+    app: Module = None
     autostart: bool = False
     single_instance: bool = False
 

@@ -68,18 +68,7 @@ class ScheduledTasks(BaseComponent):
         pass
 
     async def init(self, app_db_model, is_created: bool):
-        """
-        Add all tasks to SchedulerService and restore jobs saved in db always in paused state.
-        :return:
-        """
-        # register in SchedulerService all declared tasks and provide module for them
-        scheduler_service: SchedulerService = get_scheduler_service()
-
-        for task in self._tasks:
-            task.module = self.module
-            scheduler_service.add_task(task=task, module_name=self.module.name)
-
-        await scheduler_service.restore_jobs(module_name=self.module.name)
+        pass
 
     async def start(self):
         """
@@ -88,6 +77,15 @@ class ScheduledTasks(BaseComponent):
         """
         scheduler_service: SchedulerService = get_scheduler_service()
 
+        # add all task templates to sheduler service
+        for task in self._tasks:
+            task.app = self.module._model
+            scheduler_service.add_task(task=task, module_name=self.module.name)
+
+        # restore jobs from memory in paused state
+        await scheduler_service.restore_jobs(module_name=self.module.name)
+
+        # run task if saved state was RUNNING
         saved_scheduled_jobs = await scheduler_service.filter_by_module(module_name=self.module.name)
         for saved_job in saved_scheduled_jobs:
             if saved_job.status == StatusTask.RUNNING:
@@ -102,6 +100,9 @@ class ScheduledTasks(BaseComponent):
         saved_scheduled_jobs = await scheduler_service.filter_by_module(module_name=self.module.name)
         for saved_job in saved_scheduled_jobs:
             Schedulery.pause_job(saved_job.pk)
+
+        for task in self._tasks:
+            scheduler_service.remove_task(task=task, module_name=self.module.name)
 
     async def shutdown(self):
         pass
