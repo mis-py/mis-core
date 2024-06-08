@@ -25,6 +25,7 @@ from core.services.team import TeamService
 from core.services.user import UserService
 from core.services.variable import VariableService
 from core.services.variable_value import VariableValueService
+from libs.eventory import Eventory
 
 
 def get_user_service() -> UserService:

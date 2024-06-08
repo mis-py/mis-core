@@ -1,11 +1,9 @@
 from loguru import logger
 
-from core.utils.notification.message import Message
 from ..config import ModuleSettings
 from libs.modules.components import ScheduledTasks
 from libs.modules.AppContext import AppContext
 from libs.eventory import Eventory
-
 
 scheduled_tasks = ScheduledTasks()
 config = ModuleSettings()
@@ -19,11 +17,9 @@ async def dummy_task(ctx: AppContext):
     )
     yield "yield test 1"
     await Eventory.publish(
-        Message(
-            body={"dummy_setting": ctx.variables.PRIVATE_SETTING},
-        ),
-        ctx.routing_keys.DUMMY_EVENT,
-        ctx.app_name
+        body={"dummy_setting": ctx.variables.PRIVATE_SETTING},
+        routing_key=ctx.routing_keys.DUMMY_EVENT,
+        channel_name=ctx.app_name,
     )
     yield "yield test 2"
 
@@ -35,11 +31,9 @@ async def dummy_manual_task(ctx: AppContext, dummy_argument: str):
         f"and sending message '{dummy_argument}' to eventory"
     )
     await Eventory.publish(
-        Message(
-            body={"dummy_argument": dummy_argument},
-        ),
-        ctx.routing_keys.DUMMY_MANUAL_EVENT,
-        ctx.app_name
+        body={"dummy_argument": dummy_argument},
+        routing_key=ctx.routing_keys.DUMMY_MANUAL_EVENT,
+        channel_name=ctx.app_name,
     )
 
 

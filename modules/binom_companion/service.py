@@ -17,7 +17,7 @@ from ujson import loads, JSONDecodeError
 from tortoise.expressions import Subquery
 
 from core.exceptions import NotFound
-from core.utils.notification.message import Message
+from core.utils.notification.message import EventMessage
 from core.utils.notification.recipient import Recipient
 from core.utils.schema import PageResponse
 from core.services.base.base_service import BaseService
@@ -447,13 +447,13 @@ class ProxyDomainService(BaseService):
             if len(offer_response) or len(landing_response):
                 # make history record and eventory publish only if we actually changed something
                 await Eventory.publish(
-                    Message(body={
+                    body={
                         'group_name': group.name,
                         'new_domain': new_domain.name,
                         'old_domains': old_offers_domains + old_land_domains
-                    }),
-                    ctx.routing_keys.DOMAIN_CHANGED,
-                    ctx.app_name
+                    },
+                    routing_key=ctx.routing_keys.DOMAIN_CHANGED,
+                    channel_name=ctx.app_name,
                 )
 
                 await self.add_history_record(
@@ -520,11 +520,9 @@ class ProxyDomainService(BaseService):
                 await created_domain.fetch_related("tracker_instance")
 
                 await Eventory.publish(
-                    Message(
-                        body={"id": created_domain.pk, "name": created_domain.name},
-                    ),
-                    ctx.routing_keys.PROXY_DOMAIN_ADDED,
-                    ctx.app_name
+                    body={"id": created_domain.pk, "name": created_domain.name},
+                    routing_key=ctx.routing_keys.PROXY_DOMAIN_ADDED,
+                    channel_name=ctx.app_name,
                 )
 
             except Exception as e:

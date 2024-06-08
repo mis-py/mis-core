@@ -22,3 +22,4 @@ class RoutingKeys(BaseModel):
     """
     DUMMY_EVENT: str = "dummy_event"
     DUMMY_MANUAL_EVENT: str = "dummy_manual_event"
+    DUMMY_EDIT_EVENT: str = "dummy_edit_event"

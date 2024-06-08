@@ -5,7 +5,6 @@ from core.exceptions import MISError
 
 
 from libs.variables.variables import VariablesManager
-from libs.eventory import Eventory
 
 from .utils.BaseModule import BaseModule
 from .AppContext import AppContext
@@ -171,12 +170,16 @@ class GenericModule(BaseModule):
     async def get_context(self, user=None, team=None) -> AppContext:
         """Context for jobs and other services.
         If user or team is defined then variables will be available in context along with module variables"""
+
+        from core.dependencies.services import get_routing_key_service  # to avoid circular import
+        routing_key_service = get_routing_key_service()
+
         return AppContext(
             module=self,
             user=user,
             team=team,
             variables=await VariablesManager.make_variable_set(user=user, team=team, app=self._model),
-            routing_keys=await Eventory.make_routing_keys_set(app=self._model)
+            routing_keys=await routing_key_service.make_routing_keys_set(module=self._model)
         )
 
     def set_manifest(self, manifest: 'ModuleManifest'):

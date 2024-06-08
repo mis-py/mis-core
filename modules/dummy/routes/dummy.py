@@ -5,6 +5,7 @@ from fastapi import APIRouter, Security, Depends
 from core.dependencies.misc import get_app_context, RoutingKeysDep
 from core.dependencies.security import get_current_user
 from core.utils.schema import MisResponse, PageResponse
+from libs.eventory import Eventory
 from libs.modules.AppContext import AppContext
 
 from ..db.schema import DummyResponse, DummyCreate, DummyEdit, DummyDataResponse
@@ -47,9 +48,16 @@ async def create_dummy(
 async def edit_dummy(
         dummy_model_service: Annotated[DummyService, Depends(get_dummy_model_service)],
         dummy_id: int,
-        dummy_in: DummyEdit
+        dummy_in: DummyEdit,
+        routing_keys: RoutingKeysDep,
+        ctx: AppContext = Depends(get_app_context),
 ):
     edited_dummy = await dummy_model_service.update(dummy_id, dummy_in)
+    await Eventory.publish(
+        body={'id': dummy_id, 'dummy_string': dummy_in.dummy_string},
+        routing_key=routing_keys.DUMMY_EDIT_EVENT,
+        channel_name=ctx.app_name,
+    )
     return MisResponse[DummyResponse](result=edited_dummy)
 
 
@@ -83,5 +91,3 @@ async def get_dummy_data(
         routing_keys=[routing_keys.DUMMY_EVENT, routing_keys.DUMMY_MANUAL_EVENT],
     )
     return MisResponse[DummyDataResponse](result=response)
-
-

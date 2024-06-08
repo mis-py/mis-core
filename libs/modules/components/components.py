@@ -82,10 +82,10 @@ class EventManager(Component):
             context = await self.module.get_context()
 
             consumer = await Eventory.register_consumer(
-                app_name=self.module.name,
+                func=template.func,
                 routing_key=template.route_key,
-                callback=template.func,
-                context=context
+                channel_name=self.module.name,
+                extra_kwargs={'ctx': context},
             )
             self.consumers.append(consumer)
 

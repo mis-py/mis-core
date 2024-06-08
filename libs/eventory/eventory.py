@@ -1,21 +1,19 @@
-import asyncio
 import functools
-from asyncio import Task
-from typing import Callable
+from collections import defaultdict
+from typing import Callable, Optional, get_type_hints
 
 from loguru import logger
 import ujson
 from aio_pika import connect_robust, Message
-from aio_pika.abc import AbstractChannel, AbstractIncomingMessage, ExchangeType, AbstractRobustConnection
+from aio_pika.abc import AbstractChannel, ExchangeType, AbstractRobustConnection, AbstractIncomingMessage
 from aiormq import DuplicateConsumerTag, AMQPConnectionError
+from pydantic import BaseModel
 
-from core.repositories.routing_key import RoutingKeyRepository
-from core.services.notification import RoutingKeyService
+from core.utils.notification.message import EventMessage
+from core.utils.notification.recipient import Recipient
 
 from .consumer import Consumer
 from .config import RabbitSettings
-from .utils import RoutingKeysSet
-from ..modules import AppContext
 
 settings = RabbitSettings()
 
@@ -27,7 +25,11 @@ class Eventory:
     # Channel per module preferred
     _channels: dict[str, AbstractChannel] = {}
 
-    _listener_task: Task
+    # Registered consumers
+    _consumers: dict[str, list[Consumer]] = defaultdict(list)
+
+    # RabbitMQ exchange name
+    _exchange_name: str = 'eventory'
 
     @classmethod
     async def init(cls):
@@ -42,134 +44,119 @@ class Eventory:
         await cls._connection.close()
 
     @classmethod
-    async def get_channel(cls, app_name):
-        if app_name not in cls._channels:
-            cls._channels[app_name] = await cls._connection.channel()
-        return cls._channels[app_name]
+    async def get_channel(cls, name: str) -> AbstractChannel:
+        if name not in cls._channels:
+            cls._channels[name] = await cls._connection.channel()
+        return cls._channels[name]
 
     @classmethod
-    async def remove_channel(cls, app_name):
-        if app_name in cls._channels:
-            await cls._channels[app_name].close()
-            del cls._channels[app_name]
+    async def remove_channel(cls, name: str) -> None:
+        if name in cls._channels:
+            await cls._channels[name].close()
+            del cls._channels[name]
 
     @classmethod
-    async def register_consumer(cls, app_name: str, routing_key: str, callback: Callable, context: AppContext, *args, **kwargs):
+    async def register_consumer(
+            cls,
+            func: Callable,
+            routing_key: str,
+            channel_name: str,
+            tag: str = None,
+            extra_kwargs: dict = None,
+    ) -> Consumer:
         """
         Consumer is message receiver, can be declared for any function
-        :param app_name:
+        :param channel_name:
         :param routing_key:
-        :param callback:
-        :param args:
-        :param kwargs:
+        :param func: Consumer func
+        :param tag: Tag for consumer
+        :param extra_kwargs: Keyword arguments which will inject to func
         :return:
         """
-        # reuse chanel for app
-        channel = await cls.get_channel(app_name)
+        if extra_kwargs is None:
+            extra_kwargs = {}
 
-        # declare exchange for specific event
-        # TODO issue possible here due to app_name not in exchange
-        exchange = await channel.declare_exchange(routing_key, type=ExchangeType.FANOUT, auto_delete=True)
+        if tag is None:
+            # channel_name + func_name to avoid duplication
+            tag = f"{channel_name}:{func.__name__}"
+
+        # inject params to func
+        receiver = cls._inject_and_process_wrapper(func, extra_kwargs)
+
+        channel = await cls.get_channel(channel_name)
+        exchange = await channel.declare_exchange(cls._exchange_name, type=ExchangeType.DIRECT, auto_delete=True)
         queue = await channel.declare_queue(exclusive=True)
-        await queue.bind(exchange)
-        try:
-            receiver = cls._on_message_wrapper(callback, context, *args, **kwargs)
-            consumer = Consumer(queue, receiver, callback.__name__)
-            return consumer
-        except DuplicateConsumerTag:
-            raise RuntimeError(f'Duplicated consumer_tag: "{callback.__name__}"')
-
-    # TODO unused function. does it suppose to be like that?
-    @classmethod
-    async def register_handler(cls, app_name: str, routing_keys: list[str, str], callback: Callable, *args, **kwargs):
-        channel = await cls.get_channel(app_name)
-        queue = await channel.declare_queue(exclusive=True)
-
-        # bind all routing_keys
-        for key, key_app_name in routing_keys:
-            prefixed_routing_key = f"{key_app_name}:{key}"
-            exchange = await channel.declare_exchange(
-                prefixed_routing_key, type=ExchangeType.FANOUT, auto_delete=True,
-            )
-            await queue.bind(exchange)
+        await queue.bind(exchange, routing_key=routing_key)
 
         try:
-            receiver = cls._on_message_wrapper(callback, *args, **kwargs)
-            consumer = Consumer(queue, receiver, callback.__name__)
+            consumer = Consumer(queue, receiver, tag)
+            cls._consumers[channel_name].append(consumer)
             return consumer
         except DuplicateConsumerTag:
-            raise RuntimeError(f'Duplicated consumer_tag: "{callback.__name__}"')
+            raise RuntimeError(f'Duplicated consumer_tag: "{tag}"')
 
     @classmethod
-    async def publish(cls, obj, routing_key, app_name):
+    async def publish(
+            cls,
+            body: dict,
+            routing_key: str,
+            channel_name: str,
+            source_type: EventMessage.Source = EventMessage.Source.INTRA,
+            data_type: EventMessage.Data = EventMessage.Data.INFO,
+            recipient: Optional[Recipient] = None,
+            is_force_send: bool = False,
+    ):
+        """Make custom event message and publish event"""
+        event_message = EventMessage(
+            body=body,
+            source_type=source_type,
+            data_type=data_type,
+            recipient=recipient,
+            is_force_send=is_force_send,
+        )
+
+        await cls._publish_event(
+            body=event_message.to_dict(),
+            routing_key=routing_key,
+            channel_name=channel_name,
+        )
+
+    @classmethod
+    async def _publish_event(cls, body: dict, routing_key: str, channel_name: str):
+        channel = await cls.get_channel(channel_name)
+        exchange = await channel.declare_exchange(
+            name=cls._exchange_name,
+            type=ExchangeType.DIRECT,
+            auto_delete=True,
+        )
+
         message = Message(
-            body=ujson.dumps(obj.to_dict(), ensure_ascii=False).encode('utf-8'),
+            body=ujson.dumps(body, ensure_ascii=False).encode('utf-8'),
             content_type='application/json',
             content_encoding='utf-8'
         )
-        # TODO fix it
-        prefixed_routing_key = f"{app_name}:{routing_key}"
-        prefixed_routing_key = f"{routing_key}"
-        channel = await cls.get_channel(app_name)
-        exchange = await channel.declare_exchange(
-            prefixed_routing_key,
-            type=ExchangeType.FANOUT,
-            auto_delete=True,
-        )
         return await exchange.publish(
             message=message,
-            routing_key=prefixed_routing_key,
+            routing_key=routing_key,
         )
-
-    @classmethod
-    def start_listening(cls):
-        cls._listener_task = asyncio.ensure_future(asyncio.Future())
-
-    @classmethod
-    def stop_listening(cls):
-        if cls._listener_task:
-            cls._listener_task.cancel()
-
-    @classmethod
-    def restart_listening(cls):
-        cls.stop_listening()
-        cls.start_listening()
-
-    @staticmethod
-    def _on_message_wrapper(coro, context, *args, **kwargs):
-        @functools.wraps(coro)
-        async def _receive(message: AbstractIncomingMessage):
-            async with message.process():
-                #logger.debug(f'Received message; consumer_tag={message.consumer_tag}  exchange={message.exchange}')
-
-                json_data = ujson.loads(message.body.decode('utf-8'))
-
-                # TODO needs to be fixed properly
-                #message.json = json_data
-                message.body = json_data
-                return await coro(message=message, ctx=context, *args, **kwargs)
-        return _receive
 
     @classmethod
     def iter_consumers(cls):
-        # core consumer
-        yield "core", cls._core_consumer
-
         # module consumers
-        for app_name, module in cls._loaded_modules.items():
-            for consumer in module.consumers:
-                yield app_name, consumer
+        for channel_name, consumers in cls._consumers.items():
+            for consumer in consumers:
+                yield channel_name, consumer
 
     @classmethod
     def get_consumer(cls, consumer_tag: str) -> tuple[str, Consumer] | tuple[None, None]:
-        for app_name, consumer in cls.iter_consumers():
+        for channel_name, consumer in cls.iter_consumers():
             if consumer.consumer_tag == consumer_tag:
-                return app_name, consumer
+                return channel_name, consumer
         return None, None
 
     @classmethod
     async def pause_consumer(cls, consumer_tag: str) -> bool:
-        app_name, consumer = cls.get_consumer(consumer_tag)
+        channel_name, consumer = cls.get_consumer(consumer_tag)
         if consumer:
             await consumer.stop()
             return True
@@ -177,16 +164,56 @@ class Eventory:
 
     @classmethod
     async def resume_consumer(cls, consumer_tag: str) -> bool:
-        app_name, consumer = cls.get_consumer(consumer_tag)
+        channel_name, consumer = cls.get_consumer(consumer_tag)
         if consumer:
             await consumer.start()
             return True
         return False
 
     @classmethod
-    async def make_routing_keys_set(cls, app):
-        routing_key_service = RoutingKeyService(routing_key_repo=RoutingKeyRepository())
+    def _inject_and_process_wrapper(cls, func: Callable, extra_kwargs: dict):
+        """
+        Process message (decode/validate data) before run func (consumer)
+        And inject arguments to func (consumer)
+        """
 
-        routing_keys = await routing_key_service.filter(app_id=app.pk)
+        @functools.wraps(func)
+        async def receiver(incoming_message: AbstractIncomingMessage, **kwargs):
+            async with incoming_message.process():
+                dict_data = cls._body_decode(incoming_message.body)
 
-        return RoutingKeysSet(routing_keys)
+                try:
+                    validated_body = cls._validate_message_body(func, dict_data['body'])
+                except ValueError as e:
+                    logger.warning(f"Validation error event receiving for consumer={incoming_message.consumer_tag}: {e}")
+                    return
+
+                kwargs['incoming_message'] = incoming_message  # AbstractIncomingMessage (aio_pika object)
+                kwargs['message'] = EventMessage.from_dict(dict_data)  # Message (custom dataclass)
+                kwargs['validated_body'] = validated_body  # valid pydantic model object
+                kwargs.update(extra_kwargs)  # another keyword arguments (ex: AppContext)
+
+                # make keyword argument optional for using in func
+                kwargs = cls._filter_only_using_kwargs(func, kwargs)
+                return await func(**kwargs)
+
+        return receiver
+
+    @classmethod
+    def _filter_only_using_kwargs(cls, func, kwargs) -> dict:
+        valid_keys = func.__code__.co_varnames
+        return {k: v for k, v in kwargs.items() if k in valid_keys}
+
+    @classmethod
+    def _body_decode(cls, body: bytes) -> dict:
+        json_data = ujson.loads(body.decode('utf-8'))
+        return json_data
+
+    @classmethod
+    def _validate_message_body(cls, func, body: dict) -> BaseModel | dict:
+        type_hints = get_type_hints(func)
+        if issubclass(type_hints.get('validated_body', dict), BaseModel):
+            PydanticModel = type_hints['validated_body']
+            return PydanticModel(**body)
+        else:
+            return body

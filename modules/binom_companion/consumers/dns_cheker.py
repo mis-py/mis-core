@@ -1,7 +1,7 @@
 import asyncio
 
 from loguru import logger
-from core.utils.notification.message import Message
+from core.utils.notification.message import EventMessage
 
 from libs.modules.AppContext import AppContext
 from libs.modules.components import EventManager
@@ -13,7 +13,7 @@ event_consumers = EventManager()
 
 
 @event_consumers.add_consumer(routing_keys.PROXY_DOMAIN_ADDED)
-async def proxy_domains_dns_record_checker(ctx: AppContext, message: Message):
+async def proxy_domains_dns_record_checker(ctx: AppContext, message: EventMessage):
     """
     Checking proxy domain for DNS record 'A'
     Setting domain is valid if it has an 'A' record
