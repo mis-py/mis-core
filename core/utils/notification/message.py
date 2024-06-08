@@ -8,7 +8,7 @@ from .recipient import Recipient
 
 @dataclass_json
 @dataclass
-class Message:
+class EventMessage:
     class Source(str, Enum):
         """Events by source type"""
         EXTRA = 'extra'  # type of route that come from outside
@@ -29,7 +29,7 @@ class Message:
 @dataclass_json
 @dataclass
 class IncomingProcessedMessage:
-    message: Message
+    message: EventMessage
 
     app_name: str
     key: str

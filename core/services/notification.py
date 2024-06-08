@@ -7,6 +7,7 @@ from core.repositories.routing_key_subscription import IRoutingKeySubscriptionRe
 from core.utils.schema import PageResponse
 from core.services.base.base_service import BaseService
 from core.exceptions import AlreadyExists, NotFound
+from libs.eventory.utils import RoutingKeysSet
 from libs.redis import RedisService
 
 
@@ -48,6 +49,13 @@ class RoutingKeyService(BaseService):
             "template": instance.template,
         }
         return value
+
+    async def make_routing_keys_set(self, module):
+        routing_key_service = RoutingKeyService(routing_key_repo=RoutingKeyRepository())
+
+        routing_keys = await routing_key_service.filter(app_id=module.pk)
+
+        return RoutingKeysSet(routing_keys)
 
 
 class RoutingKeySubscriptionService(BaseService):
