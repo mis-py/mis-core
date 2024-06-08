@@ -222,7 +222,7 @@ class SchedulerService(BaseService):
         )
         await self.scheduled_job_repo.save(obj=job_db)
 
-        context = await get_app_context(user=user, team=await user.team, app=task.app)
+        context = await get_app_context(user=user, team=await user.team, module=task.app)
 
         job = Schedulery.add_job(
             task_template=task,
@@ -255,7 +255,7 @@ class SchedulerService(BaseService):
             logger.warning(f"[SchedulerService] Unknown trigger used in {saved_job.job_id}, using default one.")
             trigger = task.trigger
 
-        context = await get_app_context(user=saved_job.user, team=saved_job.team, app=task.app)
+        context = await get_app_context(user=saved_job.user, team=saved_job.team, module=task.app)
 
         job = Schedulery.add_job(
             task_template=task,

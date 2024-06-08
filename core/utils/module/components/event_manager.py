@@ -28,13 +28,13 @@ class EventManager(BaseComponent):
             logger.debug(f'[EventManager]: Register consumer {template.func.__name__} from {self.module.name}')
 
             # # consumers has only app context coz no user or team is running consumer
-            context = await get_app_context(app=app_db_model)
+            context = await get_app_context(module=app_db_model)
 
             consumer = await Eventory.register_consumer(
-                app_name=self.module.name,
+                func=template.func,
                 routing_key=template.route_key,
-                callback=template.func,
-                context=context
+                channel_name=self.module.name,
+                extra_kwargs={'ctx': context},
             )
             self.consumers.append(consumer)
 

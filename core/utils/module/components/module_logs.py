@@ -26,7 +26,7 @@ class ModuleLogs(BaseComponent):
             if matched:
                 return matched.group(1) == self.module.name
 
-        ctx: AppContext = await get_app_context(app=app_db_model)
+        ctx: AppContext = await get_app_context(module=app_db_model)
 
         logger.add(
             LOGS_DIR / f"{self.module.name}/{self.module.name}.log",
