@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends, Security
 
 from core.db.models import User
 from core.dependencies.security import get_current_user
-from core.dependencies.services import get_scheduled_job_service
+from core.dependencies.services import get_scheduler_service
 from core.exceptions import NotFound, MISError
-from core.services.scheduled_job import ScheduledJobService
+from core.services.scheduler import SchedulerService
 
 from core.schemas.task import JobResponse, JobTrigger, JobCreate #, SchedulerJob
 from core.utils.task import format_trigger
@@ -22,7 +22,7 @@ router = APIRouter(dependencies=[
     response_model=MisResponse[list[JobResponse]]
 )
 async def get_jobs(
-        scheduled_job_service: Annotated[ScheduledJobService, Depends(get_scheduled_job_service)],
+        scheduler_service: Annotated[SchedulerService, Depends(get_scheduler_service)],
         task_name: str = None,
         user_id: int = None,
         team_id: int = None,
@@ -41,7 +41,7 @@ async def get_jobs(
     if sum(1 for item in [task_name, user_id, team_id, job_id] if item is not None) > 1:
         raise MISError("Specified more than one filter!")
 
-    saved_jobs = await scheduled_job_service.get_jobs(task_name, user_id, team_id, job_id)
+    saved_jobs = await scheduler_service.get_jobs(task_name, user_id, team_id, job_id)
 
     for job_db in saved_jobs:
         response.append(
@@ -88,14 +88,14 @@ async def get_jobs(
     response_model=MisResponse[JobResponse]
 )
 async def add_job(
-        scheduled_job_service: Annotated[ScheduledJobService, Depends(get_scheduled_job_service)],
+        scheduler_service: Annotated[SchedulerService, Depends(get_scheduler_service)],
         job_in: JobCreate = None,
         current_user: User = Depends(get_current_user),
 ):
     if job_in.type == 'team':
         raise MISError('Not supported yet')
 
-    job_db = await scheduled_job_service.create_scheduled_job(user=current_user, job_in=job_in)
+    job_db = await scheduler_service.create_scheduled_job(user=current_user, job_in=job_in)
 
     job_response = JobResponse(
         job_id=job_db.pk,
@@ -115,11 +115,11 @@ async def add_job(
     response_model=MisResponse
 )
 async def pause_job(
-        scheduled_job_service: Annotated[ScheduledJobService, Depends(get_scheduled_job_service)],
+        scheduler_service: Annotated[SchedulerService, Depends(get_scheduler_service)],
         job_id: int,
         current_user: User = Depends(get_current_user)
 ):
-    job_db = await scheduled_job_service.set_paused_status(job_id=job_id)
+    job_db = await scheduler_service.set_paused_status(job_id=job_id)
 
     job_response = JobResponse(
         job_id=job_db.pk,
@@ -139,11 +139,11 @@ async def pause_job(
     response_model=MisResponse[JobResponse]
 )
 async def resume_job(
-        scheduled_job_service: Annotated[ScheduledJobService, Depends(get_scheduled_job_service)],
+        scheduler_service: Annotated[SchedulerService, Depends(get_scheduler_service)],
         job_id: int,
         current_user: User = Depends(get_current_user)
 ):
-    job_db = await scheduled_job_service.set_running_status(job_id=job_id)
+    job_db = await scheduler_service.set_running_status(job_id=job_id)
 
     job_response = JobResponse(
         job_id=job_db.pk,
@@ -163,11 +163,11 @@ async def resume_job(
     response_model=MisResponse[JobResponse]
 )
 async def reschedule_job(
-        scheduled_job_service: Annotated[ScheduledJobService, Depends(get_scheduled_job_service)],
+        scheduler_service: Annotated[SchedulerService, Depends(get_scheduler_service)],
         job_id: int,
         schedule_in: JobTrigger,
 ):
-    job_db = await scheduled_job_service.update_job_trigger(
+    job_db = await scheduler_service.update_job_trigger(
         job_id=job_id,
         schedule_in=schedule_in
     )
@@ -191,10 +191,10 @@ async def reschedule_job(
     response_model=MisResponse
 )
 async def remove_job(
-        scheduled_job_service: Annotated[ScheduledJobService, Depends(get_scheduled_job_service)],
+        scheduler_service: Annotated[SchedulerService, Depends(get_scheduler_service)],
         job_id: int,
         current_user: User = Depends(get_current_user)
 ):
-    await scheduled_job_service.cancel_job(job_id=job_id)
+    await scheduler_service.cancel_job(job_id=job_id)
 
     return MisResponse()

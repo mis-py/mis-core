@@ -1,8 +1,8 @@
 from loguru import logger
 
 from ..config import ModuleSettings
-from libs.modules.components import ScheduledTasks
-from libs.modules.AppContext import AppContext
+from core.utils.module.components import ScheduledTasks
+from core.utils.app_context import AppContext
 from libs.eventory import Eventory
 
 scheduled_tasks = ScheduledTasks()

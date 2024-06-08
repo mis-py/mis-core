@@ -3,8 +3,7 @@ from loguru import logger
 from libs.eventory import Eventory
 from libs.mongo.mongo import MongoService
 from libs.redis import RedisService
-from libs.scheduler import SchedulerService
-from libs.modules.module_service import ModuleService
+from libs.schedulery import Schedulery
 from libs.tortoise_manager import TortoiseManager
 
 from config import CoreSettings
@@ -12,7 +11,16 @@ from config import CoreSettings
 from core.routes import variable, auth, websocket, notification, team, \
     module, user, task, job, permission, guardian
 
-from core.utils.core_setup import setup_core, setup_admin_user, setup_guardian
+from core.utils.core_setup import (
+    setup_core,
+    setup_admin_user,
+    setup_guardian,
+    setup_manifest_init,
+    setup_modules_pre_init,
+    setup_modules_models,
+    setup_modules_init,
+    setup_modules_shutdown
+)
 # from modules.core.websockets.actions import Action, send_log_to_subscribers, send_notification_to_subscribers
 # from modules.core.websockets.manager import WSManager, ws_manager
 # from fastapi.openapi.docs import get_swagger_ui_html
@@ -98,12 +106,12 @@ async def init_guardian():
 
 
 async def init_scheduler():
-    await SchedulerService.init()
+    await Schedulery.init()
     logger.success('Scheduler started')
 
 
 async def shutdown_scheduler():
-    await SchedulerService.close()
+    await Schedulery.close()
     logger.info('SchedulerService shutdown')
 
 
@@ -128,32 +136,25 @@ async def shutdown_mongo():
 
 
 async def manifest_init_modules():
-    await ModuleService.manifest_init()
+    await setup_manifest_init()
     logger.success('Modules manifest initialized')
 
 
-async def pre_init_modules():
-    await ModuleService.pre_init()
+async def pre_init_modules(application):
+    await setup_modules_pre_init(application)
     logger.success('Modules pre initialized')
 
 
-async def init_modules(app):
-    await ModuleService.init(app)
+async def init_modules():
+    await setup_modules_init()
     logger.success('Modules initialized')
 
 
 async def shutdown_modules():
-    await ModuleService.shutdown()
+    await setup_modules_shutdown()
     logger.info("Modules shutdown complete")
 
 
-async def init_settings():
-    # why should we load settings to env? it's not secure at all
-    # await VariablesManager.init()
-    # logger.info('Settings loaded!')
-    raise Exception("Do not use me pls")
-
-
 async def init_modules_root_model():
-    await ModuleService.init_modules_root_model()
+    await setup_modules_models()
     logger.success('Modules root model initialized')

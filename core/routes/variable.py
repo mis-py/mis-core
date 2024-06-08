@@ -5,8 +5,9 @@ from fastapi import Depends, APIRouter, Security, Query
 from core.db.models import Team, User, Module
 from core.dependencies.security import get_current_user
 from core.dependencies.path import get_team_by_id, get_user_by_id
-from core.dependencies.services import get_variable_service, get_variable_value_service, get_team_service, \
+from core.dependencies.services import get_team_service, \
     get_user_service, get_module_service
+from core.dependencies.variable_service import get_variable_service
 from core.dependencies.path import get_module_by_id
 from core.schemas.variable import VariableResponse, VariableValueResponse
 from core.schemas.variable import UpdateVariable
@@ -15,10 +16,8 @@ from core.services.team import TeamService
 from core.services.user import UserService
 
 from core.services.variable import VariableService
-from core.services.variable_value import VariableValueService
-from core.utils.schema import MisResponse, PageResponse
+from core.utils.schema import MisResponse
 from core.exceptions.exceptions import ValidationFailed, MISError
-from libs.variables.variables import VariablesManager
 
 router = APIRouter()
 
@@ -39,7 +38,7 @@ router = APIRouter()
 @router.get(
     '/',
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:variables'])],
-    response_model=PageResponse[VariableResponse]
+    response_model=MisResponse[list[VariableResponse]]
 )
 async def get_global_variables(
         variable_service: Annotated[VariableService, Depends(get_variable_service)],
@@ -55,20 +54,22 @@ async def get_global_variables(
     else:
         module_instance = None
 
-    return await variable_service.filter_and_paginate(
+    variables = await variable_service.filter_variable(
         # is_global=is_global,
         app_id=module_instance.pk if module_instance else None,
     )
+
+    return MisResponse[list[VariableResponse]](result=variables)
 
 
 @router.get(
     '/values',
     dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:variables'])],
-    response_model=PageResponse[VariableValueResponse],
+    response_model=MisResponse[list[VariableValueResponse]],
     description="Returns all available variables by specified filter criteria"
 )
 async def get_local_variables(
-        variable_value_service: Annotated[VariableValueService, Depends(get_variable_value_service)],
+        variable_service: Annotated[VariableService, Depends(get_variable_service)],
         team_service: Annotated[TeamService, Depends(get_team_service)],
         user_service: Annotated[UserService, Depends(get_user_service)],
         team_id: int = Query(default=None),
@@ -83,11 +84,13 @@ async def get_local_variables(
     if user_id is not None:
         await user_service.get_or_raise(id=user_id)
 
-    return await variable_value_service.filter_and_paginate(
+    variable_values = await variable_service.filter_variable_value(
         team_id=team_id,
         user_id=user_id,
         prefetch_related=['variable']
     )
+
+    return MisResponse[list[VariableValueResponse]](result=variable_values)
 
 
 @router.put(
@@ -107,8 +110,7 @@ async def set_global_variables(
 
         module = await module_service.get_or_raise(id=module_id)
 
-        await variable_service.set_variables(variables=variables)
-        await VariablesManager.update_variables(app=module)
+        await variable_service.set_variables(module=module, variables=variables)
 
     return MisResponse()
 
@@ -119,7 +121,7 @@ async def set_global_variables(
     response_model=MisResponse
 )
 async def set_local_variables(
-        variable_value_service: Annotated[VariableValueService, Depends(get_variable_value_service)],
+        variable_service: Annotated[VariableService, Depends(get_variable_service)],
         team_service: Annotated[TeamService, Depends(get_team_service)],
         user_service: Annotated[UserService, Depends(get_user_service)],
         variables: list[UpdateVariable],
@@ -132,42 +134,41 @@ async def set_local_variables(
     if team_id is not None:
         team = await team_service.get_or_raise(id=team_id, prefetch_related=['users'])
 
-        await variable_value_service.set_variables_values(team_id=team.pk, variables=variables)
-        await VariablesManager.update_variables(team=team)
+        await variable_service.set_variables_values(team=team, variables=variables)
 
     if user_id is not None:
         user = await user_service.get_or_raise(id=user_id)
 
-        await variable_value_service.set_variables_values(user_id=user.pk, variables=variables)
-        await VariablesManager.update_variables(user=user)
+        await variable_service.set_variables_values(user=user, variables=variables)
 
     return MisResponse()
 
 
 @router.get(
     '/my',
-    response_model=PageResponse[VariableResponse]
+    response_model=MisResponse[list[VariableValueResponse]]
 )
 async def get_my_variables(
-        variable_value_service: Annotated[VariableValueService, Depends(get_variable_value_service)],
+        variable_service: Annotated[VariableService, Depends(get_variable_service)],
         user: User = Depends(get_current_user)
 ):
-    return await variable_value_service.filter_and_paginate(
+    variable_values = await variable_service.filter_variable_value(
         user_id=user.pk,
         prefetch_related=['variable']
     )
+
+    return MisResponse[list[VariableValueResponse]](result=variable_values)
 
 
 @router.put(
     '/my',
     response_model=MisResponse
 )
-async def edit_my_variables(
-        variable_value_service: Annotated[VariableValueService, Depends(get_variable_value_service)],
+async def set_my_variables(
+        variable_service: Annotated[VariableService, Depends(get_variable_service)],
         variables: list[UpdateVariable],
         user: User = Depends(get_current_user)
 ):
-    await variable_value_service.set_variables_values(user_id=user.pk, variables=variables)
-    await VariablesManager.update_variables(user=user)
+    await variable_service.set_variables_values(user=user, variables=variables)
 
     return MisResponse()

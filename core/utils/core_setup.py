@@ -1,17 +1,20 @@
-from typing import Annotated
-
+import os
+from loguru import logger
 from tortoise import Tortoise
 
-from const import DEFAULT_ADMIN_USERNAME
+from const import DEFAULT_ADMIN_USERNAME, MODULES_DIR, MODULES_DIR_NAME
 from config import CoreSettings
 from core.db.guardian import GuardianPermission, GuardianContentType
 from core.db.mixin import GuardianMixin
+from core.db.dataclass import AppState
 from core.db.models import Module, User, Team
 from core.dependencies.services import get_module_service, get_permission_service
 from core.services.module import ModuleService
 from core.services.permission import PermissionService
 from core.utils.common import camel_to_spaces
 from core.utils.security import get_password_hash
+from core.utils.module.utils import manifests_sort_by_dependency, import_module, unload_module, read_module_manifest, \
+    module_dependency_check
 
 
 settings = CoreSettings()
@@ -85,3 +88,115 @@ async def setup_guardian():
                     name=f"Can {code_perm_name} {model_name_spaces}",
                     content_type=content_type,
                 )
+
+
+async def setup_manifest_init():
+    """
+    Method called by system loader!
+    Collect manifest.json files from each module in modules directory
+    """
+
+    manifests = {}
+    for module in os.listdir(MODULES_DIR):
+        if "__" in module:
+            continue
+        manifest = read_module_manifest(module)
+
+        if not manifest:
+            continue
+        manifests[module] = manifest
+
+    # we need to load modules in specific order, so we sort it by dependency tree
+    # sort func adds module that not exist
+    sorted_module_manifests = manifests_sort_by_dependency(manifests)
+
+    # validation dependency version
+    for module_name, manifest in sorted_module_manifests.items():
+        is_valid_dependency_version = module_dependency_check(
+            module_manifest=manifest, all_manifests=sorted_module_manifests
+        )
+        if not is_valid_dependency_version:
+            continue
+
+        ModuleService.add_manifest(module_name, manifest)
+
+
+async def setup_modules_pre_init(application):
+    """
+    Method called by system loader!
+    Import modules by sorted manifests and run pre init for each module
+    """
+
+    for module_name in ModuleService.get_loaded_module_names():
+        package = import_module(module_name, MODULES_DIR_NAME)
+        instance = package.module
+
+        ModuleService.add_instance(module_name, instance)
+
+        logger.debug(f'[ModuleService] Module: {module_name} pre_init started!')
+        await instance.pre_init(application)
+        logger.debug(f"[ModuleService] Module: '{module_name}' pre_init finished!")
+
+
+async def setup_modules_models():
+    """
+    Method called by system loader!
+    Creates DB model instance and bind it to module instance and module components
+    """
+    module_service = get_module_service()
+    for module_name in ModuleService.get_loaded_module_names():
+        instance = ModuleService.get_loaded_module(module_name).instance
+        if not instance:
+            logger.debug(f"Module: {module_name} instance is None, skip..")
+            continue
+
+        module_model, is_created = await module_service.get_or_create(name=module_name)
+        if is_created:
+            module_model.state = AppState.PRE_INITIALIZED
+        logger.debug(f"Module: {module_name} DB instance received")
+
+        await instance.bind_model(module_model, is_created)
+        logger.debug(f"Module: {module_name} DB instance binded")
+
+
+async def setup_modules_init():
+    """
+    Method called by system loader!
+    Run module init and start if module is enabled
+    """
+
+    module_service = get_module_service()
+    for module_name in ModuleService.get_loaded_module_names():
+        module_model = await module_service.get_or_raise(name=module_name)
+        if module_model.enabled:
+            try:
+                await module_service.init_module(module_name)
+            except Exception as e:
+                logger.error(f'[ModuleService] Module: {module_name} system init failed ({e}), skip...')
+                continue
+
+            logger.debug(f'[ModuleService] Module: {module_name} auto-start is enabled starting...')
+
+            try:
+                await module_service.start_module(module_name)
+            except Exception as e:
+                logger.error(f'[ModuleService] Module: {module_name} system init failed ({e}), skip...')
+                continue
+
+    # need for start consumer for core websocket sender
+    # await cls._restart_core_consumer()
+
+
+async def setup_modules_shutdown():
+    """
+    Method called by system loader!
+    Executes when application shutdowns.
+    Calls stop_module for every enabled app if enabled and then shutdown
+    """
+    module_service = get_module_service()
+    for module_name in ModuleService.get_loaded_module_names():
+        module_model = await module_service.get_or_raise(name=module_name)
+        if module_model.enabled:
+            await module_service.stop_module(module_name)
+        await module_service.shutdown_module(module_name, from_system=True)
+

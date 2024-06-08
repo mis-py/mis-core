@@ -1,11 +1,13 @@
 from abc import abstractmethod, ABC
 
 from typing import Callable
-from core.db.models import Module
-from core.db.dataclass import AppState
-from libs.modules.Component import Component
-from libs.modules.AppContext import AppContext
-from libs.modules.utils.ModuleManifest import ModuleDependency, ModuleManifest
+from tortoise.models import Model
+
+from typing import TYPE_CHECKING
+
+# if TYPE_CHECKING:
+from .BaseComponent import BaseComponent
+from core.schemas.module import ModuleManifest, ModuleDependency
 
 
 class BaseModule(ABC):
@@ -28,17 +30,17 @@ class BaseModule(ABC):
     permissions: dict
 
     # List of module components
-    pre_init_components: list[Component]
-    components: list[Component]
+    pre_init_components: list['BaseComponent']
+    components: list['BaseComponent']
 
     # Other modules as dependencies
-    dependencies: list[ModuleDependency]
+    dependencies: list['ModuleDependency']
 
     # If auth disabled routes will not have access to current user
     auth_disabled: bool
 
     # DB reference to app model
-    _model: Module
+    _model: Model
 
     # will be True on very first model init
     _is_created: bool
@@ -56,8 +58,8 @@ class BaseModule(ABC):
             shutdown_event: Callable = None,
             start_event: Callable = None,
             stop_event: Callable = None,
-            pre_init_components: list[Component] = None,
-            components: list[Component] = None
+            pre_init_components: list['BaseComponent'] = None,
+            components: list['BaseComponent'] = None
     ):
         self.pre_init_event = pre_init_event
         self.init_event = init_event
@@ -68,23 +70,7 @@ class BaseModule(ABC):
         self.components = components
 
     @abstractmethod
-    async def _set_state(self, state: AppState) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_state(self) -> AppState:
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_id(self) -> int:
-        raise NotImplementedError
-
-    @abstractmethod
-    def is_enabled(self) -> bool:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def pre_init(self) -> bool:
+    async def pre_init(self, application) -> bool:
         raise NotImplementedError
 
     @abstractmethod
@@ -92,27 +78,27 @@ class BaseModule(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def init(self, application, from_system=False) -> bool:
+    async def init(self) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    async def start(self, from_system=False) -> bool:
+    async def start(self) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    async def stop(self, from_system=False) -> bool:
+    async def stop(self) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    async def shutdown(self, from_system=False) -> bool:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def get_context(self, user=None, team=None) -> AppContext:
+    async def shutdown(self) -> bool:
         raise NotImplementedError
 
     @abstractmethod
     def set_manifest(self, manifest: ModuleManifest) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def refresh_from_db(self) -> bool:
         raise NotImplementedError
 
 

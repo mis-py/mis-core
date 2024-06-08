@@ -1,8 +1,10 @@
 from loguru import logger
 
+
 from core.utils.notification.message import EventMessage
-from libs.modules.components import EventManager
-from libs.modules.AppContext import AppContext
+from core.utils.module.components import EventManager
+from core.utils.app_context import AppContext
+
 from ..config import RoutingKeys
 from ..db.schema import DummyResponse
 
@@ -11,6 +13,7 @@ event_consumers = EventManager()
 
 
 @event_consumers.add_consumer(routing_keys.DUMMY_EVENT)
+# TODO what if we put dependency resolve in args? like those in fastapi routes
 async def template_consumer(ctx: AppContext, message: EventMessage):
     logger.debug(f"Received message: {message.body} for module: {ctx.app_name}")
 

@@ -9,8 +9,6 @@ from core.dependencies.services import get_routing_key_service
 from core.exceptions import NotFound
 from core.utils.schema import Params
 from libs.eventory.utils import RoutingKeysSet
-from libs.modules.AppContext import AppContext
-from libs.modules.module_service import ModuleService
 from libs.redis import RedisService
 
 settings = CoreSettings()
@@ -35,27 +33,9 @@ async def get_routing_keys(
     return await routing_key_service.make_routing_keys_set(module=module)
 
 
-async def get_app_context(
-        user: User = Depends(get_current_user),
-        module: Module = Depends(get_current_app)
-):
-    await user.fetch_related('team')
-    return await ModuleService.make_module_context(module_name=module.name, user=user, team=user.team)
-
-
-async def get_userless_app_context(
-        module: Module = Depends(get_current_app)
-):
-    return await ModuleService.make_module_context(module_name=module.name)
-
-
 async def get_redis_service() -> RedisService:
     return RedisService()
 
-
-AppContextDep = Annotated[AppContext, Depends(get_app_context)]
-
-UserlessAppContextDep = Annotated[AppContext, Depends(get_userless_app_context)]
 
 PaginateParamsDep = Annotated[Params, Depends()]
 

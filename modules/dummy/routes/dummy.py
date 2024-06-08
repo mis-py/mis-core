@@ -2,11 +2,13 @@ from typing import Annotated
 
 from fastapi import APIRouter, Security, Depends
 
-from core.dependencies.misc import get_app_context, RoutingKeysDep
+from core.dependencies.misc import RoutingKeysDep
+from core.dependencies.context import get_app_context
 from core.dependencies.security import get_current_user
 from core.utils.schema import MisResponse, PageResponse
+from core.utils.app_context import AppContext
+
 from libs.eventory import Eventory
-from libs.modules.AppContext import AppContext
 
 from ..db.schema import DummyResponse, DummyCreate, DummyEdit, DummyDataResponse
 from ..dependencies.services import get_dummy_model_service
@@ -78,7 +80,7 @@ async def delete_dummy(
 async def get_dummy_data(
         dummy_model_service: Annotated[DummyService, Depends(get_dummy_model_service)],
         routing_keys: RoutingKeysDep,
-        ctx: AppContext = Depends(get_app_context),
+        ctx: Annotated[AppContext, Depends(get_app_context)],
 ):
     dummy_list = await dummy_model_service.filter()
 

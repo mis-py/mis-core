@@ -1,15 +1,8 @@
-from loguru import logger
-
-from const import DEFAULT_ADMIN_USERNAME
-from core.dependencies.services import get_g_access_group_service, get_user_service, get_guardian_service
-from core.services.guardian_service import GAccessGroupService, GuardianService
-from core.services.user import UserService
-from libs.modules.GenericModule import GenericModule
-from libs.modules.components import Variables, ModuleLogs, TortoiseModels, EventRoutingKeys, APIRoutes
+from core.utils.module import GenericModule
+from core.utils.module.components import Variables, ModuleLogs, TortoiseModels, EventRoutingKeys, APIRoutes
 
 from .config import UserSettings, RoutingKeys, ModuleSettings
 from .consumers import event_consumers
-from .db.models import DummyModel
 from .routes import router
 from .tasks import scheduled_tasks
 
@@ -48,11 +41,11 @@ async def init(module_instance: GenericModule):
 module = GenericModule(
     pre_init_components=[
         TortoiseModels(),
+        APIRoutes(router),
     ],
     components=[
         scheduled_tasks,
         event_consumers,
-        APIRoutes(router),
         # just create plain component, all work will be in init() method
         # we declare that module has models in module.db package
         Variables(app_settings, user_settings),

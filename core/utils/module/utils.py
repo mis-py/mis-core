@@ -7,7 +7,11 @@ from packaging.version import Version
 from pydantic import ValidationError
 
 from const import MODULES_DIR
-from libs.modules.utils.ModuleManifest import ModuleManifest, ModuleDependency
+from core.db.models import Module
+from core.dependencies.variable_service import get_variable_service
+from core.dependencies.services import get_routing_key_service  # to avoid circular import
+from core.schemas.module import ModuleManifest, ModuleDependency
+from core.utils.app_context import AppContext
 
 
 def import_module(app_name: str, package: str = 'modules'):
@@ -145,3 +149,18 @@ def read_module_manifest(module_name: str) -> ModuleManifest | None:
     except ValidationError as error:
         logger.error(f"[{module_name}] Invalid manifest.json content! {error}")
         return None
+
+
+async def get_app_context(module: Module, user=None, team=None):
+    """Context for jobs and other services.
+    If user or team is defined then variables will be available in context along with module variables"""
+
+    variable_service = get_variable_service()
+    routing_key_service = get_routing_key_service()
+    return AppContext(
+        user=user,
+        team=team,
+        variables=await variable_service.make_variable_set(user=user, team=await user.team if user else None, app=module),
+        app_name=module.name,
+        routing_keys=await routing_key_service.make_routing_keys_set(module=module)
+    )

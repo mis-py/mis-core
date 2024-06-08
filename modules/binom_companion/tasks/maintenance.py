@@ -2,8 +2,8 @@ from loguru import logger
 
 from datetime import datetime, timedelta, timezone
 
-from libs.modules.AppContext import AppContext
-from libs.modules.components import ScheduledTasks
+from core.utils.app_context import AppContext
+from core.utils.module.components import ScheduledTasks
 from ..service import LeadRecordService
 
 scheduled_tasks = ScheduledTasks()

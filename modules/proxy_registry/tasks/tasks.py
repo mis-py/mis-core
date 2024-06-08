@@ -4,7 +4,7 @@ from loguru import logger
 from datetime import datetime, timedelta
 
 from core.utils.notification.message import Message
-from libs.modules import AppContext
+from core.utils.app_context import AppContext
 
 from libs.modules.components import ScheduledTasks
 from libs.redis import RedisService

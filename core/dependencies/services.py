@@ -20,12 +20,9 @@ from core.services.guardian_service import GContentTypeService, GPermissionServi
 from core.services.module import ModuleService
 from core.services.notification import RoutingKeyService, RoutingKeySubscriptionService
 from core.services.permission import PermissionService
-from core.services.scheduled_job import ScheduledJobService
 from core.services.team import TeamService
 from core.services.user import UserService
-from core.services.variable import VariableService
-from core.services.variable_value import VariableValueService
-from libs.eventory import Eventory
+from core.services.scheduler import SchedulerService
 
 
 def get_user_service() -> UserService:
@@ -58,24 +55,6 @@ def get_auth_service() -> AuthService:
     return auth_service
 
 
-def get_variable_service() -> VariableService:
-    variable_repo = VariableRepository()
-
-    variable_service = VariableService(variable_repo=variable_repo)
-    return variable_service
-
-
-def get_variable_value_service() -> VariableValueService:
-    variable_value_repo = VariableValueRepository()
-    variable_repo = VariableRepository()
-
-    variable_value_service = VariableValueService(
-        variable_value_repo=variable_value_repo,
-        variable_repo=variable_repo,
-    )
-    return variable_value_service
-
-
 def get_module_service() -> ModuleService:
     module_repo = ModuleRepository()
 
@@ -83,15 +62,15 @@ def get_module_service() -> ModuleService:
     return module_service
 
 
-def get_scheduled_job_service() -> ScheduledJobService:
+def get_scheduler_service() -> SchedulerService:
     scheduled_job_repo = ScheduledJobRepository()
     module_repo = ModuleRepository()
 
-    scheduled_job_service = ScheduledJobService(
+    scheduler_service = SchedulerService(
         scheduled_job_repo=scheduled_job_repo,
         module_repo=module_repo,
     )
-    return scheduled_job_service
+    return scheduler_service
 
 
 def get_permission_service() -> PermissionService:
