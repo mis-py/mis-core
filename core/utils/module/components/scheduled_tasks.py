@@ -49,14 +49,17 @@ class ScheduledTasks(BaseComponent):
 
         def _wrapper(func):
             extra_typed = signature_to_dict(func)
-            extra_typed.pop("ctx", False)
+            has_context = extra_typed.pop("ctx", False)
+            has_job_meta = extra_typed.pop("job_meta", False)
             self._tasks.append(TaskTemplate(
                 type=task_type,
                 func=func,
                 trigger=trigger,
                 extra_typed=extra_typed,
                 autostart=autostart,
-                single_instance=single_instance
+                single_instance=single_instance,
+                has_context=bool(has_context),
+                has_job_meta=bool(has_job_meta)
             ))
             return func
         return _wrapper

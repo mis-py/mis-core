@@ -2,13 +2,14 @@ from loguru import logger
 
 from core.utils.app_context import AppContext
 from core.utils.module.components import ScheduledTasks
+from core.utils.scheduler import JobMeta
 from ..service import YandexBrowserCheckService, ReplacementGroupService, TrackerInstanceService
 
 scheduled_tasks = ScheduledTasks()
 
 
 @scheduled_tasks.schedule_task(trigger=None)
-async def yandex_check_replacement_group_proxy_change(ctx: AppContext, replacement_group_ids: list[int], yandex_api_key: str):
+async def yandex_check_replacement_group_proxy_change(ctx: AppContext, job_meta: JobMeta, replacement_group_ids: list[int], yandex_api_key: str):
     """
     Check ban in the yandex browser of domains that are currently in use
     """
@@ -31,12 +32,15 @@ async def yandex_check_replacement_group_proxy_change(ctx: AppContext, replaceme
         domains=all_domains,
         yandex_api_key=yandex_api_key,
     )
+
     if not banned_domains:
         logger.debug(f"Group ids: {replacement_group_ids}. Domains not banned: {all_domains}")
         return
 
+    logger.debug(f"Group ids: {replacement_group_ids}. Found banned domains: {all_domains}!")
+
     await ReplacementGroupService().proxy_change(
         ctx=ctx,
         replacement_group_ids=replacement_group_ids,
-        reason="Automatic task"
+        reason=f"Job id: {job_meta.job_id}"
     )

@@ -1,7 +1,7 @@
 from loguru import logger
 from tortoise.exceptions import IntegrityError
 
-from core.dependencies.services import get_routing_key_service
+from core.dependencies.routing_key_service import get_routing_key_service
 from core.services.notification import RoutingKeyService
 from ..Base.BaseComponent import BaseComponent
 

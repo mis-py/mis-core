@@ -4,7 +4,7 @@ from core.db.models import Module, User
 from core.dependencies.misc import get_current_app
 from core.dependencies.security import get_current_user
 from core.dependencies.variable_service import get_variable_service
-from core.dependencies.services import get_routing_key_service  # to avoid circular import
+from core.dependencies.routing_key_service import get_routing_key_service
 from core.utils.app_context import AppContext
 from libs.eventory import Eventory
 

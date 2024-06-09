@@ -9,7 +9,7 @@ from pydantic import ValidationError
 from const import MODULES_DIR
 from core.db.models import Module
 from core.dependencies.variable_service import get_variable_service
-from core.dependencies.services import get_routing_key_service  # to avoid circular import
+from core.dependencies.routing_key_service import get_routing_key_service
 from core.schemas.module import ModuleManifest, ModuleDependency
 from core.utils.app_context import AppContext
 

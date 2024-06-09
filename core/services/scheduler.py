@@ -10,8 +10,9 @@ from core.repositories.scheduled_job import IScheduledJobRepository
 from core.schemas.task import JobCreate, JobTrigger, TaskResponse
 from core.services.base.base_service import BaseService
 from core.utils.task import get_trigger, format_trigger
-from core.utils.scheduler import TaskTemplate
+from core.utils.scheduler import TaskTemplate, JobMeta
 from core.utils.module import get_app_context
+from core.utils.types import type_convert
 from libs.schedulery import Schedulery
 
 
@@ -198,10 +199,9 @@ class SchedulerService(BaseService):
                 raise AlreadyExists("Scheduled job already exists")
 
         # TODO refactor this validation
-
-        # for extra_name, extra_type in task.extra_typed.items():
-        #     converted_value = type_convert(to_type=extra_type, value=job_in.extra[extra_name])
-        #     job_in.extra[extra_name] = converted_value
+        for extra_name, extra_type in task.extra_typed.items():
+            converted_value = type_convert(to_type=extra_type, value=job_in.extra[extra_name])
+            job_in.extra[extra_name] = converted_value
 
         if task.extra_typed and job_in.extra:
             kwargs = validate_task_extra(job_in.extra, task.extra_typed)
@@ -224,12 +224,21 @@ class SchedulerService(BaseService):
 
         context = await get_app_context(user=user, team=await user.team, module=task.app)
 
+        job_meta = JobMeta(
+            job_id=job_db.id,
+            trigger=trigger,
+            task_name=task_name,
+            user_id=user.id,
+            module_id=task.app.id,
+        )
+
         job = Schedulery.add_job(
             task_template=task,
             job_id=job_db.id,
             kwargs=kwargs,
             trigger=trigger,
             context=context,
+            job_meta=job_meta,
             run_at_startup=task.autostart
         )
         logger.info(f'[SchedulerService]: Added job [{job_db.id}]{job.name} {"running" if task.autostart else "paused"}')
@@ -257,12 +266,21 @@ class SchedulerService(BaseService):
 
         context = await get_app_context(user=saved_job.user, team=saved_job.team, module=task.app)
 
+        job_meta = JobMeta(
+            job_id=saved_job.id,
+            trigger=trigger,
+            task_name=saved_job.task_name,
+            user_id=saved_job.user.id,
+            module_id=task.app.id,
+        )
+
         job = Schedulery.add_job(
             task_template=task,
             job_id=saved_job.id,
             run_at_startup=run_at_startup,
             context=context,
             trigger=trigger,
+            job_meta=job_meta,
             kwargs=saved_job.extra_data,
         )
         logger.info(f'[SchedulerService]: Restored job [{saved_job.id}]{job.name}')
