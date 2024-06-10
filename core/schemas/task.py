@@ -1,28 +1,30 @@
-from pydantic import BaseModel, field_validator
-import re
+from pydantic import field_validator
 from typing import Literal, Optional
-from core.utils.schema import MisModel
-from core.db.models import ScheduledJob
+from cron_converter import Cron
 from core.db.dataclass import StatusTask
+from tortoise.contrib.pydantic import PydanticModel
 
 
-class JobTrigger(MisModel):
+class JobTrigger(PydanticModel):
     trigger: Optional[int | str | list[str]] = None
 
-    # @field_validator('trigger')
-    # @classmethod
-    # def check_trigger(cls, value: int | str | list[str]):
-    #     regexp = r"/^(\*|((\*\/)?[1-5]?[0-9])) (\*|((\*\/)?[1-5]?[0-9])) (\*|((\*\/)?(1?[0-9]|2[0-3]))) (\*|((\*\/)?([1-9]|[12][0-9]|3[0-1]))) (\*|((\*\/)?([1-9]|1[0-2]))) (\*|((\*\/)?[0-6]))$/"
-    #     if isinstance(value, int) and value <= 60:
-    #         raise ValueError("Int value must be greater or equal 60")
-    #     if isinstance(value, str) and not re.match(regexp, value):
-    #         raise ValueError(f"Wrong cron expression '{value}'")
-    #     if isinstance(value, list):
-    #         for i, string_item in enumerate(value):
-    #             if isinstance(string_item, str) and not re.match(regexp, string_item):
-    #                 raise ValueError(f"Wrong cron expression '{string_item}' at position {i} of list.")
-    #
-    #     return value
+    @field_validator('trigger')
+    @classmethod
+    def validate_trigger(cls, value: int | str | list[str]) -> int | str | list[str]:
+        if isinstance(value, int) and value < 60:
+            raise ValueError("Int value must be greater or equal 60")
+        if isinstance(value, str):
+            cron = Cron(value)
+        if isinstance(value, list):
+            for i, string_item in enumerate(value):
+                if isinstance(string_item, str):
+                    try:
+                        cron = Cron(string_item)
+                    except ValueError as e:
+                        e.args = (e.args[0] + f" at position {i} of list",)
+                        raise e
+
+        return value
 
 
 # class SchedulerJob(MisModel):

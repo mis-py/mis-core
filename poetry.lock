@@ -575,6 +575,24 @@ files = [
 ]
 
 [[package]]
+name = "cron-converter"
+version = "1.2.1"
+description = "Cron string parser and scheduler for Python"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "cron_converter-1.2.1-py3-none-any.whl", hash = "sha256:4604e356c15a8fbe76a86bb42508f611ad3cade7dd65e2d6f601c2e0d5226ffc"},
+    {file = "cron_converter-1.2.1.tar.gz", hash = "sha256:6766c6ba44b8236201ac03030f314fd655343c1c4848ce216458e8d340066c59"},
+]
+
+[package.dependencies]
+python-dateutil = "*"
+
+[package.extras]
+mypy = ["mypy", "types-python-dateutil"]
+test = ["python-dateutil"]
+
+[[package]]
 name = "dataclasses-json"
 version = "0.6.1"
 description = "Easily serialize dataclasses to and from JSON."
@@ -1824,6 +1842,20 @@ pytest = ">=5.0.0"
 python-dotenv = ">=0.9.1"
 
 [[package]]
+name = "python-dateutil"
+version = "2.9.0.post0"
+description = "Extensions to the standard Python datetime module"
+optional = false
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
+files = [
+    {file = "python-dateutil-2.9.0.post0.tar.gz", hash = "sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3"},
+    {file = "python_dateutil-2.9.0.post0-py2.py3-none-any.whl", hash = "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427"},
+]
+
+[package.dependencies]
+six = ">=1.5"
+
+[[package]]
 name = "python-dotenv"
 version = "1.0.0"
 description = "Read key-value pairs from a .env file and set them as environment variables"
@@ -2636,4 +2668,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "6aabeaef7589d1b28fadb4ac0a7f7856fd7eef2e88c004527517560a6ac10e6d"
+content-hash = "4c64e8a38b847de62fac747c28672666fcdcb0a4380d43ccbdb3f5da33e94678"
