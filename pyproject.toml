@@ -33,6 +33,7 @@ aiohttp-socks = "^0.8.4"
 fake-useragent = "^1.5.1"
 aiodns = "^3.2.0"
 gunicorn = "22.0.0"
+cron-converter = "^1.2.1"
 
 
 [tool.poetry.group.test.dependencies]
