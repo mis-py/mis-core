@@ -6,8 +6,6 @@ from core.repositories.guardian_permission import GPermissionRepository
 from core.repositories.guardian_user_permission import GUserPermissionRepository
 from core.repositories.module import ModuleRepository
 from core.repositories.permission import PermissionRepository
-from core.repositories.routing_key import RoutingKeyRepository
-from core.repositories.routing_key_subscription import RoutingKeySubscriptionRepository
 from core.repositories.scheduled_job import ScheduledJobRepository
 from core.repositories.team import TeamRepository
 from core.repositories.user import UserRepository
@@ -18,7 +16,6 @@ from core.services.granted_permission import GrantedPermissionService
 from core.services.guardian_service import GContentTypeService, GPermissionService, GAccessGroupService, \
     GUserPermissionService, GGroupPermissionService, GuardianService
 from core.services.module import ModuleService
-from core.services.notification import RoutingKeyService, RoutingKeySubscriptionService
 from core.services.permission import PermissionService
 from core.services.team import TeamService
 from core.services.user import UserService
@@ -89,21 +86,6 @@ def get_granted_permission_service() -> GrantedPermissionService:
         permission_repo=permission_repo,
     )
     return granted_permission_service
-
-
-def get_routing_key_service() -> RoutingKeyService:
-    routing_key_repo = RoutingKeyRepository()
-
-    routing_key_service = RoutingKeyService(routing_key_repo=routing_key_repo)
-    return routing_key_service
-
-
-def get_routing_key_subscription_service() -> RoutingKeySubscriptionService:
-    routing_key_subscription_repo = RoutingKeySubscriptionRepository()
-
-    routing_key_subscription_service = RoutingKeySubscriptionService(
-        routing_key_subscription_repo=routing_key_subscription_repo)
-    return routing_key_subscription_service
 
 
 def get_g_content_type_service() -> GContentTypeService:

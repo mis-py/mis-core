@@ -1,8 +1,9 @@
 from typing import Annotated, Optional
 from fastapi.params import Depends, Query
 
-from core.dependencies.services import get_user_service, get_team_service, get_module_service, get_routing_key_service, \
+from core.dependencies.services import get_user_service, get_team_service, get_module_service, \
     get_g_access_group_service
+from core.dependencies.routing_key_service import get_routing_key_service
 from core.exceptions import NotFound, ValidationFailed
 from core.services.guardian_service import GAccessGroupService
 from core.services.module import ModuleService

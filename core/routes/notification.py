@@ -6,7 +6,7 @@ from core.db.models import User, RoutingKey
 from core.dependencies.misc import PaginateParamsDep
 from core.dependencies.path import get_routing_key_by_id
 from core.dependencies.security import get_current_user
-from core.dependencies.services import get_routing_key_service, get_routing_key_subscription_service
+from core.dependencies.routing_key_service import get_routing_key_service, get_routing_key_subscription_service
 from core.services.notification import RoutingKeySubscriptionService, \
     RoutingKeyService
 from core.schemas.notification import RoutingKeyResponse, RoutingKeyUpdate, RoutingKeySubscriptionResponse

@@ -7,7 +7,8 @@ from libs.eventory import CustomIncomingMessage
 from libs.redis import RedisService
 
 from .message import Message, IncomingProcessedMessage
-from ...dependencies.services import get_user_service, get_routing_key_service
+from ...dependencies.services import get_user_service
+from ...dependencies.routing_key_service import get_routing_key_service
 from ...services.user import UserService
 
 

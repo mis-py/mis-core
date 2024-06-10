@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Callable, Literal, Coroutine, AsyncGenerator
 from functools import wraps
+
+from apscheduler.triggers.combining import OrTrigger
 from loguru import logger
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
@@ -36,10 +38,13 @@ class TaskTemplate:
     type: Literal['user', 'team']
     func: Callable
     extra_typed: dict
-    trigger: IntervalTrigger | CronTrigger | None
+    trigger: IntervalTrigger | CronTrigger | OrTrigger | None
     app: Module = None
     autostart: bool = False
     single_instance: bool = False
+
+    has_context: bool = False
+    has_job_meta: bool = False
 
     @property
     def name(self):
@@ -51,3 +56,12 @@ class TaskTemplate:
     #         unique_suffix = ":".join(f"{key}={value}" for key, value in extra.items())
     #         return f"{job_id}:{unique_suffix}"
     #     return job_id
+
+
+@dataclass
+class JobMeta:
+    job_id: int
+    trigger: IntervalTrigger | CronTrigger | OrTrigger
+    task_name: str
+    user_id: int
+    module_id: int

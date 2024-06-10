@@ -5,7 +5,7 @@ from fastapi import Request, Depends
 from config import CoreSettings
 from core.db.models import Module, User
 from core.dependencies.security import get_current_user
-from core.dependencies.services import get_routing_key_service
+from core.dependencies.routing_key_service import get_routing_key_service
 from core.exceptions import NotFound
 from core.utils.schema import Params
 from libs.eventory.utils import RoutingKeysSet

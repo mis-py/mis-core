@@ -113,7 +113,7 @@ async def change_proxy_domain(
     change_result = await ReplacementGroupService().proxy_change(
         ctx,
         replacement_group_ids.replacement_group_ids,
-        "Changed via endpoint"
+        "Changed by user"
     )
 
     return MisResponse[dict](result=change_result)

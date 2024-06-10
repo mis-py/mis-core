@@ -228,20 +228,21 @@ class ReplacementGroupService(BaseService):
         )
 
         not_exist_groups = list(
-            set.symmetric_difference(set(replacement_group_ids), set([int(group.pk) for group in groups]))
+            set.symmetric_difference(
+                set([str(group) for group in replacement_group_ids]),
+                set([str(group.pk) for group in groups])
+            )
         )
 
         if len(not_exist_groups) > 0:
-            logger.warning(f"Run replacement_group_proxy_change task ERROR: "
-                           f"In requested ids: {replacement_group_ids} "
-                           f"next ids: {not_exist_groups} is not exists and would not be used")
+            logger.warning(f"In requested group ids: {replacement_group_ids} "
+                           f"next group ids: {not_exist_groups} is not exists and would not be used")
 
         not_active_groups = [group.pk for group in groups if not (group.is_active == is_active)]
 
         if len(not_active_groups) > 0:
-            logger.warning(f"Run replacement_group_proxy_change task ERROR: "
-                           f"In requested ids: {replacement_group_ids} "
-                           f"next ids: {not_active_groups} is not active and would not be used")
+            logger.warning(f"In requested group ids: {replacement_group_ids} "
+                           f"next group ids: {not_active_groups} is not active and would not be used")
 
         active_groups = [group for group in groups if (group.is_active == is_active)]
 

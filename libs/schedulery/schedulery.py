@@ -66,13 +66,13 @@ class Schedulery:
     def pause_job(cls, job_id: int) -> None:
         job = cls.get_job(job_id)
         job.pause()
-        logger.info(f'[Schedulery]: Pause job {job.name}')
+        logger.info(f'[Schedulery]: Pause job {job_id}: {job.name}')
 
     @classmethod
     def resume_job(cls, job_id: int) -> None:
         job = cls.get_job(job_id)
         job.resume()
-        logger.info(f'[Schedulery]: Resume job {job.name} (next run= {job.next_run_time})')
+        logger.info(f'[Schedulery]: Resume job {job_id}: {job.name} (next run= {job.next_run_time})')
 
     @classmethod
     def add_job(
@@ -82,18 +82,27 @@ class Schedulery:
             kwargs: dict = None,
             trigger=None,
             context=None,
+            job_meta=None,
             run_at_startup=False
     ) -> Job:
         if trigger is None:
             raise MISError(f"Trigger for job '{job_id}' not specified")
+
+        job_kwargs = dict()
+        if kwargs:
+            job_kwargs.update(**kwargs)
+        if context and task_template.has_context:
+            job_kwargs.update({'ctx': context})
+        if job_meta and task_template.has_job_meta:
+            job_kwargs.update({'job_meta': job_meta})
 
         try:
             job = cls._scheduler.add_job(
                 job_wrapper(task_template.func),
                 id=str(job_id),
                 trigger=trigger,
-                args=(context,),
-                kwargs=kwargs
+                # args=(context,),
+                kwargs=job_kwargs
             )
         except (ValueError, ConflictingIdError):
             logger.warning(
@@ -101,12 +110,9 @@ class Schedulery:
             raise AlreadyExists(f"Conflict id, job already exists for this {task_template.type}")
 
         if run_at_startup:
-            job.resume()
-            logger.debug(
-                f'[Schedulery] Resume job {job.name}, next run time: {job.next_run_time}')
+            cls.resume_job(job_id)
         else:
-            job.pause()
-            logger.debug(f'[Schedulery] Pause job {job.name}')
+            cls.pause_job(job_id)
 
         return job
 
@@ -115,10 +121,10 @@ class Schedulery:
         job = cls.get_job(job_id)
         job.remove()
 
-        logger.info(f'[Schedulery]: Removed job {job_id}!')
+        logger.info(f'[Schedulery]: Removed job {job_id}: {job.name}!')
 
     @classmethod
     def reschedule_job(cls, job_id: int, trigger) -> None:
         job = cls.get_job(job_id)
         job.reschedule(trigger=trigger)
-        logger.info(f'[Schedulery]: Reschedule job {job_id}! (next run= {job.next_run_time})')
+        logger.info(f'[Schedulery]: Reschedule job {job_id}: {job.name}! (next run= {job.next_run_time})')
