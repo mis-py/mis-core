@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from core.utils.module.components import APIRoutes
 
 from .lead_record import router as lead_record
 from .tracker_instance import router as tracker_instance
@@ -12,3 +13,5 @@ router.include_router(replacement_group, tags=["replacement_group"], prefix='/re
 router.include_router(proxy_domains, tags=["proxy_domains"], prefix='/proxy_domains')
 router.include_router(replacement_history, tags=["replacement_history"], prefix='/replacement_history')
 router.include_router(lead_record, tags=["lead_record"])
+
+api_router = APIRoutes(router)

@@ -1,9 +1,9 @@
 from core.utils.module import GenericModule
-from core.utils.module.components import Variables, ModuleLogs, TortoiseModels, EventRoutingKeys, APIRoutes
+from core.utils.module.components import Variables, ModuleLogs, TortoiseModels, EventRoutingKeys
 
 from .config import UserSettings, RoutingKeys, ModuleSettings
 from .consumers import event_consumers
-from .routes import router
+from .routes import api_router
 from .tasks import scheduled_tasks
 
 app_settings = ModuleSettings()
@@ -41,11 +41,12 @@ async def init(module_instance: GenericModule):
 module = GenericModule(
     pre_init_components=[
         TortoiseModels(),
-        APIRoutes(router),
+        api_router,
     ],
     components=[
         scheduled_tasks,
         event_consumers,
+        api_router,
         # just create plain component, all work will be in init() method
         # we declare that module has models in module.db package
         Variables(app_settings, user_settings),
