@@ -41,6 +41,7 @@ class JobTrigger(PydanticModel):
 class JobResponse(JobTrigger):
     job_id: int
     name: str
+    task_name: str
     status: StatusTask
     app_id: Optional[int]
     user_id: Optional[int]
@@ -49,6 +50,7 @@ class JobResponse(JobTrigger):
 
 class JobCreate(JobTrigger):
     task_name: str
+    name: Optional[str] = None
     extra: Optional[dict] = None
     type: Literal["user", "team"]
 

@@ -47,7 +47,8 @@ async def get_jobs(
         response.append(
             JobResponse(
                 job_id=job_db.pk,
-                name=job_db.task_name,
+                name=job_db.job_id,
+                task_name=job_db.task_name,
                 status=job_db.status,
                 app_id=job_db.app.pk,
                 user_id=job_db.user.pk if job_db.user else None,
@@ -99,7 +100,8 @@ async def add_job(
 
     job_response = JobResponse(
         job_id=job_db.pk,
-        name=job_db.task_name,
+        name=job_db.job_id,
+        task_name=job_db.task_name,
         status=job_db.status,
         app_id=job_db.app.pk,
         user_id=job_db.user.pk if job_db.user else None,
@@ -123,7 +125,8 @@ async def pause_job(
 
     job_response = JobResponse(
         job_id=job_db.pk,
-        name=job_db.task_name,
+        name=job_db.job_id,
+        task_name=job_db.task_name,
         status=job_db.status,
         app_id=job_db.app.pk,
         user_id=job_db.user.pk if job_db.user else None,
@@ -147,7 +150,8 @@ async def resume_job(
 
     job_response = JobResponse(
         job_id=job_db.pk,
-        name=job_db.task_name,
+        name=job_db.job_id,
+        task_name=job_db.task_name,
         status=job_db.status,
         app_id=job_db.app.pk,
         user_id=job_db.user.pk if job_db.user else None,
@@ -174,7 +178,8 @@ async def reschedule_job(
 
     job_response = JobResponse(
         job_id=job_db.pk,
-        name=job_db.task_name,
+        name=job_db.job_id,
+        task_name=job_db.task_name,
         status=job_db.status,
         app_id=job_db.app.pk,
         user_id=job_db.user.pk if job_db.user else None,

@@ -9,10 +9,10 @@ scheduled_tasks = ScheduledTasks()
 config = ModuleSettings()
 
 
-@scheduled_tasks.schedule_task(seconds=config.TICK_5_SEC, autostart=True)
+@scheduled_tasks.schedule_task(seconds=config.TICK_N_SEC, autostart=True)
 async def dummy_task(ctx: AppContext):
     logger.debug(
-        f"Execute task every {config.TICK_5_SEC} seconds for module {ctx.app_name} "
+        f"Execute task every {config.TICK_N_SEC} seconds for module {ctx.app_name} "
         f"and sending message to eventory"
     )
     yield "yield test 1"

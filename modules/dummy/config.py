@@ -5,7 +5,7 @@ class ModuleSettings(BaseModel):
     """
     Global module settings
     """
-    TICK_5_SEC: int = 5
+    TICK_N_SEC: int = 60
     LOG_LEVEL: str = "DEBUG"
 
 
