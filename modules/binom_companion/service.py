@@ -558,7 +558,7 @@ class ProxyDomainService(BaseService):
             last_exception = None
             for retry in range(0, retries):
                 try:
-                    async with session.get(f'https://{domain}/') as response:
+                    async with session.get(f'https://{domain}/', timeout=5) as response:
                         if not check_ssl_domain(response.certificate):
                             # TODO check with expired cert
                             return ssl.SSLCertVerificationError(f"{domain} - {response.certificate}")
@@ -619,6 +619,17 @@ class ProxyDomainService(BaseService):
         logger.info(f'[{domain}]: Proxy check passed! Verify took {round(time.time() - start_time, 2)}s')
 
         return True
+
+    # async def check_domain_valid(self, domain_id: int) -> ProxyDomain:
+    #     domain = await self.get(id=domain_id, prefetch_related=['tracker_instance'])
+    #     class Proxy:
+    #         name: str = 'without'
+    #
+    #     proxy = Proxy()
+    #
+    #     await self.is_domain_ok_by_proxy(domain.name, proxy)
+    #     return domain
+
 
 class LeadRecordService(BaseService):
     def __init__(self):

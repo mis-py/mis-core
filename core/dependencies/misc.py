@@ -23,7 +23,7 @@ async def get_current_app(request: Request):
     name = path_array[0]
     app = await Module.get_or_none(name=name)
     if not app:
-        raise NotFound('AppModel is not found in DB')
+        raise NotFound(f"AppModel '{name}' is not found in DB")
     return app
 
 

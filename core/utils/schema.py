@@ -36,7 +36,7 @@ class BaseResponse(BaseModel, Generic[T]):
 # https://github.com/uriyyo/fastapi-pagination/issues/788
 class Params(BaseModel, AbstractParams):
     page: int = Query(1, ge=1, description="Page number")
-    size: int = Query(50, ge=1, le=100, description="Page size")
+    size: int = Query(50, ge=50, le=1500, description="Page size")
 
     def to_raw_params(self) -> RawParams:
         return RawParams(

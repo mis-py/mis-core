@@ -1,4 +1,6 @@
 # from tortoise import Tortoise
+from typing import Optional
+
 from tortoise.contrib.pydantic import pydantic_model_creator, PydanticModel
 from modules.binom_companion.db.models import LeadRecord
 
@@ -35,4 +37,4 @@ class LeadRecordIn(PydanticModel):
     time: int
     origin: str
     status: bool
-    data: dict
+    data: Optional[dict] = None
