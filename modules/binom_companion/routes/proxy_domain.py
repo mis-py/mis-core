@@ -115,3 +115,15 @@ async def get_available_proxy_domains_for_groups(
     domains_set = await ProxyDomainService().find_intersection(groups)
 
     return MisResponse[list[ProxyDomainModel]](result=domains_set)
+
+
+# @router.get(
+#     '/check_domain',
+#     response_model=MisResponse[ProxyDomainModel]
+# )
+# async def check_proxy_domain(
+#         proxy_domain_id: int = Query(),
+# ):
+#     domain = await ProxyDomainService().check_domain_valid(proxy_domain_id)
+#
+#     return MisResponse[ProxyDomainModel](result=domain)
