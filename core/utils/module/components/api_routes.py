@@ -11,12 +11,9 @@ class APIRoutes(BaseComponent):
         self.application = None
 
     async def pre_init(self, application):
-        logger.debug(application)
         self.application = application
 
     async def init(self, app_db_model, is_created: bool):
-        logger.debug(app_db_model)
-        logger.debug(is_created)
         pass
 
     async def start(self):
