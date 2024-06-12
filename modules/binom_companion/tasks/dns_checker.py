@@ -1,7 +1,7 @@
 from loguru import logger
 
-from core.utils.app_context import AppContext
-from core.utils.module.components import ScheduledTasks
+from libs.modules.AppContext import AppContext
+from libs.modules.components import ScheduledTasks
 from ..service import ProxyDomainService, DNSCheckerService
 
 scheduled_tasks = ScheduledTasks()
