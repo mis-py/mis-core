@@ -59,8 +59,8 @@ async def pre_init_db():
     logger.success("Tortoise-ORM pre-init finished")
 
 
-async def init_db(app, generate_schemas=True, add_exception_handlers=True):
-    await TortoiseManager.init(app, generate_schemas, add_exception_handlers)
+async def init_db(app, add_exception_handlers=True):
+    await TortoiseManager.init(app, add_exception_handlers)
     logger.success("Tortoise-ORM started")  # , {}, {}", connections._get_storage(), Tortoise.apps)
 
 
