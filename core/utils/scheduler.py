@@ -17,7 +17,7 @@ def get_trigger(input_trigger: int | str | list[str]):
         return IntervalTrigger(seconds=input_trigger)
     elif isinstance(input_trigger, str):
         return CronTrigger.from_crontab(input_trigger)
-    elif isinstance(input_trigger, list):
+    elif isinstance(input_trigger, list) and len(input_trigger) > 0:
         return OrTrigger([CronTrigger.from_crontab(c) for c in input_trigger])
     else:
         return None
