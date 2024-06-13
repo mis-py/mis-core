@@ -71,7 +71,7 @@ class TortoiseManager:
             Tortoise.init_models(models, label)
 
     @classmethod
-    async def init(cls, app, generate_schemas, add_exception_handlers):
+    async def init(cls, app, add_exception_handlers):
         # await Tortoise.init(config=cls._tortiose_orm, _create_db=settings.POSTGRES_CREATE_DB)
         await Tortoise.init(
             db_url=cls._db_url,
@@ -79,10 +79,6 @@ class TortoiseManager:
             timezone=TIMEZONE,
             _create_db=settings.POSTGRES_CREATE_DB
         )
-
-        if generate_schemas:
-            logger.info("Tortoise-ORM generating schema")
-            await Tortoise.generate_schemas()
 
         if add_exception_handlers:
             async def doesnotexist_exception_handler(request: Request, exc: DoesNotExist):
@@ -97,6 +93,14 @@ class TortoiseManager:
                 )
 
             app.add_exception_handler(IntegrityError, integrityerror_exception_handler)
+
+    @classmethod
+    async def generate_schema(cls):
+        """
+        This must not be used in normal application workflow. All schemas generating is done by migrations.
+        """
+        logger.warning("Tortoise-ORM generating schema")
+        await Tortoise.generate_schemas()
 
     @classmethod
     async def init_migrations(cls):
