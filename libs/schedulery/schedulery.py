@@ -1,4 +1,3 @@
-import random
 from typing import Callable
 from loguru import logger
 from pytz import utc
@@ -7,9 +6,6 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.job import Job
 from apscheduler.jobstores.base import ConflictingIdError
-
-from core.exceptions import NotFound, AlreadyExists, MISError
-from core.utils.scheduler import job_wrapper, TaskTemplate
 
 from .config import SchedulerSettings
 
@@ -51,7 +47,7 @@ class Schedulery:
     def get_job(cls, job_id: int) -> Job:
         job = cls._scheduler.get_job(str(job_id))
         if not job:
-            raise NotFound(f"Job ID '{job_id}' not found")
+            raise ValueError(f"Job ID '{job_id}' not found")
         return job
 
     @classmethod
@@ -66,19 +62,20 @@ class Schedulery:
     def pause_job(cls, job_id: int) -> None:
         job = cls.get_job(job_id)
         job.pause()
-        logger.info(f'[Schedulery]: Pause job {job_id}: {job.name}')
+        logger.info(f"[Schedulery]: Pause job '{job_id}' {job.name}")
 
     @classmethod
     def resume_job(cls, job_id: int) -> None:
         job = cls.get_job(job_id)
         job.resume()
-        logger.info(f'[Schedulery]: Resume job {job_id}: {job.name} (next run= {job.next_run_time})')
+        logger.info(f"[Schedulery]: Resume job '{job_id}' {job.name} (next run= {job.next_run_time})")
 
     @classmethod
     def add_job(
             cls,
-            task_template: TaskTemplate,
+            func: Callable,
             job_id: int,
+            job_name: str,
             kwargs: dict = None,
             trigger=None,
             context=None,
@@ -86,28 +83,28 @@ class Schedulery:
             run_at_startup=False
     ) -> Job:
         if trigger is None:
-            raise MISError(f"Trigger for job '{job_id}' not specified")
+            raise ValueError(f"Trigger for job '{job_id}' not specified")
 
         job_kwargs = dict()
         if kwargs:
             job_kwargs.update(**kwargs)
-        if context and task_template.has_context:
+        if context:
             job_kwargs.update({'ctx': context})
-        if job_meta and task_template.has_job_meta:
+        if job_meta:
             job_kwargs.update({'job_meta': job_meta})
 
         try:
             job = cls._scheduler.add_job(
-                job_wrapper(task_template.func),
+                func,
+                name=job_name,
                 id=str(job_id),
                 trigger=trigger,
-                # args=(context,),
                 kwargs=job_kwargs
             )
-        except (ValueError, ConflictingIdError):
+        except (ValueError, ConflictingIdError) as e:
             logger.warning(
-                f'[Schedulery]: Failed add job {task_template.name}. Job already running for this {task_template.type}')
-            raise AlreadyExists(f"Conflict id, job already exists for this {task_template.type}")
+                f"[Schedulery]: Job with id '{job_id}' {job_name} already exists")
+            raise ValueError(f"Job with id {job_id} already exists")
 
         if run_at_startup:
             cls.resume_job(job_id)
@@ -121,10 +118,10 @@ class Schedulery:
         job = cls.get_job(job_id)
         job.remove()
 
-        logger.info(f'[Schedulery]: Removed job {job_id}: {job.name}!')
+        logger.info(f"[Schedulery]: Removed job '{job_id}' {job.name}")
 
     @classmethod
     def reschedule_job(cls, job_id: int, trigger) -> None:
         job = cls.get_job(job_id)
         job.reschedule(trigger=trigger)
-        logger.info(f'[Schedulery]: Reschedule job {job_id}: {job.name}! (next run= {job.next_run_time})')
+        logger.info(f"[Schedulery]: Reschedule job '{job_id}' {job.name} (next run= {job.next_run_time})")

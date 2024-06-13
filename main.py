@@ -141,7 +141,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         content=MisResponse[list](
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             msg=exc_name,
-            result=exc.errors()
+            result=[exc['msg'] for exc in exc.errors()]
         ).model_dump(),
     )
 

@@ -9,7 +9,7 @@ from core.exceptions import NotFound, MISError
 from core.services.scheduler import SchedulerService
 
 from core.schemas.task import JobResponse, JobTrigger, JobCreate #, SchedulerJob
-from core.utils.task import format_trigger
+from core.utils.scheduler import format_trigger
 from core.utils.schema import MisResponse
 
 router = APIRouter(dependencies=[

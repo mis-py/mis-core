@@ -9,6 +9,8 @@ from tortoise.queryset import QuerySet
 from core.utils.schema import PageResponse
 from fastapi_pagination.ext.tortoise import paginate as tortoise_paginate
 
+# TODO Idea - in memory repository
+
 
 class IRepository(ABC):
     model: Any = None
