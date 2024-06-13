@@ -9,6 +9,7 @@ from core.repositories.variable import IVariableRepository
 from core.repositories.variable_value import IVariableValueRepository
 from core.schemas.variable import UpdateVariable
 from core.services.base.base_service import BaseService
+from core.services.variable_callback_manager import VariableCallbackManager
 from core.utils.common import exclude_none_values
 from core.utils.types import type_convert
 from core.exceptions import NotFound, ValidationFailed
@@ -33,14 +34,25 @@ class VariableService(BaseService):
         for variable in variables:
             variable_obj = await self.get(id=variable.variable_id)
 
-            converted_value = await self.validate_variable(variable, variable_obj)
+            old_value = variable_obj.default_value
+            new_value = variable.new_value
+            await self.validate_variable(variable, variable_obj)
+
+            if old_value == new_value:
+                continue
 
             await self.variable_repo.update(
                 id=variable_obj.id,
-                data={'default_value': converted_value},
+                data={'default_value': new_value},
             )
 
-            await self.update_variable_sets(variable_obj.key, converted_value, app=module)
+            await self.update_variable_sets(variable_obj.key, new_value, app=module)
+
+            await VariableCallbackManager.trigger(
+                module_name=module.name,
+                variable_key=variable_obj.key,
+                new_value=new_value,
+            )
 
     async def set_variables_values(
             self,
@@ -57,9 +69,14 @@ class VariableService(BaseService):
                 await self.variable_value_repo.delete(user_id=user.id, variable_id=variable_value.variable_id)
                 continue
 
-            variable = await self.variable_repo.get(id=variable_value.variable_id)
+            variable = await self.variable_repo.get(id=variable_value.variable_id, prefetch_related=['app'])
 
             await self.validate_variable(variable=variable_value, variable_obj=variable)
+
+            old_value = variable.value
+            new_value = variable_value.new_value
+            if old_value == new_value:
+                continue
 
             await self.variable_value_repo.update_or_create(
                 variable_id=variable.pk,
@@ -69,6 +86,12 @@ class VariableService(BaseService):
             )
 
             await self.update_variable_sets(variable.key, variable_value.new_value, user, team)
+
+            await VariableCallbackManager.trigger(
+                module_name=variable.app.name,
+                variable_key=variable.key,
+                new_value=new_value,
+            )
 
     async def validate_variable(self, variable: UpdateVariable, variable_obj: Variable):
         if not variable_obj:

@@ -19,6 +19,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from const import MIS_TITLE, MIS_VERSION, ENVIRONMENT, ENV_FILE
 from config import CoreSettings
+from libs.logs.manager import LogManager
 from loaders import (
     init_core,
     init_modules,
@@ -42,28 +43,7 @@ from core.exceptions import MISError
 from core.utils.common import generate_unique_id, custom_log_timezone
 from core.utils.schema import MisResponse
 
-logging.getLogger('uvicorn').handlers.clear()
-
-logger.remove()
-logger.configure(patcher=custom_log_timezone)
-logger.add(
-    sys.stderr,
-    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
-    "<level>{level: <8}</level> | "
-    "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | <level>{message}</level>",
-    # filter - process messages from specified module
-    # filter="core"
-)
-
-# setup_logger('DEBUG', ignored=[
-#     'aiosqlite.core', 'tortoise.backends', 'tortoise.utils',
-#     'passlib', 'multipart', 'aiormq', 'aiogram.bot', 'aio_pika',
-#     'selenium', 'PIL', 'google_auth_httplib2', 'googleapiclient',
-# ])
-# for name, level in {
-#     'apscheduler': 'WARNING',
-# }.items():
-#     logging.getLogger(name).setLevel(level)
+LogManager.setup()
 
 logger.info(f'Version: {MIS_VERSION}, Environment: {ENVIRONMENT}, .env file: {ENV_FILE}')
 
@@ -184,6 +164,7 @@ async def catch_exceptions_middleware(request: Request, call_next):
                 result="Server error happen. Our devs already fired for that. Anyway see server log for error details."
             ).model_dump(),
         )
+
 
 app.middleware('http')(catch_exceptions_middleware)
 app.add_middleware(

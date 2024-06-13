@@ -1,3 +1,4 @@
+from core.services.variable_callbacks import change_module_logs
 from core.utils.module import GenericModule
 from core.utils.module.components import Variables, ModuleLogs, TortoiseModels, EventRoutingKeys
 
@@ -20,7 +21,10 @@ module = GenericModule(
         api_router,
         # scheduled_tasks,
         # event_consumers,
-        Variables(app_settings, user_settings),
+        Variables(
+            app_settings, user_settings,
+            observers={'LOG_LEVEL': change_module_logs}
+        ),
         ModuleLogs(),
         EventRoutingKeys(routing_keys),
     ]

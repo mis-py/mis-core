@@ -2,9 +2,11 @@ import re
 
 from loguru import logger
 from config import CoreSettings
-from const import LOGS_DIR
+from const import MODULES_DIR
 
 from core.utils.module import get_app_context
+from libs.logs.filters import PathLoguruFilter
+from libs.logs.manager import LogManager
 from ...app_context import AppContext
 from ..Base.BaseComponent import BaseComponent
 
@@ -21,20 +23,14 @@ class ModuleLogs(BaseComponent):
         pass
 
     async def init(self, app_db_model, is_created: bool):
-        def filter_module_logs(x):
-            matched = re.match('modules\\.(.+?(?=\\.))', x['name'])
-            if matched:
-                return matched.group(1) == self.module.name
-
         ctx: AppContext = await get_app_context(module=app_db_model)
-
-        logger.add(
-            LOGS_DIR / f"{self.module.name}/{self.module.name}.log",
+        module_path_filter = PathLoguruFilter(MODULES_DIR / self.module.name)
+        LogManager.set_loggers(
+            name=self.module.name,
+            level=ctx.variables.LOG_LEVEL,
+            filter=module_path_filter,
             format=core_settings.LOGGER_FORMAT,
             rotation=core_settings.LOG_ROTATION,
-            level=ctx.variables.LOG_LEVEL,
-            filter=filter_module_logs,
-            serialize=True,
         )
 
     async def start(self):
