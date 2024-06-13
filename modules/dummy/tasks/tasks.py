@@ -25,13 +25,18 @@ async def dummy_task(ctx: AppContext):
 
 
 @scheduled_tasks.schedule_task(trigger=None)
-async def dummy_manual_task(ctx: AppContext, dummy_argument: str):
+async def dummy_manual_task(ctx: AppContext, dummy_argument: str, dummy_second: int, dummy_kwarg: bool = True):
+    body = {
+        "dummy_argument": dummy_argument,
+        "dummy_second": dummy_second,
+        "dummy_kwarg": dummy_kwarg
+    }
     logger.debug(
         f"Task is created manually by user with specified trigger "
-        f"and sending message '{dummy_argument}' to eventory"
+        f"and sending message '{body}' to eventory"
     )
     await Eventory.publish(
-        body={"dummy_argument": dummy_argument},
+        body=body,
         routing_key=ctx.routing_keys.DUMMY_MANUAL_EVENT,
         channel_name=ctx.app_name,
     )

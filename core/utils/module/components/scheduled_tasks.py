@@ -10,7 +10,7 @@ from core.db.dataclass import StatusTask
 from core.dependencies.services import get_scheduler_service
 from core.services.scheduler import SchedulerService
 from core.utils.common import signature_to_dict
-from core.utils.scheduler import TaskTemplate
+from core.utils.scheduler import TaskTemplate, job_wrapper
 
 from ..Base.BaseComponent import BaseComponent
 # from core.db import ScheduledJob
@@ -53,7 +53,7 @@ class ScheduledTasks(BaseComponent):
             has_job_meta = extra_typed.pop("job_meta", False)
             self._tasks.append(TaskTemplate(
                 type=task_type,
-                func=func,
+                func=job_wrapper(func),
                 trigger=trigger,
                 extra_typed=extra_typed,
                 autostart=autostart,

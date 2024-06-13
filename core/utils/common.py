@@ -100,20 +100,6 @@ def signature_to_dict(func) -> dict[str, str]:
     return {key: value.annotation.__name__ for key, value in parameters.items()}
 
 
-def validate_task_extra(extra: dict, kwargs_typing: dict):
-    if extra and extra.keys() != kwargs_typing.keys():
-        raise MISError(f"Task key arguments not valid")
-
-    kwargs = {}
-    for key, value in kwargs_typing.items():
-        type_instance = globals()["__builtins__"][value]
-        try:
-            kwargs[key] = type_instance(extra[key])
-        except ValueError:
-            raise MISError(f"Type of arguments not valid")
-    return kwargs
-
-
 def pydatic_model_to_dict(model: BaseModel) -> dict[str, dict[str, str]]:
     result = {}
     for name, field in model.model_fields.items():

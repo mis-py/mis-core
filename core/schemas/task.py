@@ -12,7 +12,7 @@ class JobTrigger(PydanticModel):
     @classmethod
     def validate_trigger(cls, value: int | str | list[str]) -> int | str | list[str]:
         if isinstance(value, int) and value < 60:
-            raise ValueError("Int value must be greater or equal 60")
+            raise ValueError(f"Trigger value is lower then required: {value}<60")
         if isinstance(value, str):
             cron = Cron(value)
         if isinstance(value, list):

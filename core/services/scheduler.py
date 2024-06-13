@@ -1,7 +1,6 @@
 from typing import Optional
 from loguru import logger
 
-from core.utils.common import validate_task_extra
 from core.db.dataclass import AppState, StatusTask
 from core.db.models import ScheduledJob, User, Team, Module
 from core.exceptions import NotFound, AlreadyExists, MISError, ValidationFailed
@@ -9,10 +8,9 @@ from core.repositories.module import IModuleRepository
 from core.repositories.scheduled_job import IScheduledJobRepository
 from core.schemas.task import JobCreate, JobTrigger, TaskResponse
 from core.services.base.base_service import BaseService
-from core.utils.task import get_trigger, format_trigger
-from core.utils.scheduler import TaskTemplate, JobMeta
+from core.utils.scheduler import TaskTemplate, JobMeta, validate_trigger_from_request, validate_extra_params_from_request, get_trigger, \
+    format_trigger
 from core.utils.module import get_app_context
-from core.utils.types import type_convert
 from libs.schedulery import Schedulery
 
 
@@ -178,19 +176,6 @@ class SchedulerService(BaseService):
         [module_name, task_name] = job_in.task_name.split(':', 1)
         task: TaskTemplate = self.get_task(task_name, module_name)
 
-        # trigger logic: if specified in request - use trigger in request
-        # otherwise use trigger defined by task
-        # requested trigger serialized in DB as is
-        # task trigger not saved in DB and constructing every time from task, so in DB in will be {"data": None}
-        trigger = get_trigger(job_in.trigger)
-        if not trigger and task.trigger:
-            trigger = task.trigger
-
-        if task.trigger is None and trigger is None:
-            raise ValidationFailed(f"Argument 'trigger' required for this task!")
-
-        task_name = task.name
-
         if task.single_instance:
             scheduled_job = await self.scheduled_job_repo.get(
                 task_name=task_name, app=task.app, user=user, team=team
@@ -198,50 +183,50 @@ class SchedulerService(BaseService):
             if scheduled_job:
                 raise AlreadyExists("Scheduled job already exists")
 
-        # TODO refactor this validation
-        for extra_name, extra_type in task.extra_typed.items():
-            converted_value = type_convert(to_type=extra_type, value=job_in.extra[extra_name])
-            job_in.extra[extra_name] = converted_value
+        trigger = validate_trigger_from_request(job_in.trigger, task.trigger)
 
-        if task.extra_typed and job_in.extra:
-            kwargs = validate_task_extra(job_in.extra, task.extra_typed)
-        elif task.extra_typed and not job_in.extra:
-            raise ValidationFailed(f"Argument 'extra_typed' required some extra params {task.extra_typed}")
-        else:
-            kwargs = None
-        # ---
+        extra_params = validate_extra_params_from_request(job_in.extra, task.extra_typed)
 
         job_db: ScheduledJob = ScheduledJob(
             user=user,
             team=team,
             app=task.app,
             task_name=task_name,
+            job_id=job_in.name if job_in.name else task_name,
             status=StatusTask.RUNNING if task.autostart else StatusTask.PAUSED,
-            extra_data=kwargs,
+            extra_data=extra_params,
             trigger={"data": job_in.trigger}
         )
         await self.scheduled_job_repo.save(obj=job_db)
 
-        context = await get_app_context(user=user, team=await user.team, module=task.app)
+        if task.has_context:
+            context = await get_app_context(user=user, team=await user.team, module=task.app)
+        else:
+            context = None
 
-        job_meta = JobMeta(
-            job_id=job_db.id,
-            trigger=trigger,
-            task_name=task_name,
-            user_id=user.id,
-            module_id=task.app.id,
-        )
+        if task.has_job_meta:
+            job_meta = JobMeta(
+                job_id=job_db.id,
+                job_name=job_db.job_id,
+                task_name=task_name,
+                trigger=trigger,
+                user_id=user.id,
+                module_id=task.app.id,
+            )
+        else:
+            job_meta = None
 
         job = Schedulery.add_job(
-            task_template=task,
+            func=task.func,
             job_id=job_db.id,
-            kwargs=kwargs,
+            job_name=job_db.job_id,
+            kwargs=extra_params,
             trigger=trigger,
             context=context,
             job_meta=job_meta,
             run_at_startup=task.autostart
         )
-        logger.info(f'[SchedulerService]: Added job [{job_db.id}]{job.name} {"running" if task.autostart else "paused"}')
+        logger.info(f"[SchedulerService]: Added job '{job_db.id}' {job.name}, status: {"running" if task.autostart else "paused"}")
 
         return job_db
 
@@ -264,23 +249,31 @@ class SchedulerService(BaseService):
             logger.warning(f"[SchedulerService] Unknown trigger used in {saved_job.job_id}, using default one.")
             trigger = task.trigger
 
-        context = await get_app_context(user=saved_job.user, team=saved_job.team, module=task.app)
+        if task.has_context:
+            context = await get_app_context(user=saved_job.user, team=saved_job.team, module=task.app)
+        else:
+            context = None
 
-        job_meta = JobMeta(
-            job_id=saved_job.id,
-            trigger=trigger,
-            task_name=saved_job.task_name,
-            user_id=saved_job.user.id,
-            module_id=task.app.id,
-        )
+        if task.has_job_meta:
+            job_meta = JobMeta(
+                job_id=saved_job.id,
+                job_name=saved_job.job_id,
+                task_name=saved_job.task_name,
+                trigger=trigger,
+                user_id=saved_job.user.id,
+                module_id=task.app.id,
+            )
+        else:
+            job_meta = None
 
         job = Schedulery.add_job(
-            task_template=task,
+            func=task.func,
             job_id=saved_job.id,
+            job_name=saved_job.job_id,
             run_at_startup=run_at_startup,
             context=context,
             trigger=trigger,
             job_meta=job_meta,
             kwargs=saved_job.extra_data,
         )
-        logger.info(f'[SchedulerService]: Restored job [{saved_job.id}]{job.name}')
+        logger.info(f"[SchedulerService]: Restored job '{saved_job.id}' {job.name} status: {saved_job.status}")
