@@ -1,7 +1,7 @@
 from pydoc import locate
 
 from loguru import logger
-from pydantic import Field, create_model
+from pydantic import Field, create_model, TypeAdapter
 from tortoise.expressions import Subquery, Q
 
 from core.db.models import User, Module, Team, Variable, VariableValue
@@ -11,13 +11,11 @@ from core.schemas.variable import UpdateVariable
 from core.services.base.base_service import BaseService
 from core.services.variable_callback_manager import VariableCallbackManager
 from core.utils.common import exclude_none_values
-from core.utils.types import type_convert
 from core.exceptions import NotFound, ValidationFailed
 from core.utils.variable_set import VariableSet
 
 
 class VariableService(BaseService):
-
     """Need for update all VariableSet objects when variables changed"""
     _variables: list[VariableSet] = []
 
@@ -31,27 +29,26 @@ class VariableService(BaseService):
             module: Module,
             variables: list[UpdateVariable]
     ):
-        for variable in variables:
-            variable_obj = await self.get(id=variable.variable_id)
+        """Set global variables for module"""
 
-            old_value = variable_obj.default_value
-            new_value = variable.new_value
-            await self.validate_variable(variable, variable_obj)
+        for variable_in in variables:
+            variable_obj = await self.get(id=variable_in.variable_id)
 
-            if old_value == new_value:
-                continue
+            await self.validate_variable(variable_in, variable_obj)
 
-            await self.variable_repo.update(
-                id=variable_obj.id,
-                data={'default_value': new_value},
+            await self.variable_value_repo.update_or_create(
+                variable_id=variable_obj.pk,
+                value=variable_in.new_value,
+                user_id=None,
+                team_id=None,
             )
 
-            await self.update_variable_sets(variable_obj.key, new_value, app=module)
+            await self.update_variable_sets(variable_obj.key, variable_in.new_value, app=module)
 
             await VariableCallbackManager.trigger(
                 module_name=module.name,
                 variable_key=variable_obj.key,
-                new_value=new_value,
+                new_value=variable_in.new_value,
             )
 
     async def set_variables_values(
@@ -60,7 +57,7 @@ class VariableService(BaseService):
             user: User = None,
             team: Team = None,
     ):
-        """Set variables for user or team"""
+        """Set local variables for user or team"""
 
         for variable_value in variables:
             # remove VariableValue if new_value is empty
@@ -71,18 +68,13 @@ class VariableService(BaseService):
 
             variable = await self.variable_repo.get(id=variable_value.variable_id, prefetch_related=['app'])
 
-            await self.validate_variable(variable=variable_value, variable_obj=variable)
-
-            old_value = variable.value
-            new_value = variable_value.new_value
-            if old_value == new_value:
-                continue
+            await self.validate_local_variable(variable=variable_value, variable_obj=variable)
 
             await self.variable_value_repo.update_or_create(
                 variable_id=variable.pk,
                 value=variable_value.new_value,
-                user_id=user.id,
-                team_id=team.id,
+                user_id=user.id if user else None,
+                team_id=team.id if team else None,
             )
 
             await self.update_variable_sets(variable.key, variable_value.new_value, user, team)
@@ -90,20 +82,20 @@ class VariableService(BaseService):
             await VariableCallbackManager.trigger(
                 module_name=variable.app.name,
                 variable_key=variable.key,
-                new_value=new_value,
+                new_value=variable_value.new_value,
             )
 
     async def validate_variable(self, variable: UpdateVariable, variable_obj: Variable):
         if not variable_obj:
             raise NotFound(f"VariableValue with ID '{variable.variable_id}' not exist")
 
-        try:
-            type_convert(value=variable.new_value, to_type=variable_obj.type)
-        except ValueError:
-            raise ValidationFailed(
-                f"Can't convert value '{variable.new_value}' to '{variable_obj.type}' for VariableValue with ID '{variable.variable_id}'",
-            )
+        # validate value
+        variable_type = locate(variable_obj.type)
+        variable_value = variable.new_value
+        TypeAdapter(type=variable_type).validate_python(variable_value)
 
+    async def validate_local_variable(self, variable: UpdateVariable, variable_obj: Variable):
+        await self.validate_variable(variable=variable, variable_obj=variable_obj)
         if variable_obj.is_global:
             raise ValidationFailed(
                 f"Can't set global VariableValue with ID '{variable.variable_id}' as local setting for user",
@@ -158,7 +150,7 @@ class VariableService(BaseService):
             dict_model = variable_set.model_dump()
             dict_model.update({variable_key: new_value})
 
-            variable_set.model_validate(dict_model, strict=True)
+            variable_set.model_validate(dict_model)
 
             logger.debug(f"updating value of '{variable_key}' from '{getattr(variable_set, variable_key, None)}' to '{new_value}'")
             setattr(variable_set, variable_key, new_value)
@@ -181,6 +173,11 @@ class VariableService(BaseService):
             query = query.filter(team=team)
 
         variable_values: list[VariableValue] = await query.select_related('variable')
+
+        # Extend by global variable values
+        global_variables_query = await self.variable_value_repo.filter_queryable(user=None, team=None)
+        global_variable_values: list[VariableValue] = await global_variables_query.select_related('variable')
+        variable_values.extend(global_variable_values)
 
         # Construct pydantic fields structure
         fields = {
