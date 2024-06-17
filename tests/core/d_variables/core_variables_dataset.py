@@ -9,35 +9,29 @@ positive_get_global_variables = [
         {
             "status_code": 200,
             "msg": "Success",
-            "result": {
-                "total": 3,
-                "current": 1,
-                "size": 50,
-                "pages": 1,
-                "items": [
-                    {
-                        "id": 1,
-                        "key": "TICK_5_SEC",
-                        "default_value": "5",
-                        "is_global": True,
-                        "type": "int"
-                    },
-                    {
-                        "id": 2,
-                        "key": "LOG_LEVEL",
-                        "default_value": "DEBUG",
-                        "is_global": True,
-                        "type": "str"
-                    },
-                    {
-                        "id": 3,
-                        "key": "PRIVATE_SETTING",
-                        "default_value": "very private",
-                        "is_global": False,
-                        "type": "str"
-                    }
-                ]
-            },
+            "result": [
+                {
+                    "id": 1,
+                    "key": "TICK_N_SEC",
+                    "default_value": "60",
+                    "is_global": True,
+                    "type": "int"
+                },
+                {
+                    "id": 2,
+                    "key": "LOG_LEVEL",
+                    "default_value": "DEBUG",
+                    "is_global": True,
+                    "type": "str"
+                },
+                {
+                    "id": 3,
+                    "key": "PRIVATE_SETTING",
+                    "default_value": "very private",
+                    "is_global": False,
+                    "type": "str"
+                }
+            ],
             "status": True
         }
     ),
@@ -204,13 +198,7 @@ positive_get_global_variables = [
         {
             "status_code": 200,
             "msg": "Success",
-            "result": {
-                "total": 0,
-                "current": 1,
-                "size": 50,
-                "pages": 0,
-                "items": []
-            },
+            "result": [],
             "status": True
         }
     ),
@@ -221,35 +209,29 @@ positive_get_global_variables = [
         {
             "status_code": 200,
             "msg": "Success",
-            "result": {
-                "total": 3,
-                "current": 1,
-                "size": 50,
-                "pages": 1,
-                "items": [
-                    {
-                        "id": 1,
-                        "key": "TICK_5_SEC",
-                        "default_value": "5",
-                        "is_global": True,
-                        "type": "int"
-                    },
-                    {
-                        "id": 2,
-                        "key": "LOG_LEVEL",
-                        "default_value": "DEBUG",
-                        "is_global": True,
-                        "type": "str"
-                    },
-                    {
-                        "id": 3,
-                        "key": "PRIVATE_SETTING",
-                        "default_value": "very private",
-                        "is_global": False,
-                        "type": "str"
-                    }
-                ]
-            },
+            "result": [
+                {
+                    "id": 1,
+                    "key": "TICK_N_SEC",
+                    "default_value": "60",
+                    "is_global": True,
+                    "type": "int"
+                },
+                {
+                    "id": 2,
+                    "key": "LOG_LEVEL",
+                    "default_value": "DEBUG",
+                    "is_global": True,
+                    "type": "str"
+                },
+                {
+                    "id": 3,
+                    "key": "PRIVATE_SETTING",
+                    "default_value": "very private",
+                    "is_global": False,
+                    "type": "str"
+                }
+            ],
             "status": True
         }
     ),
@@ -277,13 +259,7 @@ positive_get_local_variables = [
         {
             "status_code": 200,
             "msg": "Success",
-            "result": {
-                "total": 0,
-                "current": 1,
-                "size": 50,
-                "pages": 0,
-                "items": []
-            },
+            "result": [],
             "status": True
         }
     ),
@@ -294,13 +270,7 @@ positive_get_local_variables = [
         {
             "status_code": 200,
             "msg": "Success",
-            "result": {
-                "total": 0,
-                "current": 1,
-                "size": 50,
-                "pages": 0,
-                "items": []
-            },
+            "result": [],
             "status": True
         }
     ),

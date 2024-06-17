@@ -6,20 +6,22 @@ positive_get_permissions_dataset = [
             'status_code': status.HTTP_200_OK,
             'msg': 'Success',
             'result': {
-                'total': 11, 'current': 1, 'size': 50, 'pages': 1,
+                'total': 13, 'current': 1, 'size': 50, 'pages': 1,
                 'items':
                     [
                         {'id': 1, 'scope': 'core:sudo', 'app': {'id': 1, 'name': 'core', 'enabled': True}},
                         {'id': 2, 'scope': 'core:users', 'app': {'id': 1, 'name': 'core', 'enabled': True}},
                         {'id': 3, 'scope': 'core:teams', 'app': {'id': 1, 'name': 'core', 'enabled': True}},
                         {'id': 4, 'scope': 'core:modules', 'app': {'id': 1, 'name': 'core', 'enabled': True}},
-                        {'id': 5, 'scope': 'core:groups', 'app': {'id': 1, 'name': 'core', 'enabled': True}},
-                        {'id': 6, 'scope': 'core:notifications', 'app': {'id': 1, 'name': 'core', 'enabled': True}},
-                        {'id': 7, 'scope': 'core:logs', 'app': {'id': 1, 'name': 'core', 'enabled': True}},
-                        {'id': 8, 'scope': 'core:tasks', 'app': {'id': 1, 'name': 'core', 'enabled': True}},
-                        {'id': 9, 'scope': 'core:consumers', 'app': {'id': 1, 'name': 'core', 'enabled': True}},
-                        {'id': 10, 'scope': 'core:permissions', 'app': {'id': 1, 'name': 'core', 'enabled': True}},
-                        {"id": 11, "scope": "dummy:dummy", "app": {"id": 2, "name": "dummy", "enabled": True}}
+                        {'id': 5, 'scope': 'core:notifications', 'app': {'id': 1, 'name': 'core', 'enabled': True}},
+                        {'id': 6, 'scope': 'core:logs', 'app': {'id': 1, 'name': 'core', 'enabled': True}},
+                        {'id': 7, 'scope': 'core:tasks', 'app': {'id': 1, 'name': 'core', 'enabled': True}},
+                        {'id': 8, 'scope': 'core:consumers', 'app': {'id': 1, 'name': 'core', 'enabled': True}},
+                        {"id": 9, "scope": "core:permissions", "app": {"id": 1, "name": "core", "enabled": True}},
+                        {"id": 10, "scope": "core:guardian", "app": {"id": 1, "name": "core", "enabled": True}},
+                        {"id": 11, "scope": "core:jobs", "app": {"id": 1, "name": "core", "enabled": True}},
+                        {"id": 12, "scope": "core:variables", "app": {"id": 1, "name": "core", "enabled": True}},
+                        {"id": 13, "scope": "dummy:dummy", "app": {"id": 3, "name": "dummy", "enabled": True}}
                     ]
             },
             'status': True
@@ -55,24 +57,6 @@ positive_get_granted_permissions_dataset = [
                         'position': None
                     },
                     'team': None
-                },
-                {
-                    "id": 3,
-                    "permission": {
-                        "id": 11,
-                        "scope": "dummy:dummy",
-                        "app": {
-                            "id": 2,
-                            "name": "dummy",
-                            "enabled": True
-                        }
-                    },
-                    "user": {
-                        "id": 1,
-                        "username": "admin",
-                        "position": None
-                    },
-                    "team": None
                 }
             ],
             'status': True

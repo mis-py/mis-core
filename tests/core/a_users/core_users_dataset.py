@@ -163,7 +163,8 @@ positive_get_user_dataset = [
                 "team": {"id": 1, "name": "Superusers"},
             }
         }
-    ),(
+    ),
+    (
         {
             "user_id": 3
         },
@@ -240,7 +241,8 @@ positive_edit_user_dataset = [
                 "team": {"id": 1, "name": "Superusers"},
             }
         }
-    ),(
+    ),
+    (
         # change password
         {
             "user_id": 3,
@@ -265,6 +267,28 @@ positive_edit_user_dataset = [
             }
         }
     ),
+    (
+        # without any params edit
+        {
+            "user_id": 3,
+        },
+        {},
+        {
+            "status_code": 200,
+            "msg": "Success",
+            "result": {
+                "id": 3,
+                "username": "Test2",
+                "position": "TEST USER 2",
+                "disabled": False,
+                "team": {
+                    "id": 1,
+                    "name": "Superusers"
+                }
+            },
+            "status": True
+        }
+    )
 ]
 
 negative_edit_user_dataset = [
@@ -286,7 +310,8 @@ negative_edit_user_dataset = [
             "msg": "NotFound",
             "result": "User not found"
         }
-    ),(
+    ),
+    (
         # Not exist team
         {
             "user_id": 3,
@@ -303,30 +328,6 @@ negative_edit_user_dataset = [
             "msg": "IntegrityError",
             "result": "Server error happen. Our devs already fired for that. Anyway see server log for error details.",
             "status": False
-        }
-    ),(
-        # Username and position(not required) field missing
-        {
-            "user_id": 3,
-        },
-        {
-            "team_id": 1,
-            "new_password": "",
-            "disabled": False,
-        },
-        {
-            'status_code': status.HTTP_422_UNPROCESSABLE_ENTITY,
-            'msg': 'RequestValidationError',
-            'result': [
-                {
-                    'type': 'missing',
-                    'loc': ['body', 'username'],
-                    'msg': 'Field required',
-                    'input': {'team_id': 1, 'new_password': '', 'disabled': False},
-                    'url': 'https://errors.pydantic.dev/2.4/v/missing'
-                }
-            ],
-            'status': False
         }
     ),
 ]
