@@ -28,9 +28,9 @@ class VariableRepository(TortoiseORMRepository, IVariableRepository):
         return await self.model.get_or_create(
             app_id=module_id,
             key=key,
-            default_value=default_value,
             is_global=is_global,
             type=type,
+            defaults={'default_value': default_value},
         )
 
     async def delete_unused(self, module_id: int, exist_keys: list[str]):

@@ -2,6 +2,7 @@ from loguru import logger
 
 from const import DEFAULT_ADMIN_USERNAME
 from core.dependencies.services import get_g_access_group_service, get_guardian_service, get_user_service
+from core.services.variable_callbacks import change_module_logs
 from core.utils.module import GenericModule
 from core.utils.module.components import Variables, ModuleLogs, TortoiseModels, EventRoutingKeys
 
@@ -60,7 +61,10 @@ module = GenericModule(
         api_router,
         # just create plain component, all work will be in init() method
         # we declare that module has models in module.db package
-        Variables(app_settings, user_settings),
+        Variables(
+            app_settings, user_settings,
+            observers={'LOG_LEVEL': change_module_logs}
+        ),
         ModuleLogs(),
         EventRoutingKeys(routing_keys),
     ],

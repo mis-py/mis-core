@@ -1,4 +1,5 @@
 import itertools
+from typing import Callable
 
 from loguru import logger
 
@@ -8,14 +9,16 @@ from core.dependencies.variable_service import get_variable_service
 from core.services.permission import PermissionService
 from core.services.user import UserService
 from core.services.variable import VariableService
+from core.services.variable_callback_manager import VariableCallbackManager
 from core.utils.common import pydatic_model_to_dict
 from ..Base.BaseComponent import BaseComponent
 
 
 class Variables(BaseComponent):
-    def __init__(self, module_variables, user_variables):
+    def __init__(self, module_variables, user_variables, observers: dict[str, Callable] = None):
         self.module_variables = module_variables
         self.user_variables = user_variables
+        self.observers = observers or {}
 
     async def pre_init(self, application):
         pass
@@ -25,6 +28,13 @@ class Variables(BaseComponent):
 
         await self.save_permissions(app_db_model)
         await self.save_variables(app_db_model)
+
+        for variable_key, observer in self.observers.items():
+            await VariableCallbackManager.register(
+                module_name=app_db_model.name,
+                variable_key=variable_key,
+                callback=observer,
+            )
 
         logger.debug(f'[Variables] Variables connected for {self.module.name}')
 
