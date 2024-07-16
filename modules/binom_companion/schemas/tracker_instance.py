@@ -1,6 +1,7 @@
 from tortoise.contrib.pydantic import PydanticModel
 from .replacement_group import ReplacementGroupBaseModel
 from .common import TrackerInstanceBaseModel
+from ..db.models import TrackerType
 
 
 class TrackerInstanceShortModel(TrackerInstanceBaseModel):
@@ -21,6 +22,7 @@ class TrackerInstanceCreateModel(PydanticModel):
     base_url: str
     get_route: str
     edit_route: str
+    type: TrackerType
 
 
 class TrackerInstanceUpdateModel(PydanticModel):

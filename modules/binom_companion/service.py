@@ -42,179 +42,8 @@ from .db.models import (
     LeadRecord
 )
 from .schemas.proxy_domain import ProxyDomainCreateBulkModel
+from .services.tracker import get_tracker_service
 from .util.util import regexp_match, check_ssl_domain, SSLResponse
-
-
-class TrackerInstanceService(BaseService):
-    def __init__(self):
-        super().__init__(repo=TrackerInstanceRepository(model=TrackerInstance))
-
-    async def check_connection(self, tracker_instance_id: int):
-        tracker_instance: TrackerInstance = await self.get(id=tracker_instance_id)
-
-        async with aiohttp.ClientSession() as session:
-            url = f"{tracker_instance.base_url}/{tracker_instance.edit_route}?api_key={tracker_instance.api_key}&action=monitor@get"
-
-            response = await session.get(url)
-
-            if not response.ok:
-                logger.error(f'Invalid response from Tracker {tracker_instance.name}: {response.status} {response.text}')
-                return None
-
-            try:
-                data = await response.json(loads=loads, content_type=None)
-
-            except JSONDecodeError:
-                logger.error(f'Invalid data from Tracker {tracker_instance.name}: {response.text}')
-                return None
-
-            if data and len(data) > 0:
-                return data.get("tracker_info")
-        return None
-
-    @staticmethod
-    async def make_tracker_get_request(
-            instance: TrackerInstance,
-            page: str,
-            group: str = 'all',
-            networks_filter: str = 'all'
-    ):
-        """
-        Typical get request must return array with some objects
-        """
-
-        async with aiohttp.ClientSession() as session:
-            url = f"{instance.base_url}/{instance.get_route}?page={page}&user_group=all" \
-                  f"&status=1&group={group}&networks_filter={networks_filter}" \
-                  f"&date=3&api_key={instance.api_key}"
-            # logger.debug(url)
-            response = await session.get(url)
-            # logger.debug(await response.json(content_type='text/html'))
-            if not response.ok:
-                logger.error(f'Invalid response from Tracker {instance.name}: {response.status} {response.text}')
-                return None
-
-            try:
-                data = await response.json(loads=loads, content_type=None)
-            except JSONDecodeError:
-                logger.error(f'Invalid data from Tracker {instance.name}: {response.text}')
-                return None
-
-            if not isinstance(data, list):
-                logger.error(f'Got non-array data from Tracker {instance.name}: {data=}')
-                return None
-
-            return await response.json(content_type='text/html')
-
-    @staticmethod
-    async def make_tracker_post_request(
-            instance: TrackerInstance,
-            payload: dict,
-            action: str,
-    ):
-        async with aiohttp.ClientSession() as session:
-            url = f"{instance.base_url}/{instance.edit_route}"
-
-            payload = {
-                "api_key": instance.api_key,
-                "action": action,
-                "payload": payload
-            }
-            # logger.debug(url)
-            # logger.debug(payload)
-            response = await session.post(url, json=payload)
-
-            return await response.json(content_type='text/html')
-
-    async def fetch_offers(self, group: ReplacementGroup, instance: TrackerInstance):
-        offer_ids = []
-        domains = set()
-
-        json_data = await self.make_tracker_get_request(
-            instance=instance,
-            page='Offers',
-            group=group.offer_group_id
-        )
-
-        if not json_data:
-            return offer_ids, list(domains)
-
-        if group.offer_geo:
-            json_data = [item for item in json_data if item.get('geo').lower() == group.offer_geo.lower()]
-
-        if group.offer_name_regexp_pattern:
-            json_data = [
-                item for item in json_data if regexp_match(item.get('name').lower(), group.offer_name_regexp_pattern)
-            ]
-
-        for off in json_data:
-            offer_ids.append(off.get('id'))
-            domain = urllib3.util.parse_url(off.get('url')).host
-            if domain:
-                domains.add(domain)
-
-        return offer_ids, list(domains)
-
-    async def fetch_landings(self, group: ReplacementGroup, instance: TrackerInstance):
-        landing_ids = []
-        domains = set()
-
-        json_data = await self.make_tracker_get_request(
-            instance=instance,
-            page='Landing_page',
-            group=group.land_group_id
-        )
-
-        if not json_data:
-            return landing_ids, list(domains)
-
-        if group.land_language:
-            json_data = [item for item in json_data if item.get('lang').lower() == group.land_language.lower()]
-
-        if group.land_name_regexp_pattern:
-            json_data = [item for item in json_data if regexp_match(item.get('name'), group.land_name_regexp_pattern)]
-
-        for land in json_data:
-            landing_ids.append(land.get('id'))
-            domain = urllib3.util.parse_url(land.get('url')).host
-            if domain:
-                domains.add(domain)
-
-        return landing_ids, list(domains)
-
-    async def change_offers_domain(self, offer_ids, new_domain: ProxyDomain, instance: TrackerInstance) -> str:
-        if not offer_ids:
-            return ""
-
-        json_data = await self.make_tracker_post_request(
-            instance=instance,
-            action="offer@mass_edit",
-            payload={
-                "options": {
-                    "domain": new_domain.name,
-                },
-                "offers": offer_ids,
-            }
-        )
-
-        return json_data
-
-    async def change_landings_domain(self, landings_ids, new_domain: ProxyDomain, instance: TrackerInstance) -> str:
-        if not landings_ids:
-            return ""
-
-        json_data = await self.make_tracker_post_request(
-            instance=instance,
-            action="landing@mass_edit",
-            payload={
-                "options": {
-                    "domain": new_domain.name,
-                },
-                "landings": landings_ids,
-            }
-        )
-
-        return json_data
 
 
 class ReplacementGroupService(BaseService):
@@ -260,13 +89,13 @@ class ReplacementGroupService(BaseService):
     async def check_replacement_group(self, replacement_group_id: int):
         replacement_group: ReplacementGroup = await self.get(id=replacement_group_id,
                                                              prefetch_related=['tracker_instance'])
-
-        offer_ids, _ = await TrackerInstanceService().fetch_offers(
+        tracker_service = get_tracker_service(replacement_group.tracker_instance.type)
+        offer_ids, _ = await tracker_service.fetch_offers(
             replacement_group,
             replacement_group.tracker_instance
         )
 
-        landing_ids, _ = await TrackerInstanceService().fetch_landings(
+        landing_ids, _ = await tracker_service.fetch_landings(
             replacement_group,
             replacement_group.tracker_instance
         )
@@ -430,15 +259,17 @@ class ProxyDomainService(BaseService):
 
         for group in groups:
             instance = group.tracker_instance
-            offers, old_offers_domains = await TrackerInstanceService().fetch_offers(group=group, instance=instance)
-            landings, old_land_domains = await TrackerInstanceService().fetch_landings(group=group, instance=instance)
+            tracker_service = get_tracker_service(instance.type)
 
-            offer_response = await TrackerInstanceService().change_offers_domain(offers, new_domain, instance=instance)
+            offers, old_offers_domains = await tracker_service.fetch_offers(group=group, instance=instance)
+            landings, old_land_domains = await tracker_service.fetch_landings(group=group, instance=instance)
+
+            offer_response = await tracker_service.change_offers_domain(offers, new_domain, instance=instance)
             logger.debug(
                 f'Group: {group}, new domain: {new_domain}, offers: {offers}, result: {offer_response if len(offer_response) > 0 else "No offers to change"}'
             )
 
-            landing_response = await TrackerInstanceService().change_landings_domain(
+            landing_response = await tracker_service.change_landings_domain(
                 landings, new_domain, instance=instance
             )
             logger.debug(

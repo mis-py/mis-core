@@ -3,7 +3,8 @@ from loguru import logger
 from core.utils.app_context import AppContext
 from core.utils.module.components import ScheduledTasks
 from core.utils.scheduler import JobMeta
-from ..service import YandexBrowserCheckService, ReplacementGroupService, TrackerInstanceService
+from ..service import YandexBrowserCheckService, ReplacementGroupService
+from ..services.tracker import get_tracker_service
 
 scheduled_tasks = ScheduledTasks()
 
@@ -21,7 +22,8 @@ async def yandex_check_replacement_group_proxy_change(ctx: AppContext, job_meta:
 
     all_domains = []
     for group in groups:
-        _, offers_domains = await TrackerInstanceService().fetch_offers(
+        tracker_instance_service = get_tracker_service(type=group.tracker_instance.type)
+        _, offers_domains = await tracker_instance_service.fetch_offers(
             group=group,
             instance=group.tracker_instance,
         )
