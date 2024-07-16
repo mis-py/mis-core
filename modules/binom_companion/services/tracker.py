@@ -216,7 +216,6 @@ class KeitaroInstanceService(BaseService, Tracker):
         keitaro = KeitaroAPI(base_url=tracker_instance.base_url, api_key=tracker_instance.api_key)
         return await keitaro.check()
 
-
     async def fetch_offers(self, group: ReplacementGroup, instance: TrackerInstance):
         keitaro = KeitaroAPI(base_url=instance.base_url, api_key=instance.api_key)
         offers = await keitaro.get_offers()
@@ -274,7 +273,12 @@ class KeitaroInstanceService(BaseService, Tracker):
     def _filter_offers(self, offers: list[dict], group: ReplacementGroup) -> list[dict]:
         filtered_offers = []
         for offer in offers:
-            if offer['group_id'] != int(group.offer_group_id):
+            if group.offer_group_id and offer['group_id'] != group.offer_group_id:
+                continue
+            elif group.offer_geo and group.offer_geo not in offer['country']:
+                continue
+            elif group.offer_name_regexp_pattern and not regexp_match(input_text=offer['name'],
+                                                                      regexp=group.offer_name_regexp_pattern):
                 continue
             filtered_offers.append(offer)
         return filtered_offers
@@ -282,7 +286,10 @@ class KeitaroInstanceService(BaseService, Tracker):
     def _filter_landings(self, landings: list[dict], group: ReplacementGroup) -> list[dict]:
         filtered_landings = []
         for landing in landings:
-            if landing['group_id'] != int(group.land_group_id):
+            if group.land_group_id and landing['group_id'] != group.land_group_id:
+                continue
+            elif group.land_name_regexp_pattern and not regexp_match(input_text=landing['name'],
+                                                                     regexp=group.land_name_regexp_pattern):
                 continue
             filtered_landings.append(landing)
         return filtered_landings
