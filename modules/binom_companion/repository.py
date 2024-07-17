@@ -1,11 +1,11 @@
 from tortoise.query_utils import Prefetch
 
 from core.repositories.base.repository import TortoiseORMRepository
-from modules.binom_companion.db.models import ReplacementHistory
+from modules.binom_companion.db.models import ReplacementHistory, TrackerInstance
 
 
 class TrackerInstanceRepository(TortoiseORMRepository):
-    pass
+    model = TrackerInstance
 
 
 class ReplacementGroupRepository(TortoiseORMRepository):
@@ -19,7 +19,7 @@ class ReplacementGroupRepository(TortoiseORMRepository):
             'tracker_instance'
         )
 
-    async def get_with_history(self, history_limit: int,  **filters):
+    async def get_with_history(self, history_limit: int, **filters):
         history_queryset = ReplacementHistory.all().prefetch_related(
             'to_domain', 'replaced_by', 'from_domains'
         ).limit(history_limit).order_by('-date_changed')
