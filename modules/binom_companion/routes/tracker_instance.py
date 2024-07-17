@@ -105,7 +105,7 @@ async def delete_tracker_instance(
 async def check_connection_tracker_instance(
         tracker_instance: TrackerInstance = Depends(get_tracker_instance_by_id),
 ):
-    tracker_service = get_tracker_service(tracker_instance.type)
+    tracker_service = get_tracker_service(tracker_instance.tracker_type)
     check_result = await tracker_service.check_connection(tracker_instance)
 
     return MisResponse[dict](result=check_result)

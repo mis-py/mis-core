@@ -22,7 +22,7 @@ async def yandex_check_replacement_group_proxy_change(ctx: AppContext, job_meta:
 
     all_domains = []
     for group in groups:
-        tracker_instance_service = get_tracker_service(type=group.tracker_instance.type)
+        tracker_instance_service = get_tracker_service(type=group.tracker_instance.tracker_type)
         _, offers_domains = await tracker_instance_service.fetch_offers(
             group=group,
             instance=group.tracker_instance,

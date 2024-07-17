@@ -89,7 +89,7 @@ class ReplacementGroupService(BaseService):
     async def check_replacement_group(self, replacement_group_id: int):
         replacement_group: ReplacementGroup = await self.get(id=replacement_group_id,
                                                              prefetch_related=['tracker_instance'])
-        tracker_service = get_tracker_service(replacement_group.tracker_instance.type)
+        tracker_service = get_tracker_service(replacement_group.tracker_instance.tracker_type)
         offer_ids, _ = await tracker_service.fetch_offers(
             replacement_group,
             replacement_group.tracker_instance
@@ -259,7 +259,7 @@ class ProxyDomainService(BaseService):
 
         for group in groups:
             instance = group.tracker_instance
-            tracker_service = get_tracker_service(instance.type)
+            tracker_service = get_tracker_service(instance.tracker_type)
 
             offers, old_offers_domains = await tracker_service.fetch_offers(group=group, instance=instance)
             landings, old_land_domains = await tracker_service.fetch_landings(group=group, instance=instance)

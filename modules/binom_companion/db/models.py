@@ -14,7 +14,7 @@ class TrackerInstance(Model):
     base_url = fields.CharField(max_length=2048)
     get_route = fields.CharField(max_length=1024)
     edit_route = fields.CharField(max_length=1024)
-    type = fields.CharEnumField(enum_type=TrackerType)
+    tracker_type = fields.CharEnumField(enum_type=TrackerType)
 
     replacement_groups: fields.ReverseRelation["ReplacementGroup"]
 
