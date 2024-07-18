@@ -11,3 +11,6 @@ class ProxyService(BaseService):
         new_is_enabled = not current_is_enabled
         proxy = await self.proxy_repo.update(id=proxy_id, data={'is_enabled': new_is_enabled})
         return proxy
+
+    async def filter_by_ids(self, proxy_ids: list[int]):
+        return await self.filter(id__in=proxy_ids)

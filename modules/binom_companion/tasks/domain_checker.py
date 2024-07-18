@@ -5,6 +5,8 @@ from core.utils.module.components import ScheduledTasks
 from core.utils.scheduler import JobMeta
 from ..service import YandexBrowserCheckService, ReplacementGroupService
 from ..services.tracker import get_tracker_service
+from ...proxy_registry.dependencies.services import get_proxy_service
+from ...proxy_registry.services.checker import ProxyChecker
 
 scheduled_tasks = ScheduledTasks()
 
@@ -45,4 +47,29 @@ async def yandex_check_replacement_group_proxy_change(ctx: AppContext, job_meta:
         ctx=ctx,
         replacement_group_ids=replacement_group_ids,
         reason=f"Job id: {job_meta.job_id}"
+    )
+
+
+@scheduled_tasks.schedule_task(trigger=None)
+async def check_domains_of_replacement_groups(
+        ctx: AppContext,
+        job_meta: JobMeta,
+        replacement_group_ids: list[int],
+        proxy_ids: list[int],
+):
+    proxy_service = get_proxy_service()
+    proxies = await proxy_service.filter_by_ids(proxy_ids)
+    proxies_address = [proxy.address for proxy in proxies]
+
+    proxy_checker = ProxyChecker()
+    valid_proxies = await proxy_checker.filter_valid_proxies(proxies_address)
+
+    if not valid_proxies:
+        logger.warning("No valid proxies for check domains!")
+        return
+
+    await ReplacementGroupService().check_group_domains(
+        ctx=ctx,
+        replacement_group_ids=replacement_group_ids,
+        proxies=valid_proxies,
     )

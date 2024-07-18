@@ -2,7 +2,8 @@ from pydantic import BaseModel
 
 
 class UserSettings(BaseModel):
-    pass
+    NOTIFY_TG_BOT_TOKEN: str = ''
+    NOTIFY_TG_CHAT_ID: str = ''
 
 
 class ModuleSettings(BaseModel):
@@ -19,3 +20,4 @@ class RoutingKeys(BaseModel):
     DOMAIN_CHANGED: str = 'domain_changed'
     PROXY_DOMAIN_FAILED: str = 'proxy_domain_failed'
     PROXY_DOMAIN_ADDED: str = 'proxy_domain_added'
+    DOMAIN_CHECK_FAILED: str = 'domain_check_failed'
