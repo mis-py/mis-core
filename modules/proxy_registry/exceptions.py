@@ -7,3 +7,7 @@ class ModuleProxyError(MISError):
 
 class InstanceInvalid(ModuleProxyError):
     pass
+
+
+class ProxyCheckError(ModuleProxyError):
+    pass

@@ -20,6 +20,9 @@ class EventManager(BaseComponent):
             return func
         return _wrapper
 
+    def extend(self, events: list[EventTemplate]):
+        self.events.extend(events)
+
     async def pre_init(self, application):
         pass
 

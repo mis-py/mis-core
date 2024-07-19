@@ -118,12 +118,64 @@ class ReplacementGroupService(BaseService):
             item.replacement_history = item.replacement_history[:history_limit]
         return results
 
-    async def get_with_history(self, history_limit: int, id:int, **filters):
+    async def get_with_history(self, history_limit: int, id: int, **filters):
         filters_without_none = exclude_none_values(filters)
         return await self.repo.get_with_history(
             replacement_group_id=id,
             history_limit=history_limit, **filters_without_none
         )
+
+    async def check_group_domains(self, ctx: AppContext, replacement_group_ids: list[int], proxies):
+        groups: list[ReplacementGroup] = await self.repo.filter(
+            id__in=replacement_group_ids,
+            prefetch_related=['tracker_instance']
+        )
+        for group in groups:
+            tracker_service = get_tracker_service(group.tracker_instance.tracker_type)
+            _, offer_domains = await tracker_service.fetch_offers(group=group, instance=group.tracker_instance)
+            _, landing_domains = await tracker_service.fetch_landings(group=group, instance=group.tracker_instance)
+
+            domains = set(offer_domains + landing_domains)
+            for domain in domains:
+                await self.check_domain_by_proxies(domain=domain, proxies=proxies, ctx=ctx)
+
+    async def check_domain_by_proxies(self, ctx: AppContext, domain: str, proxies: list[str]):
+        for proxy in proxies:
+            connector = ProxyConnector.from_url(proxy)
+            async with aiohttp.ClientSession(connector=connector) as session:
+                try:
+                    async with session.get(f'https://{domain}') as response:
+
+                        if response.status != 200:
+                            await Eventory.publish(
+                                body={'checked_domain': domain, 'message': f"GET status: {response.status}"},
+                                routing_key=ctx.routing_keys.DOMAIN_CHECK_FAILED,
+                                channel_name=ctx.app_name,
+                            )
+                            logger.warning(f"[{domain}] GET status: {response.status}")
+                            return False
+
+                        text = await response.text()
+                        if text != 'ok':
+                            await Eventory.publish(
+                                body={'checked_domain': domain,
+                                      'message': f"Response content not 'ok'! Content: {text}"},
+                                routing_key=ctx.routing_keys.DOMAIN_CHECK_FAILED,
+                                channel_name=ctx.app_name,
+                            )
+                            logger.warning(f"[{domain}] Response content not 'ok'! Content: {text}")
+                            return False
+                except Exception as e:
+                    await Eventory.publish(
+                        body={'checked_domain': domain,
+                              'message': f"Request error: {e.__class__.__name__} {e}"},
+                        routing_key=ctx.routing_keys.DOMAIN_CHECK_FAILED,
+                        channel_name=ctx.app_name,
+                    )
+                    logger.warning(f"[{domain}] Request error: {e.__class__.__name__} {e}")
+                    return False
+
+        logger.success(f"[{domain}] checks passed")
 
 
 class ProxyDomainService(BaseService):
