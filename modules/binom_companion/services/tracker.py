@@ -300,9 +300,9 @@ class KeitaroInstanceService(BaseService, Tracker):
         return domain
 
 
-def get_tracker_service(type: TrackerType) -> Tracker:
+def get_tracker_service(tracker_type: TrackerType) -> Tracker:
     tracker_services = {
         TrackerType.BINOM: BinomInstanceService(),
         TrackerType.KEITARO: KeitaroInstanceService(),
     }
-    return tracker_services[type]
+    return tracker_services[tracker_type]

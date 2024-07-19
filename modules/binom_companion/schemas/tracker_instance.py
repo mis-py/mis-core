@@ -22,7 +22,7 @@ class TrackerInstanceCreateModel(PydanticModel):
     base_url: str
     get_route: str
     edit_route: str
-    type: TrackerType
+    tracker_type: TrackerType
 
 
 class TrackerInstanceUpdateModel(PydanticModel):
