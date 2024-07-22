@@ -9,16 +9,17 @@ from modules.binom_companion.db.models import TrackerInstance
 async def transfer_data_to_new_table():
     logger.info("Start transferring data to new table")
 
-    tracker_instance = await TrackerInstance.first()
-    proxy_domains_deprecated = await tracker_instance.proxy_domains_deprecated.all()
-    proxy_domains_new = await tracker_instance.proxy_domains.all()
+    tracker_instances = await TrackerInstance.all()
+    for tracker_instance in tracker_instances:
+        proxy_domains_deprecated = await tracker_instance.proxy_domains_deprecated.all()
+        proxy_domains_new = await tracker_instance.proxy_domains.all()
 
-    for proxy_domain in proxy_domains_deprecated:
-        if proxy_domain in proxy_domains_new:
-            continue
+        for proxy_domain in proxy_domains_deprecated:
+            if proxy_domain in proxy_domains_new:
+                continue
 
-        await proxy_domain.tracker_instances.add(tracker_instance)
-        logger.debug(f"[M2M] TrackerInstance '{tracker_instance.name}' - ProxyDomain '{proxy_domain.name}'")
+            await proxy_domain.tracker_instances.add(tracker_instance)
+            logger.debug(f"[M2M] TrackerInstance '{tracker_instance.name}' - ProxyDomain '{proxy_domain.name}'")
 
     logger.info("Transferring finished")
 
