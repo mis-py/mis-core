@@ -182,6 +182,7 @@ class ProxyDomainService(BaseService):
     def __init__(self):
         super().__init__(repo=ProxyDomainRepository(model=ProxyDomain))
         self.history = ReplacementHistoryRepository(model=ReplacementHistory)
+        self.tracker_instance_repo = TrackerInstanceRepository(model=TrackerInstance)
 
     async def get_history_domains(
             self,
@@ -207,8 +208,8 @@ class ProxyDomainService(BaseService):
             id__not_in=Subquery(subfilter_values),
             is_invalid=False,
             is_ready=True,
-            tracker_instance=group.tracker_instance,
-            prefetch_related=["tracker_instance"]
+            tracker_instances=group.tracker_instance.pk,
+            prefetch_related=["tracker_instances"]
         )
 
         result = await query
@@ -401,6 +402,7 @@ class ProxyDomainService(BaseService):
                     server_name=proxy_domains_in.server_name,
                     tracker_instance_id=proxy_domains_in.tracker_instance_id
                 )
+                await self.set_trackers(created_domain, tracker_instance_ids=proxy_domains_in.tracker_instance_ids)
                 await created_domain.fetch_related("tracker_instance")
 
                 await Eventory.publish(
@@ -417,10 +419,18 @@ class ProxyDomainService(BaseService):
         return created_domains
 
     async def update_bulk(self, schema_in):
-        await self.repo.update_bulk(
+        proxy_domains = await self.repo.update_bulk(
             data_items=schema_in.model_dump(exclude_unset=True)['proxy_domains'],
-            update_fields=['name', 'tracker_instance_id', 'server_name', 'is_invalid', 'is_ready'],
+            update_fields=['name', 'server_name', 'is_invalid', 'is_ready'],
         )
+
+        # update trackers
+        schema_proxy_domains_dict = {schema_domain.id: schema_domain for schema_domain in schema_in.proxy_domains}
+        for proxy_domain in proxy_domains:
+            schema_proxy_domain = schema_proxy_domains_dict.get(proxy_domain.pk)
+            if schema_proxy_domain and schema_proxy_domain.tracker_instance_ids:
+                await self.clear_trackers(proxy_domain)
+                await self.set_trackers(proxy_domain, schema_proxy_domain.tracker_instance_ids)
 
     async def get_server_names(self):
         base_query = await self.repo.filter_queryable()
@@ -511,6 +521,13 @@ class ProxyDomainService(BaseService):
     #
     #     await self.is_domain_ok_by_proxy(domain.name, proxy)
     #     return domain
+
+    async def set_trackers(self, proxy_domain: ProxyDomain, tracker_instance_ids: list[int]):
+        tracker_instances = await self.tracker_instance_repo.filter(id__in=tracker_instance_ids)
+        await proxy_domain.tracker_instances.add(*tracker_instances)
+
+    async def clear_trackers(self, proxy_domain: ProxyDomain):
+        await proxy_domain.tracker_instances.clear()
 
 
 class LeadRecordService(BaseService):

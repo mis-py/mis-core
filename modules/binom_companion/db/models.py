@@ -67,9 +67,16 @@ class ProxyDomain(Model):
     server_name = fields.CharField(max_length=2048)
 
     # currently some domains can be used only with some trackers
-    tracker_instance: fields.ForeignKeyRelation["TrackerInstance"] = fields.ForeignKeyField(
+    tracker_instances: fields.ManyToManyRelation["TrackerInstance"] = fields.ManyToManyField(
         model_name="binom_companion.TrackerInstance",
         related_name="proxy_domains",
+        through="binom_companion_proxy_domain_tracker_instance_relation",
+    )
+
+    # deprecated field
+    tracker_instance: fields.ForeignKeyRelation["TrackerInstance"] = fields.ForeignKeyField(
+        model_name="binom_companion.TrackerInstance",
+        related_name="proxy_domains_deprecated",
     )
 
     def __str__(self):
