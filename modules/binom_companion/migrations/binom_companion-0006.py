@@ -21,15 +21,11 @@ async def transfer_data_to_new_table():
 
 
 def apply_step(conn):
-    cursor = conn.cursor()
-    cursor.execute()
-
     asyncio.create_task(transfer_data_to_new_table())
 
 
 def rollback_step(conn):
-    cursor = conn.cursor()
-    cursor.execute()
+    pass
 
 
 steps = [
