@@ -73,6 +73,12 @@ class ProxyDomain(Model):
         through="binom_companion_proxy_domain_tracker_instance_relation",
     )
 
+    # deprecated field
+    tracker_instance: fields.ForeignKeyRelation["TrackerInstance"] = fields.ForeignKeyField(
+        model_name="binom_companion.TrackerInstance",
+        related_name="proxy_domains_deprecated",
+    )
+
     def __str__(self):
         return f'<ProxyDomain: {self.pk}, {self.name} {self.date_added.strftime("%d.%m.%Y %H:%M:%S")}>'
 
