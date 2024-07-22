@@ -224,7 +224,7 @@ class KeitaroInstanceService(BaseService, Tracker):
 
         offer_ids, domains = [], []
         for offer in filtered_offers:
-            offer_ids.append(offer['id'])
+            offer_ids.append(str(offer['id']))
             domain = self._extract_domain(offer['action_payload'])
             domains.append(domain)
 
@@ -238,7 +238,7 @@ class KeitaroInstanceService(BaseService, Tracker):
 
         landing_ids, domains = [], []
         for landing in filtered_landings:
-            landing_ids.append(landing['id'])
+            landing_ids.append(str(landing['id']))
             domain = self._extract_domain(landing['action_payload'])
             domains.append(domain)
 
