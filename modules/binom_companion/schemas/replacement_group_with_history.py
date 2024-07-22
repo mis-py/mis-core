@@ -14,8 +14,8 @@ class ReplacementHistoryReadModel(PydanticModel):
     to_domain: ProxyDomainBaseModel
     replaced_by: UserModelShort
     date_changed: datetime
-    offers: list[str]
-    lands: list[str]
+    offers: list[str | int]
+    lands: list[str | int]
     reason: str | None
 
 
