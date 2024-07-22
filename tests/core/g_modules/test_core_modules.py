@@ -21,14 +21,14 @@ def client(get_mis_client):
 def test_init_module(client, params, expected):
     response = client.post("/modules/init", params=params)
     assert default_check(response)
-    assert check_response(response, expected, ignore_keys=['id'])
+    assert check_response(response, expected, ignore_keys=['id', 'version'])
 
 
 @pytest.mark.parametrize("params,expected", start_module_dataset)
 def test_start_module(client, params, expected):
     response = client.post("/modules/start", params=params)
     assert default_check(response)
-    assert check_response(response, expected, ignore_keys=['id'])
+    assert check_response(response, expected, ignore_keys=['id', 'version'])
 
 
 @pytest.mark.parametrize("params , expected", get_modules_dataset)

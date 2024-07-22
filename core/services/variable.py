@@ -1,7 +1,7 @@
 from pydoc import locate
 
 from loguru import logger
-from pydantic import Field, create_model, TypeAdapter
+from pydantic import Field, create_model, TypeAdapter, ValidationError
 from tortoise.expressions import Subquery, Q
 
 from core.db.models import User, Module, Team, Variable, VariableValue
@@ -92,7 +92,11 @@ class VariableService(BaseService):
         # validate value
         variable_type = locate(variable_obj.type)
         variable_value = variable.new_value
-        TypeAdapter(type=variable_type).validate_python(variable_value)
+        try:
+            TypeAdapter(type=variable_type).validate_python(variable_value)
+        except ValidationError:
+            raise ValidationFailed(f"Can't convert value '{variable_value}' to '{variable_obj.type}' "
+                                   f"for Variable with ID '{variable_obj.pk}'")
 
     async def validate_local_variable(self, variable: UpdateVariable, variable_obj: Variable):
         await self.validate_variable(variable=variable, variable_obj=variable_obj)

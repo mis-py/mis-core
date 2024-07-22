@@ -12,13 +12,14 @@ positive_add_job = [
             "status_code": 200,
             "msg": "Success",
             "result": {
+                "trigger": None,
                 "job_id": 1,
                 "name": "dummy_task",
+                "task_name": "dummy_task",
                 "status": "running",
                 "app_id": 2,
                 "user_id": 1,
-                "team_id": None,
-                "trigger": None,
+                "team_id": None
             },
             "status": True
         }
@@ -34,13 +35,14 @@ positive_add_job = [
             "status_code": 200,
             "msg": "Success",
             "result": {
+                "trigger": 60,
                 "job_id": 2,
                 "name": "dummy_task",
+                "task_name": "dummy_task",
                 "status": "running",
                 "app_id": 2,
                 "user_id": 1,
-                "team_id": None,
-                "trigger": 60
+                "team_id": None
             },
             "status": True
         }
@@ -56,13 +58,14 @@ positive_add_job = [
             "status_code": 200,
             "msg": "Success",
             "result": {
+                "trigger": "* * * * *",
                 "job_id": 3,
                 "name": "dummy_task",
+                "task_name": "dummy_task",
                 "status": "running",
                 "app_id": 2,
                 "user_id": 1,
-                "team_id": None,
-                "trigger": "* * * * *"
+                "team_id": None
             },
             "status": True
         }
@@ -78,13 +81,17 @@ positive_add_job = [
             "status_code": 200,
             "msg": "Success",
             "result": {
+                "trigger": [
+                    "* * * * *",
+                    "1 * * * *"
+                ],
                 "job_id": 4,
                 "name": "dummy_task",
+                "task_name": "dummy_task",
                 "status": "running",
                 "app_id": 2,
                 "user_id": 1,
-                "team_id": None,
-                "trigger": ["* * * * *", "1 * * * *"]
+                "team_id": None
             },
             "status": True
         }
@@ -93,7 +100,9 @@ positive_add_job = [
         {
             "task_name": "dummy:dummy_manual_task",
             "extra": {
-                "dummy_argument": "dummy1"
+                "dummy_argument": "dummy1",
+                "dummy_second": 10,
+                "dummy_kwarg": True,
             },
             "trigger": "* * * * *",
             "type": "user"
@@ -102,13 +111,14 @@ positive_add_job = [
             "status_code": 200,
             "msg": "Success",
             "result": {
+                "trigger": "* * * * *",
                 "job_id": 5,
                 "name": "dummy_manual_task",
+                "task_name": "dummy_manual_task",
                 "status": "paused",
                 "app_id": 2,
                 "user_id": 1,
-                "team_id": None,
-                "trigger": "* * * * *"
+                "team_id": None
             },
             "status": True
         }
@@ -124,13 +134,14 @@ positive_add_job = [
             "status_code": 200,
             "msg": "Success",
             "result": {
+                "trigger": "* * * * *",
                 "job_id": 6,
                 "name": "dummy_single_task",
+                "task_name": "dummy_single_task",
                 "status": "paused",
                 "app_id": 2,
                 "user_id": 1,
-                "team_id": None,
-                "trigger": "* * * * *",
+                "team_id": None
             },
             "status": True
         }
@@ -195,7 +206,7 @@ negative_add_job = [
         {
             "status_code": 422,
             "msg": "ValidationFailed",
-            "result": "Argument 'extra_typed' required some extra params {'dummy_argument': 'str'}",
+            "result": "Requested extra params has incorrect values",
             "status": False
         }
     ),
@@ -227,61 +238,67 @@ positive_get_jobs = [
             "msg": "Success",
             "result": [
                 {
+                    "trigger": None,
                     "job_id": 1,
                     "name": "dummy_task",
+                    "task_name": "dummy_task",
                     "status": "running",
                     "app_id": 2,
                     "user_id": 1,
-                    "team_id": None,
-                    "trigger": None,
+                    "team_id": None
                 },
                 {
+                    "trigger": 60,
                     "job_id": 2,
                     "name": "dummy_task",
+                    "task_name": "dummy_task",
                     "status": "running",
                     "app_id": 2,
                     "user_id": 1,
-                    "team_id": None,
-                    "trigger": 60,
+                    "team_id": None
                 },
                 {
+                    "trigger": "* * * * *",
                     "job_id": 3,
                     "name": "dummy_task",
+                    "task_name": "dummy_task",
                     "status": "running",
                     "app_id": 2,
                     "user_id": 1,
-                    "team_id": None,
-                    "trigger": "* * * * *",
+                    "team_id": None
                 },
                 {
-                    "job_id": 4,
-                    "name": "dummy_task",
-                    "status": "running",
-                    "app_id": 2,
-                    "user_id": 1,
-                    "team_id": None,
                     "trigger": [
                         "* * * * *",
                         "1 * * * *"
                     ],
+                    "job_id": 4,
+                    "name": "dummy_task",
+                    "task_name": "dummy_task",
+                    "status": "running",
+                    "app_id": 2,
+                    "user_id": 1,
+                    "team_id": None
                 },
                 {
+                    "trigger": "* * * * *",
                     "job_id": 5,
                     "name": "dummy_manual_task",
+                    "task_name": "dummy_manual_task",
                     "status": "paused",
                     "app_id": 2,
                     "user_id": 1,
-                    "team_id": None,
-                    "trigger": "* * * * *",
+                    "team_id": None
                 },
                 {
+                    "trigger": "* * * * *",
                     "job_id": 6,
                     "name": "dummy_single_task",
+                    "task_name": "dummy_single_task",
                     "status": "paused",
                     "app_id": 2,
                     "user_id": 1,
-                    "team_id": None,
-                    "trigger": "* * * * *",
+                    "team_id": None
                 }
             ],
             "status": True
@@ -296,43 +313,47 @@ positive_get_jobs = [
             "msg": "Success",
             "result": [
                 {
+                    "trigger": None,
                     "job_id": 1,
                     "name": "dummy_task",
+                    "task_name": "dummy_task",
                     "status": "running",
                     "app_id": 2,
                     "user_id": 1,
-                    "team_id": None,
-                    "trigger": None,
+                    "team_id": None
                 },
                 {
+                    "trigger": 60,
                     "job_id": 2,
                     "name": "dummy_task",
+                    "task_name": "dummy_task",
                     "status": "running",
                     "app_id": 2,
                     "user_id": 1,
-                    "team_id": None,
-                    "trigger": 60,
+                    "team_id": None
                 },
                 {
+                    "trigger": "* * * * *",
                     "job_id": 3,
                     "name": "dummy_task",
+                    "task_name": "dummy_task",
                     "status": "running",
                     "app_id": 2,
                     "user_id": 1,
-                    "team_id": None,
-                    "trigger": "* * * * *",
+                    "team_id": None
                 },
                 {
-                    "job_id": 4,
-                    "name": "dummy_task",
-                    "status": "running",
-                    "app_id": 2,
-                    "user_id": 1,
-                    "team_id": None,
                     "trigger": [
                         "* * * * *",
                         "1 * * * *"
                     ],
+                    "job_id": 4,
+                    "name": "dummy_task",
+                    "task_name": "dummy_task",
+                    "status": "running",
+                    "app_id": 2,
+                    "user_id": 1,
+                    "team_id": None
                 }
             ],
             "status": True
@@ -347,61 +368,67 @@ positive_get_jobs = [
             "msg": "Success",
             "result": [
                 {
+                    "trigger": None,
                     "job_id": 1,
                     "name": "dummy_task",
+                    "task_name": "dummy_task",
                     "status": "running",
-                    "app_id": 2,
+                    "app_id": 3,
                     "user_id": 1,
-                    "team_id": None,
-                    "trigger": None,
+                    "team_id": None
                 },
                 {
+                    "trigger": 60,
                     "job_id": 2,
                     "name": "dummy_task",
+                    "task_name": "dummy_task",
                     "status": "running",
                     "app_id": 2,
                     "user_id": 1,
-                    "team_id": None,
-                    "trigger": 60,
+                    "team_id": None
                 },
                 {
+                    "trigger": "* * * * *",
                     "job_id": 3,
                     "name": "dummy_task",
+                    "task_name": "dummy_task",
                     "status": "running",
                     "app_id": 2,
                     "user_id": 1,
-                    "team_id": None,
-                    "trigger": "* * * * *",
+                    "team_id": None
                 },
                 {
-                    "job_id": 4,
-                    "name": "dummy_task",
-                    "status": "running",
-                    "app_id": 2,
-                    "user_id": 1,
-                    "team_id": None,
                     "trigger": [
                         "* * * * *",
                         "1 * * * *"
                     ],
+                    "job_id": 4,
+                    "name": "dummy_task",
+                    "task_name": "dummy_task",
+                    "status": "running",
+                    "app_id": 2,
+                    "user_id": 1,
+                    "team_id": None
                 },
                 {
+                    "trigger": "* * * * *",
                     "job_id": 5,
                     "name": "dummy_manual_task",
+                    "task_name": "dummy_manual_task",
                     "status": "paused",
                     "app_id": 2,
                     "user_id": 1,
-                    "team_id": None,
-                    "trigger": "* * * * *",
+                    "team_id": None
                 },
                 {
+                    "trigger": "* * * * *",
                     "job_id": 6,
                     "name": "dummy_single_task",
+                    "task_name": "dummy_single_task",
                     "status": "paused",
                     "app_id": 2,
                     "user_id": 1,
-                    "team_id": None,
-                    "trigger": "* * * * *"
+                    "team_id": None
                 }
             ],
             "status": True
@@ -416,13 +443,14 @@ positive_get_jobs = [
             "msg": "Success",
             "result": [
                 {
+                    "trigger": 60,
                     "job_id": 2,
                     "name": "dummy_task",
+                    "task_name": "dummy_task",
                     "status": "running",
                     "app_id": 2,
                     "user_id": 1,
-                    "team_id": None,
-                    "trigger": 60,
+                    "team_id": None
                 }
             ],
             "status": True
@@ -455,13 +483,14 @@ positive_resume_job = [
             "status_code": 200,
             "msg": "Success",
             "result": {
+                "trigger": "* * * * *",
                 "job_id": 6,
                 "name": "dummy_single_task",
+                "task_name": "dummy_single_task",
                 "status": "running",
                 "app_id": 2,
                 "user_id": 1,
-                "team_id": None,
-                "trigger": "* * * * *",
+                "team_id": None
             },
             "status": True
         }
@@ -492,13 +521,14 @@ positive_pause_job = [
             "status_code": 200,
             "msg": "Success",
             "result": {
+                "trigger": "* * * * *",
                 "job_id": 3,
                 "name": "dummy_task",
+                "task_name": "dummy_task",
                 "status": "paused",
                 "app_id": 2,
                 "user_id": 1,
-                "team_id": None,
-                "trigger": "* * * * *",
+                "team_id": None
             },
             "status": True
         }
@@ -511,16 +541,17 @@ positive_pause_job = [
             "status_code": 200,
             "msg": "Success",
             "result": {
-                "job_id": 4,
-                "name": "dummy_task",
-                "status": "paused",
-                "app_id": 2,
-                "user_id": 1,
-                "team_id": None,
                 "trigger": [
                     "* * * * *",
                     "1 * * * *"
                 ],
+                "job_id": 4,
+                "name": "dummy_task",
+                "task_name": "dummy_task",
+                "status": "paused",
+                "app_id": 2,
+                "user_id": 1,
+                "team_id": None
             },
             "status": True
         }
@@ -554,13 +585,14 @@ positive_reschedule_job = [
             "status_code": 200,
             "msg": "Success",
             "result": {
+                "trigger": 360,
                 "job_id": 2,
                 "name": "dummy_task",
+                "task_name": "dummy_task",
                 "status": "running",
                 "app_id": 2,
                 "user_id": 1,
-                "team_id": None,
-                "trigger": 360
+                "team_id": None
             },
             "status": True
         }
@@ -576,13 +608,14 @@ positive_reschedule_job = [
             "status_code": 200,
             "msg": "Success",
             "result": {
+                "trigger": "1 1 * * *",
                 "job_id": 5,
                 "name": "dummy_manual_task",
+                "task_name": "dummy_manual_task",
                 "status": "paused",
                 "app_id": 2,
                 "user_id": 1,
-                "team_id": None,
-                "trigger": "1 1 * * *"
+                "team_id": None
             },
             "status": True
         }
@@ -598,16 +631,17 @@ positive_reschedule_job = [
             "status_code": 200,
             "msg": "Success",
             "result": {
+                "trigger": [
+                    "10 10 * * *",
+                    "20 20 * * *"
+                ],
                 "job_id": 6,
                 "name": "dummy_single_task",
+                "task_name": "dummy_single_task",
                 "status": "running",
                 "app_id": 2,
                 "user_id": 1,
-                "team_id": None,
-                "trigger": [
-                    "20 20 * * *",
-                    "10 10 * * *"
-                ],
+                "team_id": None
             },
             "status": True
         }
@@ -624,13 +658,14 @@ positive_reschedule_job = [
             "status_code": 200,
             "msg": "Success",
             "result": {
+                "trigger": None,
                 "job_id": 1,
                 "name": "dummy_task",
+                "task_name": "dummy_task",
                 "status": "running",
                 "app_id": 2,
                 "user_id": 1,
-                "team_id": None,
-                "trigger": None,
+                "team_id": None
             },
             "status": True
         }

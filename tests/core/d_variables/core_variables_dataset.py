@@ -318,7 +318,7 @@ negative_get_local_variables = [
 positive_set_global_variables = [
     (
         {
-            "module_id": 2
+            "module_name": "dummy"
         },
         [
             {
