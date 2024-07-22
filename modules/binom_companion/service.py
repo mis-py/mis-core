@@ -372,8 +372,8 @@ class ProxyDomainService(BaseService):
             self,
             new_domain: ProxyDomain,
             previous_domains: list[ProxyDomain],
-            offers_list: list[int],
-            lands_list: list[int],
+            offers_list: list[str],
+            lands_list: list[str],
             replaced_by: 'User',
             replacement_group: ReplacementGroup,
             reason: str
