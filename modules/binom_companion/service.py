@@ -25,6 +25,7 @@ from core.utils.common import exclude_none_values
 
 from libs.eventory import Eventory
 from core.utils.app_context import AppContext
+from .exceptions import ProxyDomainCheckError, NoProxiesError
 
 from .schemas.lead_record import LeadRecordIn
 from .repository import (
@@ -44,6 +45,8 @@ from .db.models import (
 from .schemas.proxy_domain import ProxyDomainCreateBulkModel
 from .services.tracker import get_tracker_service
 from .util.util import regexp_match, check_ssl_domain, SSLResponse
+from ..proxy_registry.dependencies.services import get_proxy_service
+from ..proxy_registry.services.checker import ProxyChecker
 
 
 class ReplacementGroupService(BaseService):
@@ -125,21 +128,58 @@ class ReplacementGroupService(BaseService):
             history_limit=history_limit, **filters_without_none
         )
 
-    async def check_group_domains(self, ctx: AppContext, replacement_group_ids: list[int], proxies):
-        groups: list[ReplacementGroup] = await self.repo.filter(
+    async def check_group_domains(self, replacement_group_ids: list[int], proxy_ids: list[int]):
+        proxy_service = get_proxy_service()
+        proxies = await proxy_service.filter_by_ids(proxy_ids)
+        proxies_address = [proxy.address for proxy in proxies]
+
+        proxy_checker = ProxyChecker()
+        valid_proxies = await proxy_checker.filter_valid_proxies(proxies_address)
+
+        if not valid_proxies:
+            raise NoProxiesError("No valid proxies for check domains!")
+
+        replacement_groups: list[ReplacementGroup] = await self.repo.filter(
             id__in=replacement_group_ids,
             prefetch_related=['tracker_instance']
         )
-        for group in groups:
+
+        return await self.fetch_and_check_group_domains(
+            replacement_groups=replacement_groups,
+            proxies=valid_proxies,
+        )
+
+    async def fetch_and_check_group_domains(
+            self,
+            replacement_groups: list[ReplacementGroup],
+            proxies: list[str],
+    ) -> list:
+        result = []
+
+        for group in replacement_groups:
+            replacement_group_result = {
+                'replacement_group_id': group.pk,
+                'domains': [],
+            }
+
             tracker_service = get_tracker_service(group.tracker_instance.tracker_type)
             _, offer_domains = await tracker_service.fetch_offers(group=group, instance=group.tracker_instance)
             _, landing_domains = await tracker_service.fetch_landings(group=group, instance=group.tracker_instance)
 
             domains = set(offer_domains + landing_domains)
             for domain in domains:
-                await self.check_domain_by_proxies(domain=domain, proxies=proxies, ctx=ctx)
+                try:
+                    await self.check_domain_by_proxies(domain=domain, proxies=proxies)
+                    replacement_group_result['domains'].append({'name': domain, 'status': True, 'message': 'ok'})
+                except ProxyDomainCheckError as error:
+                    replacement_group_result['domains'].append({'name': domain, 'status': False, 'message': str(error)})
+                    logger.warning(f"[{domain}] {str(error)}")
 
-    async def check_domain_by_proxies(self, ctx: AppContext, domain: str, proxies: list[str]):
+            result.append(replacement_group_result)
+
+        return result
+
+    async def check_domain_by_proxies(self, domain: str, proxies: list[str]):
         for proxy in proxies:
             connector = ProxyConnector.from_url(proxy)
             async with aiohttp.ClientSession(connector=connector) as session:
@@ -147,33 +187,14 @@ class ReplacementGroupService(BaseService):
                     async with session.get(f'https://{domain}') as response:
 
                         if response.status != 200:
-                            await Eventory.publish(
-                                body={'checked_domain': domain, 'message': f"GET status: {response.status}"},
-                                routing_key=ctx.routing_keys.DOMAIN_CHECK_FAILED,
-                                channel_name=ctx.app_name,
-                            )
-                            logger.warning(f"[{domain}] GET status: {response.status}")
-                            return False
+                            raise ProxyDomainCheckError(f"GET status: {response.status}")
 
                         text = await response.text()
                         if text != 'ok':
-                            await Eventory.publish(
-                                body={'checked_domain': domain,
-                                      'message': f"Response content not 'ok'! Content: {text}"},
-                                routing_key=ctx.routing_keys.DOMAIN_CHECK_FAILED,
-                                channel_name=ctx.app_name,
-                            )
-                            logger.warning(f"[{domain}] Response content not 'ok'! Content: {text}")
-                            return False
+                            raise ProxyDomainCheckError(f"Response content not 'ok'! Content: {text}")
+
                 except Exception as e:
-                    await Eventory.publish(
-                        body={'checked_domain': domain,
-                              'message': f"Request error: {e.__class__.__name__} {e}"},
-                        routing_key=ctx.routing_keys.DOMAIN_CHECK_FAILED,
-                        channel_name=ctx.app_name,
-                    )
-                    logger.warning(f"[{domain}] Request error: {e.__class__.__name__} {e}")
-                    return False
+                    raise ProxyDomainCheckError(f"Request error: {e.__class__.__name__} {e}")
 
         logger.success(f"[{domain}] checks passed")
 
