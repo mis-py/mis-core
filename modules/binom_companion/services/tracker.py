@@ -265,7 +265,7 @@ class KeitaroInstanceService(BaseService, Tracker):
 
     async def change_landings_domain(self, landing_ids, new_domain: ProxyDomain, instance: TrackerInstance) -> tuple[dict]:
         keitaro = KeitaroAPI(base_url=instance.base_url, api_key=instance.api_key)
-        landings_list = await keitaro.get_offers()
+        landings_list = await keitaro.get_landings()
         filtered_landings_dict = {landing['id']: landing for landing in landings_list if str(landing['id']) in landing_ids}
 
         update_landing_coroutines = []
