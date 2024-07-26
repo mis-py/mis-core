@@ -1,3 +1,4 @@
+import asyncio
 from abc import ABC, abstractmethod
 from urllib.parse import urlparse
 
@@ -244,30 +245,40 @@ class KeitaroInstanceService(BaseService, Tracker):
 
         return landing_ids, domains
 
-    async def change_offers_domain(self, offer_ids, new_domain: ProxyDomain, instance: TrackerInstance) -> list:
+    async def change_offers_domain(self, offer_ids, new_domain: ProxyDomain, instance: TrackerInstance) -> tuple[dict]:
         keitaro = KeitaroAPI(base_url=instance.base_url, api_key=instance.api_key)
-        responses = []
-        for offer_id in offer_ids:
-            offer_data = await keitaro.get_offer(offer_id)
+        offers_list = await keitaro.get_offers()
+        filtered_offers_dict = {offer['id']: offer for offer in offers_list if str(offer['id']) in offer_ids}
+
+        update_offers_coroutines = []
+        for offer_id, offer_data in filtered_offers_dict.items():
             old_domain = self._extract_domain(offer_data['action_payload'])
             action_payload = offer_data['action_payload'].replace(old_domain, new_domain.name, 1)
             payload = {'action_payload': action_payload}
 
-            response = await keitaro.update_offer(offer_id=offer_id, payload=payload)
-            responses.append(response)
+            update_offers_coroutines.append(
+                keitaro.update_offer(offer_id=offer_id, payload=payload)
+            )
+
+        responses = await asyncio.gather(*update_offers_coroutines)
         return responses
 
-    async def change_landings_domain(self, landing_ids, new_domain: ProxyDomain, instance: TrackerInstance) -> list:
+    async def change_landings_domain(self, landing_ids, new_domain: ProxyDomain, instance: TrackerInstance) -> tuple[dict]:
         keitaro = KeitaroAPI(base_url=instance.base_url, api_key=instance.api_key)
-        responses = []
-        for landing_id in landing_ids:
-            landing_data = await keitaro.get_landing(landing_id)
+        landings_list = await keitaro.get_landings()
+        filtered_landings_dict = {landing['id']: landing for landing in landings_list if str(landing['id']) in landing_ids}
+
+        update_landing_coroutines = []
+        for landing_id, landing_data in filtered_landings_dict:
             old_domain = self._extract_domain(landing_data['action_payload'])
             action_payload = landing_data['action_payload'].replace(old_domain, new_domain.name, 1)
             payload = {'action_payload': action_payload}
 
-            response = await keitaro.update_landing(landing_id=landing_id, payload=payload)
-            responses.append(response)
+            update_landing_coroutines.append(
+                keitaro.update_landing(landing_id=landing_id, payload=payload)
+            )
+
+        responses = await asyncio.gather(*update_landing_coroutines)
         return responses
 
     def _filter_offers(self, offers: list[dict], group: ReplacementGroup) -> list[dict]:
