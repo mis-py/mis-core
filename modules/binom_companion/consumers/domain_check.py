@@ -13,8 +13,11 @@ event_consumers = EventManager()
 @event_consumers.add_consumer(routing_keys.DOMAIN_CHECK_FAILED)
 async def domain_check_failed_notifier(ctx: AppContext, validated_body: DomainCheckFailed):
     logger.info(f'[{validated_body.checked_domain}] {validated_body.message}')
-    text = (f"Checked domain: {validated_body.checked_domain}\n"
+    text = (f"DOMAIN_CHECK_FAILED ❌\n\n"
+            f"Replacement group id: {validated_body.replacement_group_id}\n"
+            f"Checked domain: {validated_body.checked_domain}\n"
             f"Message error: {validated_body.message}")
+
     tg_bot_token = ctx.variables.NOTIFY_TG_BOT_TOKEN
     tg_chat_id = ctx.variables.NOTIFY_TG_CHAT_ID
 
@@ -30,7 +33,7 @@ async def send_telegram_message(bot_token, chat_id, message):
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     payload = {
         "chat_id": chat_id,
-        "text": message
+        "text": message[:4096]
     }
 
     async with aiohttp.ClientSession() as session:

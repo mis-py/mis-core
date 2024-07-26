@@ -117,3 +117,18 @@ async def change_proxy_domain(
     )
 
     return MisResponse[dict](result=change_result)
+
+
+@router.get(
+    '/check_domains',
+    response_model=MisResponse[list]
+)
+async def check_domains_replacement_group(
+        replacement_group_ids: Annotated[list[int], Query()] = None,
+        proxy_ids: Annotated[list[int], Query()] = None,
+):
+    check_result = await ReplacementGroupService().check_group_domains(
+        replacement_group_ids=replacement_group_ids,
+        proxy_ids=proxy_ids,
+    )
+    return MisResponse[list](result=check_result)

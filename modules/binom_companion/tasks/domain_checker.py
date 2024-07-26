@@ -3,6 +3,8 @@ from loguru import logger
 from core.utils.app_context import AppContext
 from core.utils.module.components import ScheduledTasks
 from core.utils.scheduler import JobMeta
+from libs.eventory import Eventory
+from ..exceptions import NoProxiesError
 from ..service import YandexBrowserCheckService, ReplacementGroupService
 from ..services.tracker import get_tracker_service
 from ...proxy_registry.dependencies.services import get_proxy_service
@@ -57,19 +59,27 @@ async def check_domains_of_replacement_groups(
         replacement_group_ids: list[int],
         proxy_ids: list[int],
 ):
-    proxy_service = get_proxy_service()
-    proxies = await proxy_service.filter_by_ids(proxy_ids)
-    proxies_address = [proxy.address for proxy in proxies]
-
-    proxy_checker = ProxyChecker()
-    valid_proxies = await proxy_checker.filter_valid_proxies(proxies_address)
-
-    if not valid_proxies:
-        logger.warning("No valid proxies for check domains!")
+    try:
+        check_result = await ReplacementGroupService().check_group_domains(
+            replacement_group_ids=replacement_group_ids,
+            proxy_ids=proxy_ids,
+        )
+    except NoProxiesError as e:
+        logger.warning(e)
         return
 
-    await ReplacementGroupService().check_group_domains(
-        ctx=ctx,
-        replacement_group_ids=replacement_group_ids,
-        proxies=valid_proxies,
-    )
+    # send failed check events
+    for replacement_group in check_result:
+        for domain_data in replacement_group['domains']:
+            if domain_data['status'] is True:
+                continue
+
+            await Eventory.publish(
+                body={
+                    'replacement_group_id': replacement_group['replacement_group_id'],
+                    'checked_domain': domain_data['name'],
+                    'message': domain_data['message'],
+                },
+                routing_key=ctx.routing_keys.DOMAIN_CHECK_FAILED,
+                channel_name=ctx.app_name,
+            )
