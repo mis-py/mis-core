@@ -400,7 +400,7 @@ class ProxyDomainService(BaseService):
                 created_domain = await self.create_by_kwargs(
                     name=domain,
                     server_name=proxy_domains_in.server_name,
-                    tracker_instance_id=proxy_domains_in.tracker_instance_id
+                    tracker_instance_id=1
                 )
                 await self.set_trackers(created_domain, tracker_instance_ids=proxy_domains_in.tracker_instance_ids)
                 await created_domain.fetch_related("tracker_instance")
