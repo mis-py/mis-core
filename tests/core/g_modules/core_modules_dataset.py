@@ -14,8 +14,8 @@ positive_get_modules = [
                         "id": 1,
                         "name": "core",
                         "enabled": True,
-                        "manifest": None,
                         "state": "running",
+                        "manifest": None
                     },
                     {
                         "id": 2,
@@ -26,15 +26,15 @@ positive_get_modules = [
                             "name": "dummy",
                             "display_name": "Dummy",
                             "description": "Module with examples of core functions and libs extensions",
-                            "version": "1.0",
-                            "author": "Jake Jameson",
+                            "version": "1.2",
+                            "author": "Kankuro, ADLR",
                             "category": "example",
                             "permissions": {
                                 "dummy": "Just for demonstration"
                             },
                             "dependencies": [],
-                            "extra": {},
-                            "auth_disabled": False
+                            "auth_disabled": False,
+                            "extra": {}
                         }
                     },
                     {
@@ -46,11 +46,15 @@ positive_get_modules = [
                             "name": "binom_companion",
                             "display_name": "Binom Companion",
                             "description": "Module for watching binom stats and replace offer domains",
-                            "version": "0.4",
-                            "author": "Jake Jameson",
+                            "version": "0.6",
+                            "author": "Kankuro, ADLR",
                             "category": "companion",
                             "permissions": {
-                                "sudo": "Full module access"
+                                "sudo": "Full module access",
+                                "tracker_instance": "Full managing tracker instances",
+                                "replacement_groups": "Full managing replacement groups",
+                                "replacement_history": "View replacement history endpoint",
+                                "proxy_domains": "Full managing proxy domains"
                             },
                             "dependencies": [],
                             "auth_disabled": True,
@@ -66,7 +70,7 @@ positive_get_modules = [
                             "name": "proxy_registry",
                             "display_name": "Proxy Registry",
                             "description": "Module provides proxy registry for various operations",
-                            "version": "0.1",
+                            "version": "0.3",
                             "author": "Kankuro, ADLR",
                             "category": "data provider",
                             "permissions": {
@@ -77,7 +81,7 @@ positive_get_modules = [
                             "auth_disabled": False,
                             "extra": {}
                         }
-                    }
+                    },
                 ]
             },
             "status": True
@@ -105,15 +109,15 @@ positive_get_modules = [
                             "name": "dummy",
                             "display_name": "Dummy",
                             "description": "Module with examples of core functions and libs extensions",
-                            "version": "1.0",
-                            "author": "Jake Jameson",
+                            "version": "1.2",
+                            "author": "Kankuro, ADLR",
                             "category": "example",
                             "permissions": {
                                 "dummy": "Just for demonstration"
                             },
                             "dependencies": [],
-                            "extra": {},
-                            "auth_disabled": False
+                            "auth_disabled": False,
+                            "extra": {}
                         }
                     }
                 ]
@@ -154,15 +158,15 @@ positive_init_modules = [
                     "name": "dummy",
                     "display_name": "Dummy",
                     "description": "Module with examples of core functions and libs extensions",
-                    "version": "1.0",
-                    "author": "Jake Jameson",
+                    "version": "1.2",
+                    "author": "Kankuro, ADLR",
                     "category": "example",
                     "permissions": {
                         "dummy": "Just for demonstration"
                     },
                     "dependencies": [],
-                    "extra": {},
-                    "auth_disabled": False
+                    "auth_disabled": False,
+                    "extra": {}
                 }
             },
             "status": True
@@ -212,8 +216,8 @@ positive_start_module = [
                     "name": "dummy",
                     "display_name": "Dummy",
                     "description": "Module with examples of core functions and libs extensions",
-                    "version": "1.0",
-                    "author": "Jake Jameson",
+                    "version": "1.2",
+                    "author": "Kankuro, ADLR",
                     "category": "example",
                     "permissions": {
                         "dummy": "Just for demonstration"
@@ -270,8 +274,8 @@ positive_stop_module = [
                     "name": "dummy",
                     "display_name": "Dummy",
                     "description": "Module with examples of core functions and libs extensions",
-                    "version": "1.0",
-                    "author": "Jake Jameson",
+                    "version": "1.2",
+                    "author": "Kankuro, ADLR",
                     "category": "example",
                     "permissions": {
                         "dummy": "Just for demonstration"

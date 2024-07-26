@@ -7,33 +7,29 @@ positive_get_tasks = [
             "msg": "Success",
             "result": [
                 {
+                    "trigger": 60,
                     "id": "dummy:dummy_task",
                     "name": "dummy_task",
                     "type": "user",
-                    "extra_typed": {},
-                    "trigger": 5,
-                    # "is_has_jobs": False,
-                    # "is_available_add_job": True
+                    "extra_typed": {}
                 },
                 {
+                    "trigger": None,
                     "id": "dummy:dummy_manual_task",
                     "name": "dummy_manual_task",
                     "type": "user",
                     "extra_typed": {
-                        "dummy_argument": "str"
-                    },
-                    "trigger": None,
-                    # "is_has_jobs": False,
-                    # "is_available_add_job": True
+                        "dummy_argument": "str",
+                        "dummy_second": "int",
+                        "dummy_kwarg": "bool"
+                    }
                 },
                 {
+                    "trigger": None,
                     "id": "dummy:dummy_single_task",
                     "name": "dummy_single_task",
                     "type": "user",
-                    "extra_typed": {},
-                    "trigger": None,
-                    # "is_has_jobs": False,
-                    # "is_available_add_job": True
+                    "extra_typed": {}
                 }
             ],
             "status": True
@@ -48,13 +44,11 @@ positive_get_tasks = [
             "msg": "Success",
             "result": [
                 {
+                    "trigger": 60,
                     "id": "dummy:dummy_task",
                     "name": "dummy_task",
                     "type": "user",
-                    "extra_typed": {},
-                    "trigger": 5,
-                    # "is_has_jobs": False,
-                    # "is_available_add_job": True
+                    "extra_typed": {}
                 }
             ],
             "status": True
@@ -69,15 +63,15 @@ positive_get_tasks = [
             "msg": "Success",
             "result": [
                 {
+                    "trigger": None,
                     "id": "dummy:dummy_manual_task",
                     "name": "dummy_manual_task",
                     "type": "user",
                     "extra_typed": {
-                        "dummy_argument": "str"
-                    },
-                    "trigger": None,
-                    # "is_has_jobs": False,
-                    # "is_available_add_job": True
+                        "dummy_argument": "str",
+                        "dummy_second": "int",
+                        "dummy_kwarg": "bool"
+                    }
                 }
             ],
             "status": True

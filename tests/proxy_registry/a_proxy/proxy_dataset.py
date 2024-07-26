@@ -29,39 +29,12 @@ negative_add_proxy_dataset = [
             "status_code": 422,
             "msg": "RequestValidationError",
             "result": [
-                {
-                    "type": "missing",
-                    "loc": [
-                        "body",
-                        "name"
-                    ],
-                    "msg": "Field required",
-                    "input": {},
-                    "url": "https://errors.pydantic.dev/2.4/v/missing"
-                },
-                {
-                    "type": "missing",
-                    "loc": [
-                        "body",
-                        "address"
-                    ],
-                    "msg": "Field required",
-                    "input": {},
-                    "url": "https://errors.pydantic.dev/2.4/v/missing"
-                },
-                {
-                    "type": "missing",
-                    "loc": [
-                        "body",
-                        "change_url"
-                    ],
-                    "msg": "Field required",
-                    "input": {},
-                    "url": "https://errors.pydantic.dev/2.4/v/missing"
-                }
+                "Field required ('body', 'name')",
+                "Field required ('body', 'address')",
+                "Field required ('body', 'change_url')"
             ],
             "status": False
-        },
+        }
     )
 ]
 

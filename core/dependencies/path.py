@@ -4,7 +4,7 @@ from fastapi.params import Depends, Query
 from core.dependencies.services import get_user_service, get_team_service, get_module_service, \
     get_g_access_group_service
 from core.dependencies.routing_key_service import get_routing_key_service
-from core.exceptions import NotFound, ValidationFailed
+from core.exceptions import NotFound, ValidationFailed, MISError
 from core.services.guardian_service import GAccessGroupService
 from core.services.module import ModuleService
 from core.services.user import UserService
@@ -40,6 +40,8 @@ async def get_module_by_id(
 
     if not module:
         raise NotFound('Module not found')
+    elif module.name == 'core':
+        raise MISError("Operations on 'core' module not allowed from 'module_service'")
     return module
 
 

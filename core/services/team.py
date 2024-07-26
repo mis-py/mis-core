@@ -36,7 +36,7 @@ class TeamService(BaseService):
             await self.user_repo.update_list(update_ids=team_in.users_ids, data={'team_id': new_team.id})
 
         for variable_in in team_in.variables:
-            variable = await self.uow.variable_repo.get(id=variable_in.variable_id)
+            variable = await self.variable_repo.get(id=variable_in.variable_id)
             try:
                 type_convert(value=variable_in.new_value, to_type=variable.type)
             except ValueError:

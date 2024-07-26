@@ -144,18 +144,12 @@ negative_get_team_dataset = [
             "id": 1234
         },
         {
+            "status_code": 422,
             "msg": "RequestValidationError",
             "result": [
-                {
-                    "type": "missing",
-                    "loc": ["query", "team_id"],
-                    "msg": "Field required",
-                    "input": None,
-                    "url": "https://errors.pydantic.dev/2.4/v/missing"
-                }
+                "Field required ('query', 'team_id')"
             ],
-            "status": False,
-            "status_code": status.HTTP_422_UNPROCESSABLE_ENTITY
+            "status": False
         }
     ),
 ]
@@ -280,18 +274,12 @@ negative_remove_team_dataset = [
             "team": 2,
         },
         {
+            "status_code": 422,
             "msg": "RequestValidationError",
             "result": [
-                {
-                    'input': None,
-                    'loc': ['query', 'team_id'],
-                    'msg': 'Field required',
-                    'type': 'missing',
-                    'url': 'https://errors.pydantic.dev/2.4/v/missing'
-                }
+                "Field required ('query', 'team_id')"
             ],
-            "status": False,
-            "status_code": status.HTTP_422_UNPROCESSABLE_ENTITY
+            "status": False
         }
     )
 ]
