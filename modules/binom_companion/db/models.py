@@ -77,6 +77,7 @@ class ProxyDomain(Model):
     tracker_instance: fields.ForeignKeyRelation["TrackerInstance"] = fields.ForeignKeyField(
         model_name="binom_companion.TrackerInstance",
         related_name="proxy_domains_deprecated",
+        null=True
     )
 
     def __str__(self):

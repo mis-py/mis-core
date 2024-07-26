@@ -18,9 +18,7 @@ async def proxy_domains_dns_record_checker(ctx: AppContext, message: EventMessag
     Checking proxy domain for DNS record 'A'
     Setting domain is valid if it has an 'A' record
     """
-    # TODO need fix eventory
-    # domain_data = message.json['body']
-    domain_data = message.body['body']
+    domain_data = message.body
 
     dns_checker_service = DNSCheckerService()
     record_to_check = 'A'
