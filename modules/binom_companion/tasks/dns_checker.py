@@ -14,7 +14,7 @@ async def proxy_domains_checker(ctx: AppContext, **kwargs):
     Setting domain invalid if not 'A' record
     """
     logger.debug(f"Start domain validating!")
-    proxy_domain_service = ProxyDomainService(context_logger=logger)
+    proxy_domain_service = ProxyDomainService()
     active_proxy_domains = await proxy_domain_service.filter(is_invalid=True)
     dns_checker_service = DNSCheckerService()
     record_to_check = 'A'

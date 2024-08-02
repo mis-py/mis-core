@@ -25,7 +25,7 @@ async def yandex_check_replacement_group_proxy_change(
     Check ban in the yandex browser of domains that are currently in use
     """
 
-    groups = await ReplacementGroupService(context_logger=logger).filter(
+    groups = await ReplacementGroupService().filter(
         id__in=replacement_group_ids,
         prefetch_related=['tracker_instance'],
     )
@@ -68,7 +68,7 @@ async def check_domains_of_replacement_groups(
         **kwargs,
 ):
     try:
-        check_result = await ReplacementGroupService(context_logger=logger).check_group_domains(
+        check_result = await ReplacementGroupService().check_group_domains(
             replacement_group_ids=replacement_group_ids,
             proxy_ids=proxy_ids,
         )
