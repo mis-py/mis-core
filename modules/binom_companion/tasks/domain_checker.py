@@ -19,7 +19,6 @@ async def yandex_check_replacement_group_proxy_change(
         job_meta: JobMeta,
         replacement_group_ids: list[int],
         yandex_api_key: str,
-        logger,
         **kwargs,
 ):
     """

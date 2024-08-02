@@ -27,6 +27,7 @@ class CoreSettings(BaseSettings):
         "<green>{extra[datetime]}</green> | "
         "<level>{level: <8}</level> | "
         "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
+        "<magenta>{extra[context_key]}</magenta> | "
         "<level>{message}</level>"
     )
     LOG_ROTATION: str = "00:00"

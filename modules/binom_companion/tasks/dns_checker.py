@@ -8,7 +8,7 @@ scheduled_tasks = ScheduledTasks()
 
 
 @scheduled_tasks.schedule_task(trigger=None)
-async def proxy_domains_checker(ctx: AppContext, logger, **kwargs):
+async def proxy_domains_checker(ctx: AppContext, **kwargs):
     """
     Checking all valid proxy domains for DNS record 'A'
     Setting domain invalid if not 'A' record

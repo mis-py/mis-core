@@ -50,8 +50,7 @@ from ..proxy_registry.services.checker import ProxyChecker
 
 
 class ReplacementGroupService(BaseService):
-    def __init__(self, context_logger = None):
-        self.logger = context_logger if context_logger else logger
+    def __init__(self):
         super().__init__(repo=ReplacementGroupRepository(model=ReplacementGroup))
 
     async def get_groups_from_id(self, replacement_group_ids: list[int], is_active: bool = True) -> list[ReplacementGroup]:
@@ -68,13 +67,13 @@ class ReplacementGroupService(BaseService):
         )
 
         if len(not_exist_groups) > 0:
-            self.logger.warning(f"In requested group ids: {replacement_group_ids} "
+            logger.warning(f"In requested group ids: {replacement_group_ids} "
                            f"next group ids: {not_exist_groups} is not exists and would not be used")
 
         not_active_groups = [group.pk for group in groups if not (group.is_active == is_active)]
 
         if len(not_active_groups) > 0:
-            self.logger.warning(f"In requested group ids: {replacement_group_ids} "
+            logger.warning(f"In requested group ids: {replacement_group_ids} "
                            f"next group ids: {not_active_groups} is not active and would not be used")
 
         active_groups = [group for group in groups if (group.is_active == is_active)]
@@ -86,9 +85,9 @@ class ReplacementGroupService(BaseService):
         active_groups = await self.get_groups_from_id(replacement_group_ids=replacement_group_ids)
 
         if len(active_groups) > 0:
-            return await ProxyDomainService(context_logger=self.logger).change_domain(ctx, active_groups, reason)
+            return await ProxyDomainService().change_domain(ctx, active_groups, reason)
         else:
-            self.logger.warning(f"Run replacement_group_proxy_change task ERROR: Nothing to run")
+            logger.warning(f"Run replacement_group_proxy_change task ERROR: Nothing to run")
 
     async def check_replacement_group(self, replacement_group_id: int):
         replacement_group: ReplacementGroup = await self.get(id=replacement_group_id,
@@ -174,7 +173,7 @@ class ReplacementGroupService(BaseService):
                     replacement_group_result['domains'].append({'name': domain, 'status': True, 'message': 'ok'})
                 except ProxyDomainCheckError as error:
                     replacement_group_result['domains'].append({'name': domain, 'status': False, 'message': str(error)})
-                    self.logger.warning(f"[{domain}] {str(error)}")
+                    logger.warning(f"[{domain}] {str(error)}")
 
             result.append(replacement_group_result)
 
@@ -197,12 +196,11 @@ class ReplacementGroupService(BaseService):
                 except Exception as e:
                     raise ProxyDomainCheckError(f"Request error: {e.__class__.__name__} {e}")
 
-        self.logger.success(f"[{domain}] checks passed")
+        logger.success(f"[{domain}] checks passed")
 
 
 class ProxyDomainService(BaseService):
-    def __init__(self, context_logger = None):
-        self.logger = context_logger if context_logger else logger
+    def __init__(self):
         super().__init__(repo=ProxyDomainRepository(model=ProxyDomain))
         self.history = ReplacementHistoryRepository(model=ReplacementHistory)
         self.tracker_instance_repo = TrackerInstanceRepository(model=TrackerInstance)
@@ -341,14 +339,14 @@ class ProxyDomainService(BaseService):
             landings, old_land_domains = await tracker_service.fetch_landings(group=group, instance=instance)
 
             offer_response = await tracker_service.change_offers_domain(offers, new_domain, instance=instance)
-            self.logger.debug(
+            logger.debug(
                 f'Group: {group}, new domain: {new_domain}, offers: {offers}, result: {offer_response if len(offer_response) > 0 else "No offers to change"}'
             )
 
             landing_response = await tracker_service.change_landings_domain(
                 landings, new_domain, instance=instance
             )
-            self.logger.debug(
+            logger.debug(
                 f'Group: {group}, new domain: {new_domain}, landings: {landings}, result: {landing_response if len(landing_response) > 0 else "No landings to change"}'
             )
 
@@ -435,7 +433,7 @@ class ProxyDomainService(BaseService):
 
             except Exception as e:
                 # TODO notify in response if skipped some domains
-                self.logger.warning(f"Skipped creating domain: {domain}, exception: {e}")
+                logger.warning(f"Skipped creating domain: {domain}, exception: {e}")
                 continue
 
         return created_domains
@@ -499,23 +497,23 @@ class ProxyDomainService(BaseService):
         response = await self.check_domain_with_proxy(domain)  # , proxy.address)
 
         if isinstance(response, ssl.SSLCertVerificationError):
-            self.logger.warning(f'[{domain}] {proxy.name}: Possible expired certificate {response}')
+            logger.warning(f'[{domain}] {proxy.name}: Possible expired certificate {response}')
             return False
 
         if isinstance(response, ssl.SSLError):
-            self.logger.warning(f'[{domain}] {proxy.name}: Invalid SSL certificate {response}')
+            logger.warning(f'[{domain}] {proxy.name}: Invalid SSL certificate {response}')
             return False
 
         elif isinstance(response, ValueError):
-            self.logger.warning(f'[{domain}] {proxy.name}: Response is not "ok" {response}')
+            logger.warning(f'[{domain}] {proxy.name}: Response is not "ok" {response}')
             return False
 
         elif isinstance(response, ClientHttpProxyError):
-            self.logger.warning(f'[{domain}] {proxy.name}: ({response.__class__.__name__}) {response}')
+            logger.warning(f'[{domain}] {proxy.name}: ({response.__class__.__name__}) {response}')
             return False
 
         elif isinstance(response, ConnectionResetError):
-            self.logger.warning(
+            logger.warning(
                 f'[{domain}] {proxy.name}: ({response.__class__.__name__}) {response} Possible block, check it manually')
             return False
 
@@ -527,10 +525,10 @@ class ProxyDomainService(BaseService):
         #     return None
 
         elif isinstance(response, Exception):
-            self.logger.warning(f'[{domain}] {proxy.name}: ({response.__class__.__name__}) {response}')
+            logger.warning(f'[{domain}] {proxy.name}: ({response.__class__.__name__}) {response}')
             return False
 
-        self.logger.info(f'[{domain}]: Proxy check passed! Verify took {round(time.time() - start_time, 2)}s')
+        logger.info(f'[{domain}]: Proxy check passed! Verify took {round(time.time() - start_time, 2)}s')
 
         return True
 

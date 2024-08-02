@@ -51,7 +51,6 @@ class ScheduledTasks(BaseComponent):
             extra_typed = signature_to_dict(func)
             extra_typed.pop('ctx', None)
             extra_typed.pop('job_meta', None)
-            extra_typed.pop('logger', None)
             extra_typed.pop('kwargs', None)
             self._tasks.append(TaskTemplate(
                 type=task_type,

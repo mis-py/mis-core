@@ -212,12 +212,14 @@ class SchedulerService(BaseService):
             user_id=user.id,
             module_id=task.app.id,
         )
-        task_logger = LogManager.bind_logger(
-            name=f"{job_db.task_name}-{job_db.id}",
+        log_key_name = f"{job_db.task_name}-{job_db.id}"
+        LogManager.set_file_handler(
+            key=log_key_name,
             level=context.variables.LOG_LEVEL,
+            filter=lambda record: record['extra'].get('filter_name') == log_key_name,
             format=core_settings.LOGGER_FORMAT,
             rotation=core_settings.LOG_ROTATION,
-            logs_dir=LOGS_DIR / context.app_name / 'jobs',
+            save_path=LOGS_DIR / context.app_name / 'jobs' / log_key_name / f"{log_key_name}.log",
         )
 
         job = Schedulery.add_job(
@@ -229,7 +231,6 @@ class SchedulerService(BaseService):
             context=context,
             job_meta=job_meta,
             run_at_startup=task.autostart,
-            task_logger=task_logger,
         )
         logger.info(f"[SchedulerService]: Added job '{job_db.id}' {job.name}, status: {"running" if task.autostart else "paused"}")
 
@@ -263,12 +264,14 @@ class SchedulerService(BaseService):
             user_id=saved_job.user.id,
             module_id=task.app.id,
         )
-        task_logger = LogManager.bind_logger(
-            name=f"{saved_job.task_name}-{saved_job.id}",
+        log_key_name = f"{saved_job.task_name}-{saved_job.id}"
+        LogManager.set_file_handler(
+            key=log_key_name,
             level=context.variables.LOG_LEVEL,
+            filter=lambda record: record['extra'].get('filter_name') == log_key_name,
             format=core_settings.LOGGER_FORMAT,
             rotation=core_settings.LOG_ROTATION,
-            logs_dir=LOGS_DIR / context.app_name / 'jobs',
+            save_path=LOGS_DIR / context.app_name / 'jobs' / log_key_name / f"{log_key_name}.log",
         )
 
         job = Schedulery.add_job(
@@ -279,7 +282,6 @@ class SchedulerService(BaseService):
             context=context,
             trigger=trigger,
             job_meta=job_meta,
-            task_logger=task_logger,
             kwargs=saved_job.extra_data,
         )
         logger.info(f"[SchedulerService]: Restored job '{saved_job.id}' {job.name} status: {saved_job.status}")
