@@ -28,7 +28,8 @@ async def get_jobs(
         user_id: int = None,
         team_id: int = None,
         job_id: int = None,
-        current_user: User = Depends(get_current_user)
+        current_user: User = Depends(get_current_user),
+        history_limit: int = 20,
 ):
     """
     Get existent jobs \n
@@ -55,7 +56,7 @@ async def get_jobs(
                 user_id=job_db.user.pk if job_db.user else None,
                 team_id=job_db.team.pk if job_db.team else None,
                 trigger=job_db.trigger['data'],
-                execute_info=JobExecutionStorage.get(job_db.pk),
+                execute_history=await JobExecutionStorage().get(job_db.pk, limit=history_limit),
             )
         )
 
@@ -109,7 +110,7 @@ async def add_job(
         user_id=job_db.user.pk if job_db.user else None,
         team_id=job_db.team.pk if job_db.team else None,
         trigger=job_db.trigger['data'],
-        execute_info=JobExecutionStorage.get(job_db.pk),
+        execute_history=await JobExecutionStorage().get(job_db.pk),
     )
 
     return MisResponse[JobResponse](result=job_response)
@@ -135,7 +136,7 @@ async def pause_job(
         user_id=job_db.user.pk if job_db.user else None,
         team_id=job_db.team.pk if job_db.team else None,
         trigger=job_db.trigger['data'],
-        execute_info = JobExecutionStorage.get(job_db.pk),
+        execute_history=await JobExecutionStorage().get(job_db.pk),
     )
 
     return MisResponse[JobResponse](result=job_response)
@@ -161,7 +162,7 @@ async def resume_job(
         user_id=job_db.user.pk if job_db.user else None,
         team_id=job_db.team.pk if job_db.team else None,
         trigger=job_db.trigger['data'],
-        execute_info=JobExecutionStorage.get(job_db.pk),
+        execute_history=await JobExecutionStorage().get(job_db.pk),
     )
 
     return MisResponse[JobResponse](result=job_response)
@@ -190,7 +191,7 @@ async def reschedule_job(
         user_id=job_db.user.pk if job_db.user else None,
         team_id=job_db.team.pk if job_db.team else None,
         trigger=job_db.trigger['data'],
-        execute_info = JobExecutionStorage.get(job_db.pk),
+        execute_history=await JobExecutionStorage().get(job_db.pk),
     )
 
     return MisResponse[JobResponse](result=job_response)

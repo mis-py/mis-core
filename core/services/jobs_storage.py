@@ -2,6 +2,39 @@ from enum import Enum
 
 from tortoise import timezone
 
+from bson import ObjectId
+
+from core.exceptions import NotFound
+from core.repositories.job_storage import IJobStorageRepository, JobStorageRepository
+
+
+class JobStorageService:
+
+    def __init__(self, job_storage_repo: IJobStorageRepository):
+        self.job_storage_repo = job_storage_repo
+
+    async def get(self, id: str):
+        return await self.job_storage_repo.get(_id=ObjectId(id))
+
+    async def filter_and_sort(self, limit: int, **filters):
+        return await self.job_storage_repo.filter_and_sort(**filters, limit=limit)
+
+    async def create(self, data):
+        return await self.job_storage_repo.create(data=data)
+
+    async def update(self, id: str, data: dict):
+        update_result = await self.job_storage_repo.update(
+            _id=ObjectId(id),
+            data=data,
+        )
+        if update_result is not None:
+            return update_result
+        else:
+            raise NotFound(f"Item {id} not found")
+
+    async def count(self, **filters):
+        return await self.job_storage_repo.count(**filters)
+
 
 class JobStatus(str, Enum):
     WAITING = "waiting"
@@ -11,80 +44,75 @@ class JobStatus(str, Enum):
 
 
 class JobExecutionStorage:
-    storage: dict = {}
 
-    @classmethod
-    def insert(cls, job_id: int):
-        if job_id not in cls.storage:
-            cls.storage[job_id] = {
+    def __init__(self):
+        self.job_storage_service = JobStorageService(job_storage_repo=JobStorageRepository())
+
+    async def insert(self, job_id: int):
+        new_item = await self.job_storage_service.create(
+            data={
+                'job_id': job_id,
                 'status': JobStatus.EXECUTING.value,
-                'count': 0,
-                'items': [],
+                'run_at': timezone.now(),
+                'yield': [],
+                'return': None,
+                'exception': None,
+                'end_at': None,
+                'time': None,
             }
+        )
+        return new_item.inserted_id
 
-        cls.storage[job_id]['items'].append({
-            'status': JobStatus.EXECUTING.value,
-            'run_at': timezone.now(),
-            'yield': [],
-            'return': None,
-            'exception': None,
-            'end_at': None,
-            'time': None,
-        })
-        cls.storage[job_id]['count'] += 1
-
-        # remove first item if count more 100
-        if len(cls.storage[job_id]) > 100:
-            cls.storage[job_id].pop(0)
-
-    @classmethod
-    def insert_yield(cls, job_id: int, value):
-        """Insert yield value for last execution item"""
+    async def insert_yield(self, item_id: int, value):
+        """Insert yield value for execution item"""
+        item = await self.job_storage_service.get(id=item_id)
         force_str_value = str(value)
-        cls.storage[job_id]['items'][-1]['yield'].append(force_str_value)
+        item['yield'].append(force_str_value)
+        await self.job_storage_service.update(id=item_id, data=item)
 
-    @classmethod
-    def set_return(cls, job_id: int, value):
-        """Set return value for last execution item"""
+    async def set_return(self, item_id: str, value):
+        """Set return value for execution item"""
+        item = await self.job_storage_service.get(id=item_id)
         force_str_value = str(value)
-        cls.storage[job_id]['items'][-1]['return'] = force_str_value
+        item['return'] = force_str_value
+        await self.job_storage_service.update(id=item_id, data=item)
 
-    @classmethod
-    def set_exception(cls, job_id: int, value):
-        """Set exception value for last execution item"""
+    async def set_exception(self, item_id: str, value):
+        """Set exception value for execution item"""
+        item = await self.job_storage_service.get(id=item_id)
         force_str_value = str(value)
-        cls.storage[job_id]['items'][-1]['exception'] = force_str_value
-        cls.storage[job_id]['items'][-1]['status'] = JobStatus.FAILED.value
+        item['exception'] = force_str_value
+        item['status'] = JobStatus.FAILED.value
+        await self.job_storage_service.update(id=item_id, data=item)
 
-    @classmethod
-    def set_end(cls, job_id: int):
-        """Set end info for last execution item"""
-        cls.storage[job_id]['items'][-1]['end_at'] = timezone.now()
-        cls.storage[job_id]['items'][-1]['status'] = JobStatus.DONE.value
+    async def set_end(self, item_id: str):
+        """Set end info for execution item"""
+        item = await self.job_storage_service.get(id=item_id)
+        item['end_at'] = timezone.now()
+        item['status'] = JobStatus.DONE.value
+        await self.job_storage_service.update(id=item_id, data=item)
 
-    @classmethod
-    def set_time_execution(cls, job_id: int, seconds: float):
-        """Set execution seconds for last execution item"""
-        cls.storage[job_id]['items'][-1]['time'] = seconds
+    async def set_time_execution(self, item_id: str, seconds: float):
+        """Set execution seconds for execution item"""
+        item = await self.job_storage_service.get(id=item_id)
+        item['time'] = seconds
+        await self.job_storage_service.update(id=item_id, data=item)
 
-    @classmethod
-    def get(cls, job_id: int):
-        execute_info = cls.storage.get(job_id)
-        if not execute_info:
+    async def get(self, job_id: int, limit: int = 20):
+        executions = await self.job_storage_service.filter_and_sort(job_id=job_id, limit=limit)
+        if not executions:
             return {
-                'status': JobStatus.WAITING.value,
-                'last_run_at': None,
-                'avg_time': None,
                 'count': 0,
                 'items': [],
             }
-        executions = execute_info['items']
-        time_executions = [item['time'] for item in executions if item['time']]
-        avg_execution_time = sum(time_executions) / len(time_executions) if len(time_executions) > 0 else None
+
+        clear_execution_items = []
+        for item in executions:
+            item.pop('_id')
+            item.pop('job_id')
+            clear_execution_items.append(item)
+
         return {
-            'status': 'waiting' if executions[-1]['status'] == 'done' else 'running',
-            'avg_time': avg_execution_time,
-            'last_run_at': executions[-1]['run_at'],
-            'count': len(executions),
-            'items': executions,
+            'count': await self.job_storage_service.count(job_id=job_id),
+            'items': clear_execution_items,
         }

@@ -79,27 +79,32 @@ def job_wrapper(func):
 
         job_meta = kwargs.get('job_meta')
         job_id = job_meta.job_id
+        job_execution_storage = JobExecutionStorage()
+
         with logger.contextualize(filter_name=f"{job_meta.task_name}-{job_meta.job_id}", context_key=f"JOB:{job_meta.task_name}:{job_meta.job_id}"):
             logger.debug("Job started!")
-            JobExecutionStorage.insert(job_id)
+            insert_id = await job_execution_storage.insert(job_id)
 
             start_time = time.time()
             try:
                 if isinstance(obj_to_call, Coroutine):
                     return_info = await obj_to_call
                     logger.debug(return_info)
-                    JobExecutionStorage.set_return(job_id, value=return_info)
+                    await job_execution_storage.set_return(insert_id, value=return_info)
                 elif isinstance(obj_to_call, AsyncGenerator):
                     async for payload in obj_to_call:
                         logger.debug(payload)
-                        JobExecutionStorage.insert_yield(job_id, value=payload)
-                JobExecutionStorage.set_end(job_id)
+                        await job_execution_storage.insert_yield(insert_id, value=payload)
+
+                await job_execution_storage.set_end(insert_id)
+
             except Exception as e:
-                JobExecutionStorage.set_exception(job_id, value=e)
+                await job_execution_storage.set_exception(insert_id, value=e)
                 logger.exception(e)
+
             finally:
                 execution_seconds = round(time.time() - start_time, 6)
-                JobExecutionStorage.set_time_execution(job_id, seconds=execution_seconds)
+                await job_execution_storage.set_time_execution(insert_id, seconds=execution_seconds)
                 logger.debug(f"Job finished! {execution_seconds} seconds elapsed")
 
     return inner
