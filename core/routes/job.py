@@ -6,6 +6,7 @@ from core.db.models import User
 from core.dependencies.security import get_current_user
 from core.dependencies.services import get_scheduler_service
 from core.exceptions import NotFound, MISError
+from core.services.jobs_storage import JobExecutionStorage
 from core.services.scheduler import SchedulerService
 
 from core.schemas.task import JobResponse, JobTrigger, JobCreate #, SchedulerJob
@@ -53,7 +54,8 @@ async def get_jobs(
                 app_id=job_db.app.pk,
                 user_id=job_db.user.pk if job_db.user else None,
                 team_id=job_db.team.pk if job_db.team else None,
-                trigger=job_db.trigger['data']
+                trigger=job_db.trigger['data'],
+                execute_info=JobExecutionStorage.get(job_db.pk),
             )
         )
 
@@ -106,7 +108,8 @@ async def add_job(
         app_id=job_db.app.pk,
         user_id=job_db.user.pk if job_db.user else None,
         team_id=job_db.team.pk if job_db.team else None,
-        trigger=job_db.trigger['data']
+        trigger=job_db.trigger['data'],
+        execute_info=JobExecutionStorage.get(job_db.pk),
     )
 
     return MisResponse[JobResponse](result=job_response)
@@ -131,7 +134,8 @@ async def pause_job(
         app_id=job_db.app.pk,
         user_id=job_db.user.pk if job_db.user else None,
         team_id=job_db.team.pk if job_db.team else None,
-        trigger=job_db.trigger['data']
+        trigger=job_db.trigger['data'],
+        execute_info = JobExecutionStorage.get(job_db.pk),
     )
 
     return MisResponse[JobResponse](result=job_response)
@@ -156,7 +160,8 @@ async def resume_job(
         app_id=job_db.app.pk,
         user_id=job_db.user.pk if job_db.user else None,
         team_id=job_db.team.pk if job_db.team else None,
-        trigger=job_db.trigger['data']
+        trigger=job_db.trigger['data'],
+        execute_info=JobExecutionStorage.get(job_db.pk),
     )
 
     return MisResponse[JobResponse](result=job_response)
@@ -184,8 +189,8 @@ async def reschedule_job(
         app_id=job_db.app.pk,
         user_id=job_db.user.pk if job_db.user else None,
         team_id=job_db.team.pk if job_db.team else None,
-        trigger=job_db.trigger['data']
-
+        trigger=job_db.trigger['data'],
+        execute_info = JobExecutionStorage.get(job_db.pk),
     )
 
     return MisResponse[JobResponse](result=job_response)

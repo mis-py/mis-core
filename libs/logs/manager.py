@@ -1,5 +1,6 @@
 import logging
 import sys
+from pathlib import Path
 from typing import Callable
 
 from loguru import logger
@@ -122,3 +123,16 @@ class LogManager:
             rotation=rotation, serialize=True,
         )
         logger.debug(f"[{name}] File logger was set")
+
+    @classmethod
+    def bind_logger(cls, name: str, level: str, format: str, rotation: str, logs_dir: Path):
+        new_logger = logger.bind(filter_name=name)
+        cls.set_file_handler(
+            key=name,
+            level=level,
+            filter=lambda record: record['extra'].get('filter_name') == name,
+            format=format,
+            save_path=str(logs_dir / name / f"{name}.log"),
+            rotation=rotation, serialize=True,
+        )
+        return new_logger

@@ -1,6 +1,7 @@
 from typing import Optional
 from loguru import logger
 
+from const import LOGS_DIR
 from core.db.dataclass import AppState, StatusTask
 from core.db.models import ScheduledJob, User, Team, Module
 from core.exceptions import NotFound, AlreadyExists, MISError, ValidationFailed
@@ -8,9 +9,11 @@ from core.repositories.module import IModuleRepository
 from core.repositories.scheduled_job import IScheduledJobRepository
 from core.schemas.task import JobCreate, JobTrigger, TaskResponse
 from core.services.base.base_service import BaseService
+from core.services.variable_callbacks import core_settings
 from core.utils.scheduler import TaskTemplate, JobMeta, validate_trigger_from_request, validate_extra_params_from_request, get_trigger, \
     format_trigger
 from core.utils.module import get_app_context
+from libs.logs.manager import LogManager
 from libs.schedulery import Schedulery
 
 
@@ -199,22 +202,23 @@ class SchedulerService(BaseService):
         )
         await self.scheduled_job_repo.save(obj=job_db)
 
-        if task.has_context:
-            context = await get_app_context(user=user, team=await user.team, module=task.app)
-        else:
-            context = None
+        context = await get_app_context(user=user, team=await user.team, module=task.app)
 
-        if task.has_job_meta:
-            job_meta = JobMeta(
-                job_id=job_db.id,
-                job_name=job_db.job_id,
-                task_name=task_name,
-                trigger=trigger,
-                user_id=user.id,
-                module_id=task.app.id,
-            )
-        else:
-            job_meta = None
+        job_meta = JobMeta(
+            job_id=job_db.id,
+            job_name=job_db.job_id,
+            task_name=task_name,
+            trigger=trigger,
+            user_id=user.id,
+            module_id=task.app.id,
+        )
+        task_logger = LogManager.bind_logger(
+            name=f"{job_db.task_name}-{job_db.id}",
+            level=context.variables.LOG_LEVEL,
+            format=core_settings.LOGGER_FORMAT,
+            rotation=core_settings.LOG_ROTATION,
+            logs_dir=LOGS_DIR / context.app_name / 'jobs',
+        )
 
         job = Schedulery.add_job(
             func=task.func,
@@ -224,7 +228,8 @@ class SchedulerService(BaseService):
             trigger=trigger,
             context=context,
             job_meta=job_meta,
-            run_at_startup=task.autostart
+            run_at_startup=task.autostart,
+            task_logger=task_logger,
         )
         logger.info(f"[SchedulerService]: Added job '{job_db.id}' {job.name}, status: {"running" if task.autostart else "paused"}")
 
@@ -249,22 +254,22 @@ class SchedulerService(BaseService):
             logger.warning(f"[SchedulerService] Unknown trigger used in {saved_job.job_id}, using default one.")
             trigger = task.trigger
 
-        if task.has_context:
-            context = await get_app_context(user=saved_job.user, team=saved_job.team, module=task.app)
-        else:
-            context = None
-
-        if task.has_job_meta:
-            job_meta = JobMeta(
-                job_id=saved_job.id,
-                job_name=saved_job.job_id,
-                task_name=saved_job.task_name,
-                trigger=trigger,
-                user_id=saved_job.user.id,
-                module_id=task.app.id,
-            )
-        else:
-            job_meta = None
+        context = await get_app_context(user=saved_job.user, team=saved_job.team, module=task.app)
+        job_meta = JobMeta(
+            job_id=saved_job.id,
+            job_name=saved_job.job_id,
+            task_name=saved_job.task_name,
+            trigger=trigger,
+            user_id=saved_job.user.id,
+            module_id=task.app.id,
+        )
+        task_logger = LogManager.bind_logger(
+            name=f"{saved_job.task_name}-{saved_job.id}",
+            level=context.variables.LOG_LEVEL,
+            format=core_settings.LOGGER_FORMAT,
+            rotation=core_settings.LOG_ROTATION,
+            logs_dir=LOGS_DIR / context.app_name / 'jobs',
+        )
 
         job = Schedulery.add_job(
             func=task.func,
@@ -274,6 +279,7 @@ class SchedulerService(BaseService):
             context=context,
             trigger=trigger,
             job_meta=job_meta,
+            task_logger=task_logger,
             kwargs=saved_job.extra_data,
         )
         logger.info(f"[SchedulerService]: Restored job '{saved_job.id}' {job.name} status: {saved_job.status}")

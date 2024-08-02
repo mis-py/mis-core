@@ -8,14 +8,14 @@ scheduled_tasks = ScheduledTasks()
 
 
 @scheduled_tasks.schedule_task(trigger=None)
-async def proxy_domains_checker(ctx: AppContext):
+async def proxy_domains_checker(ctx: AppContext, logger, **kwargs):
     """
     Checking all valid proxy domains for DNS record 'A'
     Setting domain invalid if not 'A' record
     """
     logger.debug(f"Start domain validating!")
-    proxy_domain_service = ProxyDomainService()
-    active_proxy_domains = await ProxyDomainService().filter(is_invalid=True)
+    proxy_domain_service = ProxyDomainService(context_logger=logger)
+    active_proxy_domains = await proxy_domain_service.filter(is_invalid=True)
     dns_checker_service = DNSCheckerService()
     record_to_check = 'A'
     logger.debug(f"Domains to check: '{active_proxy_domains}'")
@@ -42,6 +42,3 @@ async def proxy_domains_checker(ctx: AppContext):
             logger.warning(f"ProxyDomain: '{domain.name}' validation by DNS failed")
 
     logger.debug(f"Task finished.")
-
-
-

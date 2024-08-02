@@ -81,7 +81,8 @@ class Schedulery:
             trigger=None,
             context=None,
             job_meta=None,
-            run_at_startup=False
+            run_at_startup=False,
+            task_logger=None,
     ) -> Job:
         if trigger is None:
             raise ValueError(f"Trigger for job '{job_id}' not specified")
@@ -93,6 +94,8 @@ class Schedulery:
             job_kwargs.update({'ctx': context})
         if job_meta:
             job_kwargs.update({'job_meta': job_meta})
+        if task_logger:
+            job_kwargs.update({'logger': task_logger})
 
         try:
             job = cls._scheduler.add_job(

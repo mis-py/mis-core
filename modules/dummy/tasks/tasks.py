@@ -1,3 +1,4 @@
+import asyncio
 from loguru import logger
 
 from ..config import ModuleSettings
@@ -10,7 +11,7 @@ config = ModuleSettings()
 
 
 @scheduled_tasks.schedule_task(seconds=config.TICK_N_SEC, autostart=True)
-async def dummy_task(ctx: AppContext):
+async def dummy_task(ctx: AppContext, logger, **kwargs):
     logger.debug(
         f"Execute task every {config.TICK_N_SEC} seconds for module {ctx.app_name} "
         f"and sending message to eventory"
@@ -25,7 +26,14 @@ async def dummy_task(ctx: AppContext):
 
 
 @scheduled_tasks.schedule_task(trigger=None)
-async def dummy_manual_task(ctx: AppContext, dummy_argument: str, dummy_second: int, dummy_kwarg: bool = True):
+async def dummy_manual_task(
+        ctx: AppContext,
+        logger,
+        dummy_argument: str,
+        dummy_second: int,
+        dummy_kwarg: bool = True,
+        **kwargs,
+):
     body = {
         "dummy_argument": dummy_argument,
         "dummy_second": dummy_second,
@@ -43,7 +51,7 @@ async def dummy_manual_task(ctx: AppContext, dummy_argument: str, dummy_second: 
 
 
 @scheduled_tasks.schedule_task(trigger=None, single_instance=True)
-async def dummy_single_task(ctx: AppContext):
+async def dummy_single_task(ctx: AppContext, logger, **kwargs):
     logger.debug(
         f"Task for single_instance demonstration for {ctx.app_name}"
     )
