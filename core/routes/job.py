@@ -6,6 +6,7 @@ from core.db.models import User
 from core.dependencies.security import get_current_user
 from core.dependencies.services import get_scheduler_service
 from core.exceptions import NotFound, MISError
+from core.services.jobs_storage import JobExecutionStorage
 from core.services.scheduler import SchedulerService
 
 from core.schemas.task import JobResponse, JobTrigger, JobCreate #, SchedulerJob
@@ -27,7 +28,8 @@ async def get_jobs(
         user_id: int = None,
         team_id: int = None,
         job_id: int = None,
-        current_user: User = Depends(get_current_user)
+        current_user: User = Depends(get_current_user),
+        history_limit: int = 20,
 ):
     """
     Get existent jobs \n
@@ -53,7 +55,8 @@ async def get_jobs(
                 app_id=job_db.app.pk,
                 user_id=job_db.user.pk if job_db.user else None,
                 team_id=job_db.team.pk if job_db.team else None,
-                trigger=job_db.trigger['data']
+                trigger=job_db.trigger['data'],
+                execute_history=await JobExecutionStorage().get(job_db.pk, limit=history_limit),
             )
         )
 
@@ -106,7 +109,8 @@ async def add_job(
         app_id=job_db.app.pk,
         user_id=job_db.user.pk if job_db.user else None,
         team_id=job_db.team.pk if job_db.team else None,
-        trigger=job_db.trigger['data']
+        trigger=job_db.trigger['data'],
+        execute_history=await JobExecutionStorage().get(job_db.pk),
     )
 
     return MisResponse[JobResponse](result=job_response)
@@ -131,7 +135,8 @@ async def pause_job(
         app_id=job_db.app.pk,
         user_id=job_db.user.pk if job_db.user else None,
         team_id=job_db.team.pk if job_db.team else None,
-        trigger=job_db.trigger['data']
+        trigger=job_db.trigger['data'],
+        execute_history=await JobExecutionStorage().get(job_db.pk),
     )
 
     return MisResponse[JobResponse](result=job_response)
@@ -156,7 +161,8 @@ async def resume_job(
         app_id=job_db.app.pk,
         user_id=job_db.user.pk if job_db.user else None,
         team_id=job_db.team.pk if job_db.team else None,
-        trigger=job_db.trigger['data']
+        trigger=job_db.trigger['data'],
+        execute_history=await JobExecutionStorage().get(job_db.pk),
     )
 
     return MisResponse[JobResponse](result=job_response)
@@ -184,8 +190,8 @@ async def reschedule_job(
         app_id=job_db.app.pk,
         user_id=job_db.user.pk if job_db.user else None,
         team_id=job_db.team.pk if job_db.team else None,
-        trigger=job_db.trigger['data']
-
+        trigger=job_db.trigger['data'],
+        execute_history=await JobExecutionStorage().get(job_db.pk),
     )
 
     return MisResponse[JobResponse](result=job_response)

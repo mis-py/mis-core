@@ -20,7 +20,7 @@ routing_keys = RoutingKeys()
 
 # this task change proxy IP every N hours
 @scheduled_tasks.schedule_task(hours=1, start_date=datetime.now() + timedelta(seconds=30))
-async def change_proxies_ip(ctx: AppContext):
+async def change_proxies_ip(ctx: AppContext, logger, **kwargs):
     proxy_service = get_proxy_service()
     proxies = await proxy_service.filter(change_url__startswith='http', is_enabled=True)
 
@@ -44,7 +44,7 @@ async def change_proxies_ip(ctx: AppContext):
 
 
 @scheduled_tasks.schedule_task(minutes=15, start_date=datetime.now() + timedelta(seconds=30))
-async def proxy_self_check(ctx: AppContext):
+async def proxy_self_check(ctx: AppContext, logger, **kwargs):
     proxy_service = get_proxy_service()
     proxies = await proxy_service.filter(is_enabled=True)
 

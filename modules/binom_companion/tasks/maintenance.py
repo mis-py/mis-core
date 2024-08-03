@@ -15,7 +15,8 @@ scheduled_tasks = ScheduledTasks()
     start_date=datetime.now() + timedelta(seconds=10)
 )
 async def old_lead_records_cleanup(
-        lead_record_ttl: int = 1800
+        lead_record_ttl: int = 1800,
+        **kwargs,
 ):
     now = datetime.now(timezone.utc)
 

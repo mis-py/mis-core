@@ -1,3 +1,4 @@
+import time
 from dataclasses import dataclass
 from typing import Callable, Literal, Coroutine, AsyncGenerator
 from functools import wraps
@@ -10,6 +11,8 @@ from pydantic import create_model, ValidationError
 
 from core.db.models import Module
 from core.exceptions import ValidationFailed
+from core.services.jobs_storage import JobExecutionStorage
+from core.utils.app_context import AppContext
 
 
 def get_trigger(input_trigger: int | str | list[str]):
@@ -74,19 +77,35 @@ def job_wrapper(func):
     async def inner(*args, **kwargs):
         obj_to_call = func(*args, **kwargs)
 
-        if isinstance(obj_to_call, Coroutine):
-            await obj_to_call
-        elif isinstance(obj_to_call, AsyncGenerator):
-            async for payload in obj_to_call:
-                logger.debug(payload)
-                # TODO extend logic here
-                # await Eventory.publish(
-                #     Message(
-                #         body={"dummy_setting": ctx.settings.PRIVATE_SETTING},
-                #     ),
-                #     routing_keys.DUMMY_EVENT,
-                #     ctx.app_name
-                # )
+        job_meta = kwargs.get('job_meta')
+        job_id = job_meta.job_id
+        job_execution_storage = JobExecutionStorage()
+
+        with logger.contextualize(filter_name=f"{job_meta.task_name}-{job_meta.job_id}", context_key=f"JOB:{job_meta.task_name}:{job_meta.job_id}"):
+            logger.debug("Job started!")
+            insert_id = await job_execution_storage.insert(job_id)
+
+            start_time = time.time()
+            try:
+                if isinstance(obj_to_call, Coroutine):
+                    return_info = await obj_to_call
+                    logger.debug(return_info)
+                    await job_execution_storage.set_return(insert_id, value=return_info)
+                elif isinstance(obj_to_call, AsyncGenerator):
+                    async for payload in obj_to_call:
+                        logger.debug(payload)
+                        await job_execution_storage.insert_yield(insert_id, value=payload)
+
+                await job_execution_storage.set_end(insert_id)
+
+            except Exception as e:
+                await job_execution_storage.set_exception(insert_id, value=e)
+                logger.exception(e)
+
+            finally:
+                execution_seconds = round(time.time() - start_time, 6)
+                await job_execution_storage.set_time_execution(insert_id, seconds=execution_seconds)
+                logger.debug(f"Job finished! {execution_seconds} seconds elapsed")
 
     return inner
 
@@ -100,9 +119,6 @@ class TaskTemplate:
     app: Module = None
     autostart: bool = False
     single_instance: bool = False
-
-    has_context: bool = False
-    has_job_meta: bool = False
 
     @property
     def name(self):

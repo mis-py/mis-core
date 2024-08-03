@@ -46,6 +46,7 @@ class JobResponse(JobTrigger):
     app_id: Optional[int]
     user_id: Optional[int]
     team_id: Optional[int]
+    execute_history: Optional[dict]
 
 
 class JobCreate(JobTrigger):

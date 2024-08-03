@@ -163,8 +163,8 @@ class MongodbRepository(IRepository):
     async def get(self, **filters) -> Optional[ModelType]:
         return await self.model.find_one(filters)
 
-    async def filter(self, **filters) -> list[ModelType]:
-        return await self.model.find(filters).to_list(length=100)
+    async def filter(self, limit: int = 100, **filters) -> list[ModelType]:
+        return await self.model.find(filters).to_list(length=limit)
 
     async def filter_queryable(self, prefetch_related: list[str] = None, **filters) -> QuerySet:
         """Returns filtered queryset"""
@@ -173,6 +173,12 @@ class MongodbRepository(IRepository):
     async def paginate(self, queryset: QuerySet, params: AbstractParams = None) -> PageResponse:
         """Paginate by fastapi-pagination and return pydantic model"""
         # TODO
+
+    async def save(self):
+        pass # TODO
+
+    async def update_bulk(self):
+        pass # TODO
 
     async def exists(self, **filters) -> bool:
         """Check if model object exists"""

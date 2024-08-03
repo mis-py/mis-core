@@ -81,7 +81,7 @@ class Schedulery:
             trigger=None,
             context=None,
             job_meta=None,
-            run_at_startup=False
+            run_at_startup=False,
     ) -> Job:
         if trigger is None:
             raise ValueError(f"Trigger for job '{job_id}' not specified")

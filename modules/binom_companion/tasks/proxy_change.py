@@ -8,7 +8,12 @@ scheduled_tasks = ScheduledTasks()
 
 
 @scheduled_tasks.schedule_task(trigger=None)
-async def single_replacement_group_proxy_change(ctx: AppContext, job_meta: JobMeta, replacement_group_id: int):
+async def single_replacement_group_proxy_change(
+        ctx: AppContext,
+        job_meta: JobMeta,
+        replacement_group_id: int,
+        **kwargs,
+):
     """Tasks that run only single replacement group."""
     await ReplacementGroupService().proxy_change(
         ctx=ctx,
@@ -18,7 +23,12 @@ async def single_replacement_group_proxy_change(ctx: AppContext, job_meta: JobMe
 
 
 @scheduled_tasks.schedule_task(trigger=None)
-async def multiple_replacement_group_proxy_change(ctx: AppContext, job_meta: JobMeta, replacement_group_ids: list[int]):
+async def multiple_replacement_group_proxy_change(
+        ctx: AppContext,
+        job_meta: JobMeta,
+        replacement_group_ids: list[int],
+        **kwargs,
+):
     """
     Task that can run multiple groups at same time.
     Main purpose is that we can assign single domain on multiple groups at single run.

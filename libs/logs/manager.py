@@ -1,5 +1,6 @@
 import logging
 import sys
+from pathlib import Path
 from typing import Callable
 
 from loguru import logger
@@ -8,6 +9,7 @@ from config import CoreSettings
 from const import LOGS_DIR, MODULES_DIR
 from core.utils.common import custom_log_timezone
 from libs.logs.filters import PathLoguruFilter
+from libs.logs.formatters import Formatter
 
 settings = CoreSettings()
 
@@ -64,11 +66,13 @@ class LogManager:
 
     @classmethod
     def set_terminal_handler(cls, key: str, filter: Callable, level: str, format: str):
+        formatter = Formatter(fmt=format, context_key=key)
+
         # add new terminal logs handler
         handler_id = logger.add(
             sink=sys.stderr,
             level=level,
-            format=format,
+            format=formatter.format,
             filter=filter,
         )
 
@@ -89,10 +93,12 @@ class LogManager:
             rotation: str,
             serialize: bool = True,
     ):
+        formatter = Formatter(fmt=format, context_key=key)
+
         # add new file logs handler
         handler_id = logger.add(
             sink=save_path,
-            format=format,
+            format=formatter.format,
             rotation=rotation,
             level=level,
             filter=filter,

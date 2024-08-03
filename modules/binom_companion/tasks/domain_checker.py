@@ -14,7 +14,13 @@ scheduled_tasks = ScheduledTasks()
 
 
 @scheduled_tasks.schedule_task(trigger=None)
-async def yandex_check_replacement_group_proxy_change(ctx: AppContext, job_meta: JobMeta, replacement_group_ids: list[int], yandex_api_key: str):
+async def yandex_check_replacement_group_proxy_change(
+        ctx: AppContext,
+        job_meta: JobMeta,
+        replacement_group_ids: list[int],
+        yandex_api_key: str,
+        **kwargs,
+):
     """
     Check ban in the yandex browser of domains that are currently in use
     """
@@ -58,6 +64,8 @@ async def check_domains_of_replacement_groups(
         job_meta: JobMeta,
         replacement_group_ids: list[int],
         proxy_ids: list[int],
+        logger,
+        **kwargs,
 ):
     try:
         check_result = await ReplacementGroupService().check_group_domains(
