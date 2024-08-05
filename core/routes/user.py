@@ -58,7 +58,7 @@ async def edit_user_me(
         user_in: UserSelfUpdate,
         user: User = Depends(get_current_user),
 ):
-    await user_service.update(id=user.pk, schema_in=user_in)
+    await user_service.update_user(id=user.pk, schema_in=user_in)
     user_with_related = await user_service.get(
         id=user.pk, prefetch_related=['team', 'variable_values'])
 
@@ -124,3 +124,21 @@ async def delete_user(
     await user_service.delete(id=user.pk)
 
     return MisResponse()
+
+
+@router.put(
+    '/edit/client_data',
+    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:users'])],
+    response_model=MisResponse[dict]
+)
+async def edit_user_client_data(
+        user_service: Annotated[UserService, Depends(get_user_service)],
+        client_data: dict,
+        user: User = Depends(get_user_by_id),
+):
+    saved_data = await user_service.update_client_data(
+        id=user.pk,
+        old_client_data=user.client_data,
+        new_client_data=client_data,
+    )
+    return MisResponse[dict](result=saved_data)
