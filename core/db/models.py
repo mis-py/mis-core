@@ -1,4 +1,5 @@
 from tortoise import fields
+from tortoise.fields import JSONField
 from tortoise.models import Model
 from .mixin import UserPermissionsMixin, TeamPermissionsMixin, Permission
 from .dataclass import AppState, StatusTask
@@ -15,6 +16,8 @@ class User(Model, UserPermissionsMixin):
     variable_values: fields.ReverseRelation['VariableValue']
     groups: fields.ManyToManyRelation
     access_groups: fields.ManyToManyRelation['GuardianAccessGroup']
+
+    user_data = JSONField(default=dict)
 
     class PydanticMeta:
         exclude = ("hashed_password",)
