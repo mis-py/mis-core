@@ -32,7 +32,7 @@ class UserResponse(MisModel):
     position: Optional[str]
     disabled: bool
     team: Optional[TeamModelShort]
-    client_data: dict
+    user_data: dict
     # variables: list[VariableValueResponse] = []
 
 
@@ -42,5 +42,5 @@ class UserListResponse(BaseModel):
     position: Optional[str]
     disabled: bool
     team: Optional[TeamModelShort]
-    client_data: dict
+    user_data: dict
     # variables: list[VariableValueResponse] = []

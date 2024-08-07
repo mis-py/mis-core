@@ -17,7 +17,7 @@ class User(Model, UserPermissionsMixin):
     groups: fields.ManyToManyRelation
     access_groups: fields.ManyToManyRelation['GuardianAccessGroup']
 
-    client_data = JSONField(default=dict)
+    user_data = JSONField(default=dict)
 
     class PydanticMeta:
         exclude = ("hashed_password",)

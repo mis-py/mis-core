@@ -127,18 +127,17 @@ async def delete_user(
 
 
 @router.put(
-    '/edit/client_data',
-    dependencies=[Security(get_current_user, scopes=['core:sudo', 'core:users'])],
+    '/edit/user_data',
     response_model=MisResponse[dict]
 )
-async def edit_user_client_data(
+async def edit_user_data(
         user_service: Annotated[UserService, Depends(get_user_service)],
-        client_data: dict,
+        user_data: dict,
         user: User = Depends(get_user_by_id),
 ):
-    saved_data = await user_service.update_client_data(
+    saved_data = await user_service.update_user_data(
         id=user.pk,
-        old_client_data=user.client_data,
-        new_client_data=client_data,
+        old_user_data=user.user_data,
+        new_user_data=user_data,
     )
     return MisResponse[dict](result=saved_data)

@@ -44,11 +44,11 @@ class UserService(BaseService):
             raise ValidationFailed("ADMIN user can't be updated")
         return await self.user_repo.update(pk=id, data=update_data)
 
-    async def update_client_data(self, id: int, old_client_data: dict, new_client_data: dict) -> dict:
-        client_data = {**old_client_data, **new_client_data}
-        cleared_client_data = {key: value for key, value in client_data.items() if value is not None}
-        await self.user_repo.update(pk=id, data={'client_data': cleared_client_data})
-        return cleared_client_data
+    async def update_user_data(self, id: int, old_user_data: dict, new_user_data: dict) -> dict:
+        user_data = {**old_user_data, **new_user_data}
+        cleared_user_data = {key: value for key, value in user_data.items() if value is not None}
+        await self.user_repo.update(pk=id, data={'user_data': cleared_user_data})
+        return cleared_user_data
 
     async def update_with_password(self, user: User, schema_in: UserUpdate) -> User:
         user = await self.update_user(id=user.pk, schema_in=schema_in)
@@ -72,8 +72,7 @@ class UserService(BaseService):
             recipient: Recipient,
     ):
         if not recipient and not is_force_send:
-            return await self.user_repo.filter_by_subscription(routing_key=routing_key)
-
+            return await self.user_repo.filter_by_subscription(routing_key=routing_key.upper())
         if is_force_send and not recipient:
             return await self.user_repo.filter()
 
