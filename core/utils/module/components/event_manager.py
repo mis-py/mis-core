@@ -51,8 +51,6 @@ class EventManager(BaseComponent):
             except DuplicateConsumerTag as e:
                 logger.error(f"Consumer already exists: {e}")
 
-        # TODO should I restart it actually?
-        # Eventory.restart_listening()
 
     async def stop(self):
         for consumer in self.consumers:

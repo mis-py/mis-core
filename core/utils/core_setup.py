@@ -1,9 +1,12 @@
 import os
+
+from aiormq import DuplicateConsumerTag
 from loguru import logger
 from tortoise import Tortoise
 
 from const import DEFAULT_ADMIN_USERNAME, MODULES_DIR, MODULES_DIR_NAME
 from config import CoreSettings
+from core.consumers import core_event_consumers
 from core.db.guardian import GuardianPermission, GuardianContentType
 from core.db.mixin import GuardianMixin
 from core.db.dataclass import AppState
@@ -14,8 +17,8 @@ from core.services.permission import PermissionService
 from core.utils.common import camel_to_spaces
 from core.utils.security import get_password_hash
 from core.utils.module.utils import manifests_sort_by_dependency, import_module, unload_module, read_module_manifest, \
-    module_dependency_check
-
+    module_dependency_check, get_app_context
+from libs.eventory import Eventory
 
 settings = CoreSettings()
 
@@ -41,6 +44,8 @@ async def setup_core():
         await permission_service.create_with_scope(name="Access for 'guardian' endpoints", scope="guardian", module=core)
         await permission_service.create_with_scope(name="Access for 'jobs' endpoints", scope="jobs", module=core)
         await permission_service.create_with_scope(name="Access for 'variables' endpoints", scope="variables", module=core)
+
+    await setup_core_consumers(core)
 
     return core is None
 
@@ -183,9 +188,6 @@ async def setup_modules_init():
                 logger.error(f'[ModuleService] Module: {module_name} system init failed ({e}), skip...')
                 continue
 
-    # need for start consumer for core websocket sender
-    # await cls._restart_core_consumer()
-
 
 async def setup_modules_shutdown():
     """
@@ -200,3 +202,25 @@ async def setup_modules_shutdown():
             await module_service.stop_module(module_name)
         await module_service.shutdown_module(module_name, from_system=True)
 
+
+async def setup_core_consumers(core: Module):
+    """Register and start eventory consumers"""
+    for event in core_event_consumers.events:
+        logger.debug(f'[EventManager]: Register consumer {event.func.__name__} from {core.name}')
+
+        context = await get_app_context(module=core)
+
+        consumer = await Eventory.register_consumer(
+            func=event.func,
+            routing_key=event.route_key,
+            channel_name=core.name,
+            extra_kwargs={'ctx': context},
+        )
+
+        logger.debug(f'[EventManager] Starting consumer {consumer.consumer_tag} from {core.name}')
+        try:
+            await consumer.start()
+        except DuplicateConsumerTag as e:
+            logger.error(f"Consumer already exists: {e}")
+
+        core_event_consumers.consumers.append(consumer)

@@ -28,8 +28,9 @@ class Eventory:
     # Registered consumers
     _consumers: dict[str, list[Consumer]] = defaultdict(list)
 
-    # RabbitMQ exchange name
-    _exchange_name: str = 'eventory'
+    # RabbitMQ exchange name and type
+    _exchange_name: str = 'topic_eventory'
+    _exchange_type: ExchangeType = ExchangeType.TOPIC
 
     @classmethod
     async def init(cls):
@@ -84,7 +85,7 @@ class Eventory:
         receiver = cls._inject_and_process_wrapper(func, extra_kwargs)
 
         channel = await cls.get_channel(channel_name)
-        exchange = await channel.declare_exchange(cls._exchange_name, type=ExchangeType.DIRECT, auto_delete=True)
+        exchange = await channel.declare_exchange(cls._exchange_name, type=cls._exchange_type, auto_delete=True)
         queue = await channel.declare_queue(exclusive=True)
         await queue.bind(exchange, routing_key=routing_key)
 
@@ -126,7 +127,7 @@ class Eventory:
         channel = await cls.get_channel(channel_name)
         exchange = await channel.declare_exchange(
             name=cls._exchange_name,
-            type=ExchangeType.DIRECT,
+            type=cls._exchange_type,
             auto_delete=True,
         )
 

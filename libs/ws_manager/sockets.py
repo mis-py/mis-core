@@ -1,23 +1,32 @@
 import time
-from typing import Callable
+from dataclasses import dataclass, field
 
 from fastapi.websockets import WebSocket
 from loguru import logger
 
+from libs.ws_manager.enums import ResponseStatus, Action, WebsocketEvent
+
+
+@dataclass
+class Connection:
+    user_id: int
+    websocket: WebSocket
+
+    # Client can subscribe for various events here
+    subscribed_events: set[str] = field(default_factory=set)
+
 
 class WSManager:
     # Hold client connections
-    _connections: dict[int, dict] = {}
-    _actions: dict = {}
+    _connections: dict[int, Connection] = {}
 
     @classmethod
     async def connect(cls, websocket: WebSocket, user_id: int):
         await websocket.accept()
-        cls._connections[user_id] = {
-            'websocket': websocket,
-            # Client can subscribe for various events here
-            'subscribes': {},
-        }
+        cls._connections[user_id] = Connection(
+            user_id=user_id,
+            websocket=websocket,
+        )
         logger.debug(f"[Websocket] User (id={user_id}) connected")
 
     @classmethod
@@ -26,45 +35,65 @@ class WSManager:
         logger.debug(f"[Websocket] User (id={user_id}) disconnected")
 
     @classmethod
-    def subscribe(cls, message: dict, user_id: int):
-        action = message.pop('subscribe')
-        if action not in cls._actions:
-            return False
-        cls._connections[user_id]['subscribes'][action] = {**message}
-        return True
+    def get_connection(cls, user_id: int) -> Connection:
+        connection = cls._connections.get(user_id)
+        if connection is None:
+            raise ValueError(f"No connection for user (id={user_id}) found")
+        return connection
 
     @classmethod
-    def unsubscribe(cls, message: dict, user_id: int):
-        action = message.pop('unsubscribe')
+    def subscribe(cls, user_id: int, event: str):
+        connection = cls.get_connection(user_id)
+        connection.subscribed_events.add(event)
+
+    @classmethod
+    def unsubscribe(cls, user_id: int, event: str):
+        connection = cls.get_connection(user_id)
         try:
-            del cls._connections[user_id]['subscribes'][action]
-            return True
+            connection.subscribed_events.remove(event)
         except KeyError:
+            # already removed or not exist; skip error
+            pass
+
+    @classmethod
+    def is_subscribed_event(cls, user_id: int, event: str):
+        connection = cls.get_connection(user_id)
+        return event in connection.subscribed_events
+
+    @classmethod
+    def is_connection_exists(cls, user_id: int) -> bool:
+        try:
+            connection = cls.get_connection(user_id)
+            return bool(connection)
+        except ValueError:
             return False
 
     @classmethod
-    def register_action(cls, action: str, callback: Callable):
-        cls._actions[action] = callback
+    async def _send_message(cls, websocket: WebSocket, data: dict):
+        try:
+            await websocket.send_json(data=data)
+        except Exception as e:
+            logger.warning(f'Send message error {e.__class__.__name__} {e}')
 
     @classmethod
-    def get_user_subscriptions(cls, user_id: int):
-        return cls._connections[user_id]['subscribes']
-
-    @classmethod
-    def is_user_subscribed(cls, user_id: int, action: str):
-        if action in cls.get_user_subscriptions(user_id):
-            return True
-        return False
-
-    @staticmethod
-    async def send_action_message(connection: WebSocket, message: dict, action: str):
+    async def send_answer(cls, user_id: int, message_data: dict, action: Action, status: ResponseStatus):
+        """This message send an answer to the user request"""
+        connection = cls.get_connection(user_id)
         data = {
             'action': action,
-            'data': message,
+            'data': message_data,
             'time': int(time.time()),
+            'status': status,
         }
-        await connection.send_json(data)
+        await cls._send_message(websocket=connection.websocket, data=data)
 
     @classmethod
-    async def run_action(cls, action: str, *args, **kwargs):
-        await cls._actions[action](cls, *args, **kwargs)
+    async def send_event(cls, user_id: int, message_data: dict, event: WebsocketEvent):
+        """This message send auto (ex: notification or log)"""
+        connection = cls.get_connection(user_id)
+        data = {
+            'event': event,
+            'data': message_data,
+            'time': int(time.time()),
+        }
+        await cls._send_message(websocket=connection.websocket, data=data)
