@@ -40,7 +40,7 @@ from loaders import (
 from loaders import (
     shutdown_modules, shutdown_eventory, shutdown_scheduler, shutdown_db, shutdown_redis, shutdown_mongo)
 from core.exceptions import MISError
-from core.utils.common import generate_unique_id, custom_log_timezone
+from core.utils.common import generate_unique_id
 from core.utils.schema import MisResponse
 
 LogManager.setup()

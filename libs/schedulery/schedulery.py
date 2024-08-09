@@ -7,7 +7,6 @@ from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.job import Job
 from apscheduler.jobstores.base import ConflictingIdError
 
-from core.exceptions import NotFound
 from .config import SchedulerSettings
 
 
@@ -48,7 +47,7 @@ class Schedulery:
     def get_job(cls, job_id: int) -> Job:
         job = cls._scheduler.get_job(str(job_id))
         if not job:
-            raise NotFound(f"Job ID '{job_id}' not found")
+            raise ValueError(f"Job ID '{job_id}' not found")
         return job
 
     @classmethod

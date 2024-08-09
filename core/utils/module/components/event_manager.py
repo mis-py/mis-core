@@ -7,6 +7,7 @@ from libs.eventory.utils import EventTemplate
 from core.utils.module import get_app_context
 
 from ..Base.BaseComponent import BaseComponent
+from ...notification.eventory import inject_and_process_wrapper
 
 
 class EventManager(BaseComponent):
@@ -32,12 +33,12 @@ class EventManager(BaseComponent):
 
             # # consumers has only app context coz no user or team is running consumer
             context = await get_app_context(module=app_db_model)
+            wrapped_func = inject_and_process_wrapper(func=template.func, extra_kwargs={'ctx': context})
 
             consumer = await Eventory.register_consumer(
-                func=template.func,
+                func=wrapped_func,
                 routing_key=template.route_key,
                 channel_name=self.module.name,
-                extra_kwargs={'ctx': context},
             )
             self.consumers.append(consumer)
 

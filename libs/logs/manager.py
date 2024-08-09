@@ -1,13 +1,13 @@
+import datetime
 import logging
 import sys
-from pathlib import Path
 from typing import Callable
 
+import pytz
 from loguru import logger
 
 from config import CoreSettings
-from const import LOGS_DIR, MODULES_DIR
-from core.utils.common import custom_log_timezone
+from const import LOGS_DIR, MODULES_DIR, TIMEZONE
 from libs.logs.filters import PathLoguruFilter
 from libs.logs.formatters import Formatter
 
@@ -128,3 +128,9 @@ class LogManager:
             rotation=rotation, serialize=True,
         )
         logger.debug(f"[{name}] File logger was set")
+
+
+def custom_log_timezone(record):
+    tz = pytz.timezone(TIMEZONE)
+    dt = datetime.datetime.now(tz)
+    record["extra"]["datetime"] = dt.strftime('%d-%m-%Y %H:%M:%S.%f')[:-3]

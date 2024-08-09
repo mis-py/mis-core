@@ -5,10 +5,9 @@ from fastapi import APIRouter, Security, Depends
 from core.dependencies.misc import RoutingKeysDep
 from core.dependencies.context import get_app_context
 from core.dependencies.security import get_current_user
+from core.utils.notification.eventory import eventory_publish
 from core.utils.schema import MisResponse, PageResponse
 from core.utils.app_context import AppContext
-
-from libs.eventory import Eventory
 
 from ..db.schema import DummyResponse, DummyCreate, DummyEdit, DummyDataResponse
 from ..dependencies.services import get_dummy_model_service
@@ -55,7 +54,7 @@ async def edit_dummy(
         ctx: AppContext = Depends(get_app_context),
 ):
     edited_dummy = await dummy_model_service.update(dummy_id, dummy_in)
-    await Eventory.publish(
+    await eventory_publish(
         body={'id': dummy_id, 'dummy_string': dummy_in.dummy_string},
         routing_key=routing_keys.DUMMY_EDIT_EVENT,
         channel_name=ctx.app_name,

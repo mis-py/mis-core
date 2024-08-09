@@ -2,8 +2,8 @@ from loguru import logger
 
 from core.utils.app_context import AppContext
 from core.utils.module.components import ScheduledTasks
+from core.utils.notification.eventory import eventory_publish
 from core.utils.scheduler import JobMeta
-from libs.eventory import Eventory
 from ..exceptions import NoProxiesError
 from ..service import YandexBrowserCheckService, ReplacementGroupService
 from ..services.tracker import get_tracker_service
@@ -82,7 +82,7 @@ async def check_domains_of_replacement_groups(
             if domain_data['status'] is True:
                 continue
 
-            await Eventory.publish(
+            await eventory_publish(
                 body={
                     'replacement_group_id': replacement_group['replacement_group_id'],
                     'checked_domain': domain_data['name'],

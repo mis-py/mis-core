@@ -1,10 +1,9 @@
-import asyncio
 from loguru import logger
 
+from core.utils.notification.eventory import eventory_publish
 from ..config import ModuleSettings
 from core.utils.module.components import ScheduledTasks
 from core.utils.app_context import AppContext
-from libs.eventory import Eventory
 
 scheduled_tasks = ScheduledTasks()
 config = ModuleSettings()
@@ -17,7 +16,7 @@ async def dummy_task(ctx: AppContext, **kwargs):
         f"and sending message to eventory"
     )
     yield "yield test 1"
-    await Eventory.publish(
+    await eventory_publish(
         body={"dummy_setting": ctx.variables.PRIVATE_SETTING},
         routing_key=ctx.routing_keys.DUMMY_EVENT,
         channel_name=ctx.app_name,
@@ -42,7 +41,7 @@ async def dummy_manual_task(
         f"Task is created manually by user with specified trigger "
         f"and sending message '{body}' to eventory"
     )
-    await Eventory.publish(
+    await eventory_publish(
         body=body,
         routing_key=ctx.routing_keys.DUMMY_MANUAL_EVENT,
         channel_name=ctx.app_name,

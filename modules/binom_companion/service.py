@@ -13,17 +13,14 @@ import asyncio
 from aiohttp import ClientHttpProxyError
 from fastapi_pagination.bases import AbstractParams
 from loguru import logger
-from ujson import loads, JSONDecodeError
 from tortoise.expressions import Subquery
 
 from core.exceptions import NotFound
-from core.utils.notification.message import EventMessage
-from core.utils.notification.recipient import Recipient
+from core.utils.notification.eventory import eventory_publish
 from core.utils.schema import PageResponse
 from core.services.base.base_service import BaseService
 from core.utils.common import exclude_none_values
 
-from libs.eventory import Eventory
 from core.utils.app_context import AppContext
 from .exceptions import ProxyDomainCheckError, NoProxiesError
 
@@ -352,7 +349,7 @@ class ProxyDomainService(BaseService):
 
             if len(offer_response) or len(landing_response):
                 # make history record and eventory publish only if we actually changed something
-                await Eventory.publish(
+                await eventory_publish(
                     body={
                         'group_name': group.name,
                         'new_domain': new_domain.name,
@@ -425,7 +422,7 @@ class ProxyDomainService(BaseService):
                 await self.set_trackers(created_domain, tracker_instance_ids=proxy_domains_in.tracker_instance_ids)
                 await created_domain.fetch_related("tracker_instance")
 
-                await Eventory.publish(
+                await eventory_publish(
                     body={"id": created_domain.pk, "name": created_domain.name},
                     routing_key=ctx.routing_keys.PROXY_DOMAIN_ADDED,
                     channel_name=ctx.app_name,
