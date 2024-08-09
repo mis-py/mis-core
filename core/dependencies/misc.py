@@ -15,7 +15,7 @@ settings = CoreSettings()
 
 
 async def get_current_app(request: Request):
-    path = request.url.components.path.replace(settings.ROOT_PATH, '/')
+    path = request.url.components.path.replace(settings.ROOT_PATH, '')
     path_array = path.split('/')
     path_array = list(filter(len, path_array))
     name = path_array[0]
