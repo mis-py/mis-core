@@ -15,7 +15,8 @@ from fastapi_pagination.bases import AbstractParams
 from loguru import logger
 from tortoise.expressions import Subquery
 
-from core.exceptions import NotFound
+from core.exceptions import NotFound, ValidationFailed
+from core.utils.module.shared_hub import SharedHub
 from core.utils.notification.eventory import eventory_publish
 from core.utils.schema import PageResponse
 from core.services.base.base_service import BaseService
@@ -42,8 +43,6 @@ from .db.models import (
 from .schemas.proxy_domain import ProxyDomainCreateBulkModel
 from .services.tracker import get_tracker_service
 from .util.util import regexp_match, check_ssl_domain, SSLResponse
-from ..proxy_registry.dependencies.services import get_proxy_service
-from ..proxy_registry.services.checker import ProxyChecker
 
 
 class ReplacementGroupService(BaseService):
@@ -86,6 +85,34 @@ class ReplacementGroupService(BaseService):
         else:
             logger.warning(f"Run replacement_group_proxy_change task ERROR: Nothing to run")
 
+    async def fake_proxy_change(
+            self,
+            ctx: AppContext,
+            replacement_group_ids: list[int],
+            reason: str,
+            domains: list[str],
+            servers: list[str],
+    ):
+        """Function for adding replacement history without changing domains"""
+        active_groups = await self.get_groups_from_id(replacement_group_ids=replacement_group_ids)
+
+        if len(active_groups) == 0:
+            raise ValidationFailed(f"No active replacement groups")
+
+        if domains:
+            proxy_domains = await ProxyDomainService().filter(name__in=domains)
+        elif servers:
+            proxy_domains = await ProxyDomainService().filter(server_name__in=servers)
+        else:
+            raise ValidationFailed(f"'domains' and 'servers' is empty")
+
+        return await ProxyDomainService().fake_change_domain(
+            ctx=ctx,
+            groups=active_groups,
+            reason=reason,
+            domains=proxy_domains,
+        )
+
     async def check_replacement_group(self, replacement_group_id: int):
         replacement_group: ReplacementGroup = await self.get(id=replacement_group_id,
                                                              prefetch_related=['tracker_instance'])
@@ -126,11 +153,11 @@ class ReplacementGroupService(BaseService):
         )
 
     async def check_group_domains(self, replacement_group_ids: list[int], proxy_ids: list[int]):
-        proxy_service = get_proxy_service()
+        proxy_service: 'ProxyService' = await SharedHub.execute(module='proxy_registry', func_key='get_proxy_service')
         proxies = await proxy_service.filter_by_ids(proxy_ids)
         proxies_address = [proxy.address for proxy in proxies]
 
-        proxy_checker = ProxyChecker()
+        proxy_checker: 'ProxyChecker' = await SharedHub.execute(module='proxy_registry', func_key='get_proxy_checker')
         valid_proxies = await proxy_checker.filter_valid_proxies(proxies_address)
 
         if not valid_proxies:
@@ -385,6 +412,37 @@ class ProxyDomainService(BaseService):
             change_result["replacement_groups"].append(group_result)
 
         return change_result
+
+    async def fake_change_domain(
+            self,
+            ctx: AppContext,
+            groups: list[ReplacementGroup],
+            reason: str,
+            domains: list[ProxyDomain],
+    ):
+        """
+        Function to adding replacement history without changing domains on tracker
+        """
+
+        group_ids = [group.pk for group in groups]
+        logger.debug(f"Run fake_change_domain task for group: {group_ids}")
+        for group in groups:
+            instance = group.tracker_instance
+            tracker_service = get_tracker_service(instance.tracker_type)
+
+            offers, old_offers_domains = await tracker_service.fetch_offers(group=group, instance=instance)
+            landings, old_land_domains = await tracker_service.fetch_landings(group=group, instance=instance)
+
+            for new_domain in domains:
+                await self.add_history_record(
+                    new_domain=new_domain,
+                    previous_domains=old_offers_domains + old_land_domains,
+                    offers_list=offers,
+                    lands_list=landings,
+                    replaced_by=ctx.user,
+                    replacement_group=group,
+                    reason=reason
+                )
 
     async def add_history_record(
             self,

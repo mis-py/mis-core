@@ -1,3 +1,5 @@
+from typing import Optional
+
 from tortoise.contrib.pydantic import PydanticModel
 
 from .common import ReplacementHistoryBaseModel, TrackerInstanceBaseModel
@@ -65,3 +67,9 @@ class ReplacementGroupUpdateModel(PydanticModel):
 
 class ReplacementGroupChangeProxyIds(PydanticModel):
     replacement_group_ids: list[int]
+
+
+class ReplacementGroupFakeChangeProxyIds(PydanticModel):
+    replacement_group_ids: list[int]
+    domains: Optional[list[str]] = None
+    servers: Optional[list[str]] = None
