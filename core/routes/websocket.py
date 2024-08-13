@@ -5,9 +5,9 @@ from fastapi import WebSocket, APIRouter, WebSocketDisconnect
 from fastapi.params import Depends
 
 from core.db.models import User
-from core.dependencies.security import ws_user_core_sudo
+from core.dependencies.security import ws_current_user
 from libs.ws_manager import WSManager
-from libs.ws_manager.action_handlers import factory_handlers, make_action_handler
+from libs.ws_manager.action_handlers import make_action_handler
 from libs.ws_manager.enums import ResponseStatus, Action
 
 router = APIRouter()
@@ -16,7 +16,7 @@ router = APIRouter()
 @router.websocket("")
 async def websocket_endpoint(
         websocket: WebSocket,
-        user: User = Depends(ws_user_core_sudo),
+        user: User = Depends(ws_current_user),
 ):
     await WSManager.connect(websocket, user_id=user.pk)
 

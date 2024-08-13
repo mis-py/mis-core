@@ -50,3 +50,11 @@ async def ws_user_core_sudo(
     user = await auth_service.get_user_from_token(token=token)
     await check_user_perm(user, ['core:sudo'])
     return user
+
+
+async def ws_current_user(
+        auth_service: Annotated[AuthService, Depends(get_auth_service)],
+        token: str = Query(...)):
+
+    user = await auth_service.get_user_from_token(token=token)
+    return user
