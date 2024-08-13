@@ -64,7 +64,6 @@ async def check_domains_of_replacement_groups(
         job_meta: JobMeta,
         replacement_group_ids: list[int],
         proxy_ids: list[int],
-        logger,
         **kwargs,
 ):
     try:

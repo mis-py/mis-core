@@ -4,6 +4,7 @@ from core.utils.module.components import Variables, ModuleLogs, TortoiseModels, 
 
 from .config import UserSettings, RoutingKeys, ModuleSettings
 from .routes import api_router
+
 # from .consumers import event_consumers
 # from .tasks import scheduled_tasks
 

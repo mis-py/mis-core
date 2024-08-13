@@ -9,7 +9,7 @@ from core.utils.schema import PageResponse, MisResponse
 from core.utils.app_context import AppContext
 
 from ..schemas.replacement_group import ReplacementGroupModel, ReplacementGroupCreateModel, ReplacementGroupUpdateModel, \
-    ReplacementGroupChangeProxyIds
+    ReplacementGroupChangeProxyIds, ReplacementGroupFakeChangeProxyIds
 from ..schemas.replacement_group_with_history import ReplacementGroupWithHistory
 from ..service import ReplacementGroupService
 
@@ -132,3 +132,22 @@ async def check_domains_replacement_group(
         proxy_ids=proxy_ids,
     )
     return MisResponse[list](result=check_result)
+
+
+@router.post(
+    '/add_history',
+    response_model=MisResponse[dict]
+)
+async def add_history_domain(
+        schema_in: ReplacementGroupFakeChangeProxyIds,
+        ctx: Annotated[AppContext, Depends(get_app_context)],
+):
+    change_result = await ReplacementGroupService().fake_proxy_change(
+        ctx=ctx,
+        replacement_group_ids=schema_in.replacement_group_ids,
+        reason="Changed by user (fake)",
+        domains=schema_in.domains,
+        servers=schema_in.servers,
+    )
+
+    return MisResponse[dict](result=change_result)
