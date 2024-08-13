@@ -16,7 +16,6 @@ from loguru import logger
 from tortoise.expressions import Subquery
 
 from core.exceptions import NotFound, ValidationFailed
-from core.utils.module.shared_hub import SharedHub
 from core.utils.notification.eventory import eventory_publish
 from core.utils.schema import PageResponse
 from core.services.base.base_service import BaseService
@@ -43,6 +42,7 @@ from .db.models import (
 from .schemas.proxy_domain import ProxyDomainCreateBulkModel
 from .services.tracker import get_tracker_service
 from .util.util import regexp_match, check_ssl_domain, SSLResponse
+from ..proxy_registry.shared import shared_logic as proxy_registry_shared
 
 
 class ReplacementGroupService(BaseService):
@@ -153,11 +153,11 @@ class ReplacementGroupService(BaseService):
         )
 
     async def check_group_domains(self, replacement_group_ids: list[int], proxy_ids: list[int]):
-        proxy_service: 'ProxyService' = await SharedHub.execute(module='proxy_registry', func_key='get_proxy_service')
+        proxy_service = await proxy_registry_shared.proxy_service()
         proxies = await proxy_service.filter_by_ids(proxy_ids)
         proxies_address = [proxy.address for proxy in proxies]
 
-        proxy_checker: 'ProxyChecker' = await SharedHub.execute(module='proxy_registry', func_key='get_proxy_checker')
+        proxy_checker = await proxy_registry_shared.proxy_checker()
         valid_proxies = await proxy_checker.filter_valid_proxies(proxies_address)
 
         if not valid_proxies:
