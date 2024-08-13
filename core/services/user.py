@@ -68,8 +68,8 @@ class UserService(BaseService):
     async def users_who_receive_message(
             self,
             routing_key: str,
-            is_force_send: bool,
             recipient: Recipient,
+            is_force_send: bool = False,
     ):
         if not recipient and not is_force_send:
             return await self.user_repo.filter_by_subscription(routing_key=routing_key.upper())

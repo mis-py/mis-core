@@ -1,7 +1,10 @@
+from string import Template
+
 from fastapi_pagination.bases import AbstractParams
+from loguru import logger
 from tortoise import transactions
 
-from core.db.models import RoutingKey
+from core.db.models import RoutingKey, User
 from core.repositories.routing_key import IRoutingKeyRepository, RoutingKeyRepository
 from core.repositories.routing_key_subscription import IRoutingKeySubscriptionRepository
 from core.utils.schema import PageResponse
@@ -9,6 +12,8 @@ from core.services.base.base_service import BaseService
 from core.exceptions import AlreadyExists, NotFound
 from libs.eventory.utils import RoutingKeysSet
 from libs.redis import RedisService
+from libs.ws_manager import WSManager
+from libs.ws_manager.enums import WebsocketEvent
 
 
 class RoutingKeyService(BaseService):
@@ -57,6 +62,19 @@ class RoutingKeyService(BaseService):
 
         return RoutingKeysSet(routing_keys)
 
+    @staticmethod
+    async def body_verbose_by_template(body, template_string: str):
+        """Format body dict to string using Template string"""
+        if not template_string:
+            return None
+
+        try:
+            template = Template(template_string)
+            return template.substitute(body)
+        except KeyError as error:
+            logger.error(f"Wrong template string key: {error}")
+            return None
+
 
 class RoutingKeySubscriptionService(BaseService):
     def __init__(self, routing_key_subscription_repo: IRoutingKeySubscriptionRepository):
@@ -92,3 +110,23 @@ class RoutingKeySubscriptionService(BaseService):
     #             user_id=user_id,
     #             routing_key_ids=routing_key_ids,
     #         )
+
+
+class Notificator:
+    def __init__(self, ws_manager: WSManager):
+        self.ws_manager = ws_manager
+
+    async def ws_notify_users(
+            self,
+            message_data: dict,
+            users: list[User],
+    ):
+        event = WebsocketEvent.NOTIFICATION.value
+
+        for user in users:
+            if not self.ws_manager.is_connection_exists(user.pk):
+                continue
+            if not self.ws_manager.is_subscribed_event(user.pk, event=event):
+                continue
+
+            await self.ws_manager.send_event(user.pk, message_data=message_data, event=event)
