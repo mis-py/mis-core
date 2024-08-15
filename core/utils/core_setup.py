@@ -15,6 +15,7 @@ from core.dependencies.services import get_module_service, get_permission_servic
 from core.services.module import ModuleService
 from core.services.permission import PermissionService
 from core.utils.common import camel_to_spaces
+from core.utils.notification.eventory import inject_and_process_wrapper
 from core.utils.security import get_password_hash
 from core.utils.module.utils import manifests_sort_by_dependency, import_module, unload_module, read_module_manifest, \
     module_dependency_check, get_app_context
@@ -209,12 +210,12 @@ async def setup_core_consumers(core: Module):
         logger.debug(f'[EventManager]: Register consumer {event.func.__name__} from {core.name}')
 
         context = await get_app_context(module=core)
+        wrapped_func = inject_and_process_wrapper(func=event.func, extra_kwargs={'ctx': context})
 
         consumer = await Eventory.register_consumer(
-            func=event.func,
+            func=wrapped_func,
             routing_key=event.route_key,
             channel_name=core.name,
-            extra_kwargs={'ctx': context},
         )
 
         logger.debug(f'[EventManager] Starting consumer {consumer.consumer_tag} from {core.name}')
