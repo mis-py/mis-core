@@ -1,14 +1,18 @@
+import os
+from functools import partial
+
 import pytest
 from fastapi.testclient import TestClient
+
+from core.db.models import User
 from main import app
 from libs.tortoise_manager import TortoiseManager
 from tortoise import Tortoise, ConfigurationError, connections
+from tortoise.contrib import test
+from tortoise.contrib.test import finalizer, initializer
 
-import logging
-
-log = logging.getLogger(__name__)
-
-logging.getLogger('passlib').setLevel(logging.ERROR)
+from tests.config import log, UNITTEST_DB_URL
+from tests.tortoise_test_overwrite import init_db, get_db_config
 
 
 @pytest.fixture(scope="session")
@@ -45,3 +49,22 @@ async def init_database():
     log.info("Cleanup Tortoise after tests")
     await drop_databases()
 
+
+@pytest.fixture(scope="session", autouse=True)
+def initialize_tests(request):
+    try:
+        from tortoise.backends.psycopg import PsycopgClient
+
+        PsycopgClient.default_timeout = float(os.environ.get("TORTOISE_POSTGRES_TIMEOUT", "15"))
+    except ImportError:
+        pass
+
+    init_db_with_migration = partial(init_db, migration_paths=TortoiseManager._migrations_to_apply.values())
+    test._init_db = init_db_with_migration
+    test.getDBConfig = get_db_config
+    initializer(
+        modules=TortoiseManager._modules['core'],
+        db_url=UNITTEST_DB_URL,
+        app_label='core',
+    )
+    request.addfinalizer(finalizer)

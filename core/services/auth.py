@@ -44,8 +44,8 @@ class AuthService:
         if not verify_password(old_password, user.hashed_password):
             raise ValidationFailed("Invalid old password")
 
-        await self.user_repo.update(
-            id=user.pk,
+        await self.user_repo.update_by_kwargs(
+            user_id=user.pk,
             hashed_password=get_password_hash(new_password),
         )
         return True
