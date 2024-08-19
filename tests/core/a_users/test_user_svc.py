@@ -1,3 +1,5 @@
+import pytest
+
 from core.db.models import Team, User
 from core.dependencies.services import get_user_service
 from core.exceptions import AlreadyExists, NotFound, ValidationFailed
@@ -34,13 +36,13 @@ class TestUserService(TestCase):
         assert user.team_id == self.team.pk
         assert user.position == position
 
-        # # test create when user already exists
-        # with self.assertRaises(AlreadyExists):
-        #     await user_service.create_with_pass(user_in=user_in)
-        #
-        # # test create user without team
-        # with self.assertRaises(NotFound):
-        #     await user_service.create_with_pass(user_in=user_in)
+        # test create when user already exists
+        with pytest.raises(AlreadyExists):
+            await self.user_service.create_with_pass(user_in=user_in)
+
+        # test create user without team
+        with pytest.raises(NotFound):
+            await self.user_service.create_with_pass(user_in=user_in)
 
     async def test_update_user(self):
         updated_user = await self.user_service.update_user(
