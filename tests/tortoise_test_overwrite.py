@@ -6,10 +6,11 @@ from tortoise.exceptions import DBConnectionError, OperationalError
 from tortoise.contrib import test
 from yoyo import get_backend, read_migrations
 
-from tests.config import UNITTEST_DB_URL, log
+from libs.tortoise_manager import TortoiseManager
+from tests.config import log
 
 def _run_yoyo_migrations(migration_paths: list[str]):
-    backend = get_backend(UNITTEST_DB_URL)
+    backend = get_backend(TortoiseManager._db_url)
     for migration_path in migration_paths:
         migrations = read_migrations(migration_path)
         try:

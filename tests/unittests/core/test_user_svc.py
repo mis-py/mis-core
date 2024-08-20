@@ -15,6 +15,15 @@ class TestUserService(TestCase):
         self.team = await Team.create(name="Test")
         self.user = await User.create(username="SimpleUser", team_id=self.team.pk, hashed_password="...")
 
+    async def asyncTearDown(self) -> None:
+        try:
+            await super().asyncTearDown()
+        except Exception:
+            # skip error if transaction already finalized
+            # raised when using atomic transaction in 'with pytest.raises(...)'
+            pass
+
+
     async def test_create_with_pass(self):
         username = 'Piter'
         password = 'superpass'
@@ -40,7 +49,13 @@ class TestUserService(TestCase):
         with pytest.raises(AlreadyExists):
             await self.user_service.create_with_pass(user_in=user_in)
 
-        # test create user without team
+        # test create user with incorrect team
+        user_in = UserCreate(
+            username=username,
+            password=password,
+            team_id=0,
+            position=position
+        )
         with pytest.raises(NotFound):
             await self.user_service.create_with_pass(user_in=user_in)
 

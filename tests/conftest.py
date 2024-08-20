@@ -4,14 +4,13 @@ from functools import partial
 import pytest
 from fastapi.testclient import TestClient
 
-from core.db.models import User
 from main import app
 from libs.tortoise_manager import TortoiseManager
 from tortoise import Tortoise, ConfigurationError, connections
 from tortoise.contrib import test
 from tortoise.contrib.test import finalizer, initializer
 
-from tests.config import log, UNITTEST_DB_URL
+from tests.config import log
 from tests.tortoise_test_overwrite import init_db, get_db_config
 
 
@@ -64,7 +63,7 @@ def initialize_tests(request):
     test.getDBConfig = get_db_config
     initializer(
         modules=TortoiseManager._modules['core'],
-        db_url=UNITTEST_DB_URL,
+        db_url=TortoiseManager._db_url,
         app_label='core',
     )
     request.addfinalizer(finalizer)
