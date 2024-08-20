@@ -3,7 +3,7 @@ from unittest.mock import Mock
 import pytest
 from tortoise.contrib.test import TestCase
 
-from core.db.models import Module, Variable, VariableValue, Team
+from core.db.models import Module, Variable, VariableValue, Team, User
 from core.dependencies.variable_service import get_variable_service
 from core.exceptions import ValidationFailed
 
@@ -39,6 +39,7 @@ class TestVariableService(TestCase):
             )
         ]
         team = await Team.create(name="Team")
+        await team.fetch_related('users')
 
         await self.variable_service.set_variables_values(team=team, variables=variables)
 
@@ -87,7 +88,6 @@ class TestVariableService(TestCase):
         assert variable.is_global is False
         assert variable.type == 'str'
 
-
     async def test_update_variable(self):
         variable = await Variable.create(key="TEST", app=self.module, type='str', is_global=False)
 
@@ -111,3 +111,45 @@ class TestVariableService(TestCase):
 
         is_variable_exists = await self.variable_service.exists(id=unused_variable.pk)
         assert is_variable_exists is False
+
+    async def test_make_variable_set(self):
+        await Variable.create(
+            key="TEST",
+            app=self.module,
+            type='str',
+            is_global=False,
+            default_value='test',
+        )
+        team = await Team.create(name='Test')
+        user = await User.create(username='Test', team_id=team.pk, hashed_password='...')
+
+        variable_set = await self.variable_service.make_variable_set(
+            app=self.module,
+            user=user,
+        )
+
+        assert variable_set.TEST == 'test'
+
+    async def update_variable_sets(self):
+        await Variable.create(
+            key="TEST",
+            app=self.module,
+            type='str',
+            is_global=False,
+            default_value='test',
+        )
+        team = await Team.create(name='Test')
+        user = await User.create(username='Test', team_id=team.pk, hashed_password='...')
+
+        await self.variable_service.make_variable_set(
+            app=self.module,
+            user=user,
+        )
+
+        await self.variable_service.update_variable_sets(
+            variable_key='TEST',
+            new_value='UpdatedTest',
+            user=user,
+        )
+
+        assert await self.variable_service._variables[0].TEST == 'UpdatedTest'
