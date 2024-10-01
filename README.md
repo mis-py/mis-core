@@ -2,7 +2,12 @@
 
 ## Overview
 
-TBW
+Core capabilities:
+- User management
+- Group management
+- Permissions
+- Tasks and Jobs
+- Modules
 
 ## Table of Contents
 
