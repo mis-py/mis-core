@@ -24,4 +24,4 @@ Please make sure your code adheres to the project's coding standards and passes 
 
 ## License
 
-This project is licensed under the  GNU GENERAL PUBLIC LICENSE - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the  GNU GENERAL PUBLIC LICENSE - see the [LICENSE.txt](LICENSE) file for details.
