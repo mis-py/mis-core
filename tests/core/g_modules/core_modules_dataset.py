@@ -56,7 +56,12 @@ positive_get_modules = [
                                 "replacement_history": "View replacement history endpoint",
                                 "proxy_domains": "Full managing proxy domains"
                             },
-                            "dependencies": [],
+                            "dependencies": [
+                                {
+                                    "module": "proxy_registry",
+                                    "version": "==0.4"
+                                }
+                            ],
                             "auth_disabled": True,
                             "extra": {}
                         }

@@ -29,7 +29,7 @@ class RoutingKeyService(BaseService):
     async def recreate(self, module_id, key: str, name: str):
         # delete for remove user subscription relations
         await self.routing_key_repo.delete(key=key)
-        await self.routing_key_repo.create(data={
+        return await self.routing_key_repo.create(data={
             'app_id': module_id,
             'key': key,
             'name': name,

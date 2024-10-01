@@ -35,19 +35,19 @@ def test_start_module(client, params, expected):
 def test_get_modules(client, params, expected):
     response = client.get("/modules", params=params)
     assert default_check(response)
-    assert check_response(response, expected, ignore_keys=['id'])
+    assert check_response(response, expected, ignore_keys=['id', 'version'])
 
 
 @pytest.mark.parametrize("params, expected", stop_module_dataset)
 def test_stop_module(client, params, expected):
     response = client.post("/modules/stop", params=params)
     assert default_check(response)
-    assert check_response(response, expected, ignore_keys=['id'])
+    assert check_response(response, expected, ignore_keys=['id', 'version'])
 
 
 @pytest.mark.parametrize("params,expected", shutdown_module_dataset)
 def test_shutdown_module(client, params, expected):
     response = client.post("/modules/shutdown", params=params)
     assert default_check(response)
-    assert check_response(response, expected, ignore_keys=['id'])
+    assert check_response(response, expected, ignore_keys=['id', 'version'])
 

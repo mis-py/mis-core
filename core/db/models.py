@@ -42,7 +42,7 @@ class Variable(Model):
     default_value = fields.CharField(max_length=500, null=True)
 
     is_global = fields.BooleanField(default=True)
-    type = fields.CharField(max_length=100, default="text")
+    type = fields.CharField(max_length=100, default="str")
 
     app = fields.ForeignKeyField('core.Module', related_name='variables')
 

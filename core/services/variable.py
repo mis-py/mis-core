@@ -124,7 +124,7 @@ class VariableService(BaseService):
     async def update_variable(self, variable: Variable, default_value, is_global: bool, type: str):
         """Update params if new params not equal old params"""
         if variable.default_value != default_value or variable.is_global != is_global or variable.type != type:
-            await self.variable_repo.update(
+             return await self.variable_repo.update(
                 id=variable.pk,
                 data={
                     'default_value': default_value,

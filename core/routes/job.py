@@ -125,7 +125,11 @@ async def pause_job(
         job_id: int,
         current_user: User = Depends(get_current_user)
 ):
-    job_db = await scheduler_service.set_paused_status(job_id=job_id)
+    try:
+        job_db = await scheduler_service.set_paused_status(job_id=job_id)
+    except ValueError as e:
+        raise NotFound(str(e))
+
 
     job_response = JobResponse(
         job_id=job_db.pk,
@@ -151,7 +155,10 @@ async def resume_job(
         job_id: int,
         current_user: User = Depends(get_current_user)
 ):
-    job_db = await scheduler_service.set_running_status(job_id=job_id)
+    try:
+        job_db = await scheduler_service.set_running_status(job_id=job_id)
+    except ValueError as e:
+        raise NotFound(str(e))
 
     job_response = JobResponse(
         job_id=job_db.pk,
@@ -177,10 +184,13 @@ async def reschedule_job(
         job_id: int,
         schedule_in: JobTrigger,
 ):
-    job_db = await scheduler_service.update_job_trigger(
-        job_id=job_id,
-        schedule_in=schedule_in
-    )
+    try:
+        job_db = await scheduler_service.update_job_trigger(
+            job_id=job_id,
+            schedule_in=schedule_in
+        )
+    except ValueError as e:
+        raise NotFound(str(e))
 
     job_response = JobResponse(
         job_id=job_db.pk,
@@ -206,6 +216,9 @@ async def remove_job(
         job_id: int,
         current_user: User = Depends(get_current_user)
 ):
-    await scheduler_service.cancel_job(job_id=job_id)
+    try:
+        await scheduler_service.cancel_job(job_id=job_id)
+    except ValueError as e:
+        raise NotFound(str(e))
 
     return MisResponse()

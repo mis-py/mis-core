@@ -14,6 +14,9 @@ class IUserRepository(IRepository, ABC):
     async def filter_by_subscription(self, **kwargs):
         raise NotImplementedError
 
+    @abstractmethod
+    async def update_by_kwargs(self, user_id: int, **kwargs):
+        raise NotImplementedError
 
 class UserRepository(TortoiseORMRepository, IUserRepository):
     model = User
@@ -27,3 +30,6 @@ class UserRepository(TortoiseORMRepository, IUserRepository):
             subscriptions__isnull=False,
             subscriptions__routing_key__key=routing_key,
         ).distinct()
+
+    async def update_by_kwargs(self, user_id: int, **kwargs):
+        return await self.update(id=user_id, data=kwargs)
