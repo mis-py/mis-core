@@ -20,7 +20,8 @@ positive_get_users_dataset = [
                         "team": {
                             "id": 1,
                             "name": "Superusers"
-                        }
+                        },
+                        "user_data": {}
                     }
                 ]
             },
@@ -48,7 +49,8 @@ positive_get_users_dataset = [
                         "team": {
                             "id": 1,
                             "name": "Superusers"
-                        }
+                        },
+                        "user_data": {}
                     }
                 ]
             },
@@ -88,7 +90,8 @@ positive_create_user_dataset = [
                 "username": "Test1",
                 "position": "TEST USER",
                 "disabled": False,
-                "team": {"id": 1, "name": "Superusers"}
+                "team": {"id": 1, "name": "Superusers"},
+                "user_data": {}
             }
         }
     ),
@@ -109,6 +112,7 @@ positive_create_user_dataset = [
                 "position": "TEST USER 2",
                 "disabled": False,
                 "team": None,
+                "user_data": {}
             }
         }
     )
@@ -161,6 +165,7 @@ positive_get_user_dataset = [
                 "position": "TEST USER",
                 "disabled": False,
                 "team": {"id": 1, "name": "Superusers"},
+                "user_data": {}
             }
         }
     ),
@@ -178,6 +183,7 @@ positive_get_user_dataset = [
                 "position": "TEST USER 2",
                 "disabled": False,
                 "team": None,
+                "user_data": {}
             }
         }
     ),
@@ -233,6 +239,7 @@ positive_edit_user_dataset = [
                 "position": "TEST USER 999",
                 "disabled": False,
                 "team": {"id": 1, "name": "Superusers"},
+                "user_data": {}
             }
         }
     ),
@@ -258,6 +265,7 @@ positive_edit_user_dataset = [
                 "position": "TEST USER 2",
                 "disabled": False,
                 "team": {"id": 1, "name": "Superusers"},
+                "user_data": {}
             }
         }
     ),
@@ -278,7 +286,8 @@ positive_edit_user_dataset = [
                 "team": {
                     "id": 1,
                     "name": "Superusers"
-                }
+                },
+                "user_data": {}
             },
             "status": True
         }

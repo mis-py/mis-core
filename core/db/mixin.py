@@ -38,8 +38,10 @@ class PermissionsMixin:
         permission = await Permission.get_or_none(scope=scope)
         if not permission:
             return False
-        await GrantedPermission.get_or_create(permission=permission, **relation_arg)
-        return True
+
+        if not await GrantedPermission.filter(permission_id=permission.pk).exists():
+            await GrantedPermission.create(permission=permission, **relation_arg)
+            return True
 
     async def remove_permission(self, scope: str):
         """
