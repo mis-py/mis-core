@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "mis-project-api2"
-version = "0.2.0"
+name = "mis-project-api"
+version = "2.2.0"
 description = "Management Information System Project API"
-authors = ["Jake Jameson <jake.jameson9983@gmail.com>"]
+authors = ["GigaWatte <wolfrage2580@gmail.com>", "m-riabchenko <mriabchenko11@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
