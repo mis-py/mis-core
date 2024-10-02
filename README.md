@@ -1,5 +1,6 @@
 # MIS Server Core
-
+> [!NOTE]
+> The repository is not intended to be run in standalone! It has external dependencies so pls check this out [mis](https://github.com/mis-py/mis) for install and run instructions!
 ## Overview
 
 Core capabilities:
@@ -8,6 +9,7 @@ Core capabilities:
 - Permissions
 - Tasks and Jobs
 - Modules
+- Notifications
 
 ## Table of Contents
 
