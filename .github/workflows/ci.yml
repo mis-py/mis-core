@@ -25,12 +25,8 @@ jobs:
         python-version: 3.12.6
         cache: 'pip'
 
-    - name: t
-      run: pwd
-
     - uses: actions/cache@v1
       with:
-        id: cache
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
@@ -42,11 +38,13 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel httpx pytest pytest-md pytest-emoji pytest-dotenv pytest-asyncio
         pip install -r requirements.txt
 
-    - uses: pavelzw/pytest-action@v2
-      with:
-        emoji: false
-        verbose: false
-        job-summary: true
+    - name: Run tests
+      run: pytest
+    #- uses: pavelzw/pytest-action@v2
+    #  with:
+    #    emoji: false
+    #    verbose: false
+    #    job-summary: true
 
   build:
     name: Build docker image
