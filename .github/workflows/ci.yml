@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: ${{ vars.IMAGE_NAME }} CI
 
 on:
   push:
@@ -7,6 +7,32 @@ on:
     branches: [ "main" ]
 
 jobs:
+
+  test:
+    name: Run pytests
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set timezone
+      uses: szenius/set-timezone@v1.2
+      with:
+        timezone: 'Europe/Kyiv'
+    
+    - name: Set up Python 3.12.6
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.12.6
+
+    - name: Install dependencies
+      run: pip install pytest pytest-md pytest-emoji
+
+    - uses: pavelzw/pytest-action@v2
+      with:
+        emoji: false
+        verbose: false
+        job-summary: true
 
   build:
 
