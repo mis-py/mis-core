@@ -30,12 +30,6 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel httpx pytest pytest-md pytest-emoji pytest-dotenv pytest-asyncio
         pip install -r requirements.txt
 
-    - name: Try to create required dirs directly
-      run: python const.py
-
-    - name: Show current dir
-      run: ls -lhai
-
     - uses: pavelzw/pytest-action@v2
       with:
         emoji: false
