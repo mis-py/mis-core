@@ -25,7 +25,19 @@ jobs:
         python-version: 3.12.6
         cache: 'pip'
 
+    -name: t
+     run: pwd
+
+    - uses: actions/cache@v1
+      with:
+        id: cache
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
     - name: Install dependencies
+      if: steps.cache.outputs.cache-hit != 'true'
       run: |
         python -m pip install --upgrade pip setuptools wheel httpx pytest pytest-md pytest-emoji pytest-dotenv pytest-asyncio
         pip install -r requirements.txt
