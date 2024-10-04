@@ -1,4 +1,4 @@
-name: ${{ vars.IMAGE_NAME }} CI
+name: CI
 
 on:
   push:
