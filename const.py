@@ -23,9 +23,9 @@ TASK_LOGS_DIR = LOGS_DIR / TASKS_DIR_NAME
 
 TIMEZONE: str = os.getenv('TIMEZONE', 'Europe/Kyiv')
 
-#MODULES_DIR.mkdir(exist_ok=True, mode=775)
-#APPDATA_DIR.mkdir(exist_ok=True, mode=775)
-#LOGS_DIR.mkdir(exist_ok=True, mode=775)
+MODULES_DIR.mkdir(exist_ok=True, mode=775)
+APPDATA_DIR.mkdir(exist_ok=True, mode=775)
+LOGS_DIR.mkdir(exist_ok=True, mode=775)
 
 DEV_ENVIRONMENT = 'dev'    # for running with containers setup
 PROD_ENVIRONMENT = 'prod'  # for production
