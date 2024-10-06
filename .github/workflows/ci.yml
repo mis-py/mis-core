@@ -10,7 +10,7 @@ jobs:
   test:
     name: Run pytests
     runs-on: ubuntu-latest
-    container: ubuntu-latest
+    container: ubuntu:latest
 
     services:
       redis:
