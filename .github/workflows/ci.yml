@@ -56,15 +56,17 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel httpx pytest pytest-md pytest-emoji pytest-dotenv pytest-asyncio
         python -m pip install -r requirements.txt
 
-    - name: Run tests
-      run: pytest
+    #- name: Run tests
+    #  run: pytest
+    #  env: 
+    #    ENVIRONMENT: TEST
+    - uses: pavelzw/pytest-action@v2
+      with:
+        emoji: false
+        verbose: false
+        job-summary: true
       env: 
         ENVIRONMENT: TEST
-    #- uses: pavelzw/pytest-action@v2
-    #  with:
-    #    emoji: false
-    #    verbose: false
-    #    job-summary: true
 
   build:
     name: Build docker image
