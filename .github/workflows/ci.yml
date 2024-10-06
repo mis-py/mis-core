@@ -31,9 +31,6 @@ jobs:
           MONGO_INITDB_DATABASE: mis
 
     steps:
-#    - name: install
-#      run: apt-get update && apt-get install -y lsb-release && apt-get clean all
-
     - uses: actions/checkout@v4
     
 #    - name: Set up Python 3.12.6
@@ -56,10 +53,6 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel httpx pytest pytest-md pytest-emoji pytest-dotenv pytest-asyncio
         python -m pip install -r requirements.txt
 
-    #- name: Run tests
-    #  run: pytest
-    #  env: 
-    #    ENVIRONMENT: TEST
     - uses: pavelzw/pytest-action@v2
       with:
         emoji: false
@@ -78,3 +71,11 @@ jobs:
     
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag ${{ vars.IMAGE_NAME }}:$(date +%s)
+  
+  security:
+    name: Check for vulnerabilities
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Placeholder
+      # https://github.com/docker/scout-action
