@@ -33,7 +33,7 @@ jobs:
     steps:
     - name: install
       run: apt-get update && apt-get install -y lsb-release && apt-get clean all
-      
+
     - uses: actions/checkout@v4
     
     - name: Set up Python 3.12.6
@@ -59,7 +59,7 @@ jobs:
     - name: Run tests
       run: pytest
       env: 
-      ENVIRONMENT: TEST
+        ENVIRONMENT: TEST
     #- uses: pavelzw/pytest-action@v2
     #  with:
     #    emoji: false
