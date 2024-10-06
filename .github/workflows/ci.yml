@@ -38,7 +38,7 @@ jobs:
     - name: Set timezone
       uses: szenius/set-timezone@v1.2
       with:
-        timezone: 'Europe/Kyiv'
+        timezoneLinux: 'Europe/Kyiv'
     
     - name: Set up Python 3.12.6
       uses: actions/setup-python@v4
