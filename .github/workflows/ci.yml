@@ -32,14 +32,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-
-    - name: Set env
-      run: echo "ENVIRONMENT=TEST" >> $GITHUB_ENV
-      
-    - name: Set timezone
-      uses: szenius/set-timezone@v1.2
-      with:
-        timezoneLinux: 'Europe/Kyiv'
     
     - name: Set up Python 3.12.6
       uses: actions/setup-python@v4
@@ -63,6 +55,8 @@ jobs:
 
     - name: Run tests
       run: pytest
+      env: 
+        ENVIRONMENT: TEST
     #- uses: pavelzw/pytest-action@v2
     #  with:
     #    emoji: false
