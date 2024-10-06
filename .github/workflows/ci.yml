@@ -11,9 +11,27 @@ jobs:
     name: Run pytests
     runs-on: ubuntu-latest
 
+    services:
+      redis:
+        image: redis:7.0.10-alpine
+      postgres:
+        image: postgres:15.2-alpine
+        env:
+          POSTGRES_USER=postgres
+          POSTGRES_PASSWORD=postgres
+          POSTGRES_DB=mis_test
+      rabbitmq:
+        image: rabbitmq:3.11.13-alpine
+      mongodb:
+        image: mongo
+        env:
+          MONGO_INITDB_ROOT_USERNAME=mongodb
+          MONGO_INITDB_ROOT_PASSWORD=mongodb
+          MONGO_INITDB_DATABASE=mis
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set env
       run: echo "ENVIRONMENT=TEST" >> $GITHUB_ENV
       
