@@ -4,7 +4,6 @@ from jose import jwt
 from fastapi.routing import APIRoute
 from fastapi.security import OAuth2PasswordBearer
 
-from const import DEV_ENVIRONMENT, ENVIRONMENT
 from config import CoreSettings
 from core.db.models import User
 from core.exceptions import AccessError, AuthError
