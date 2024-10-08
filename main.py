@@ -17,7 +17,7 @@ from starlette.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-from const import MIS_TITLE, MIS_VERSION, ENVIRONMENT, ENV_FILE
+from const import MIS_TITLE, MIS_VERSION, ENVIRONMENT
 from config import CoreSettings
 from libs.logs.manager import LogManager
 from loaders import (
@@ -45,7 +45,7 @@ from core.utils.schema import MisResponse
 
 LogManager.setup()
 
-logger.info(f'Version: {MIS_VERSION}, Environment: {ENVIRONMENT}, .env file: {ENV_FILE}')
+logger.info(f'Version: {MIS_VERSION}, Environment: {ENVIRONMENT}')
 
 settings = CoreSettings()
 

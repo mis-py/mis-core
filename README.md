@@ -19,54 +19,54 @@ Core capabilities:
 
 ## Supported env variables
 
-| Variable name | Default Value | Required | Description
-| --- | --- | --- | --- 
-| TIMEZONE                    | Europe/Kyiv | No | Timezone for system operation and logs |
-| DEFAULT_ADMIN_PASSWORD      | admin | No | Password used to create 'admin' user while setup on clean database
-| SECRET_KEY                  | wherysecretkey | No | Seret key for token generation
-| ALGORITHM                   | HS256 | No | Algorithm for token generation
-| ACCESS_TOKEN_EXPIRE_MINUTES | 2880 | No | Token expiry time in minutes. set to 0 to never expire
-| AUTHORIZATION_ENABLED       | true | No | In case of False all authorization creds will lead to admin user
-| LOGGER_FORMAT               | \<green>{extra[datetime]}\</green> \<level>{level: <8}\</level> \<cyan>{name}\</cyan>:\<cyan>{function}\</cyan>:\<cyan>{line}</cyan> \<level>{message}\</level> | No | Logging for core and components |
-| LOG_ROTATION                | 00:00 | No | Log Rotation
-| LOG_LEVEL                   | DEBUG | No | Log level
-| ROOT_PATH                   | /api | No | Root path for all endpoints. use only with reverse proxy.
-| DOCS_URL                    | /docs | No | Endpoint path for swagger
-| OPEN_API_URL                | /openapi.json' | No | Endpoint for openapi.json file
-| ALLOW_ORIGINS               | http://localhost:9090 | No | For CORS manipulation
+| Variable name | Default Value | Description
+| --- | --- | --- 
+| TZ                          | Europe/Kyiv | Timezone for system operation and logs |
+| DEFAULT_ADMIN_PASSWORD      | admin | Password used to create 'admin' user while setup on clean database
+| SECRET_KEY                  | secret_key | Seret key for token generation
+| ALGORITHM                   | HS256 | Algorithm for token generation
+| ACCESS_TOKEN_EXPIRE_MINUTES | 2880 | Token expiry time in minutes. set to 0 to never expire
+| AUTHORIZATION_ENABLED       | true | In case of False all authorization creds will lead to admin user
+| LOGGER_FORMAT               | \<green>{extra[datetime]}\</green> \<level>{level: <8}\</level> \<cyan>{name}\</cyan>:\<cyan>{function}\</cyan>:\<cyan>{line}</cyan> \<level>{message}\</level> | Logging for core and components |
+| LOG_ROTATION                | 00:00 | Log Rotation
+| LOG_LEVEL                   | DEBUG | Log level
+| ROOT_PATH                   | /api | Root path for all endpoints. use only with reverse proxy.
+| DOCS_URL                    | /docs | Endpoint path for swagger
+| OPEN_API_URL                | /openapi.json' | Endpoint for openapi.json file
+| ALLOW_ORIGINS               | http://localhost:9090 | For CORS manipulation
+| SERVER_HOST                 | localhost | Hostname
+| SERVER_PORT                 | 8000 | Port 
+| SERVER_LOG_LEVEL            | debug | Log level
 
 ### Postgres connection settings
-| Variable name | Default Value | Required | Description
-| --- | --- | --- | --- 
-| POSTGRES_USER | postgres | |
-| POSTGRES_PASSWORD | postgres | |
-| POSTGRES_HOST | postgres | |
-| POSTGRES_PORT | 5432 | |
-| POSTGRES_DB | mis | |
+| Variable name | Default Value  | Description
+| --- | --- | --- 
+| POSTGRES_USER | postgres |
+| POSTGRES_PASSWORD | postgres |
+| POSTGRES_HOST | mis-postgres |
+| POSTGRES_PORT | 5432 |
+| POSTGRES_DB | mis |
+| POSTGRES_CREATE_DB | False |
 
 ### Rabbit connection settings
-| Variable name | Default Value | Required | Description
-| --- | --- | --- | --- 
-| RABBITMQ_URL | amqp://guest:guest@tabbitmq:5672/ | |
-| EVENTORY_LOG_LEVEL | INFO | |
+| Variable name | Default Value  | Description
+| --- | --- | --- 
+| RABBITMQ_URL | amqp://guest:guest@mis-rabbitmq:5672/ | Rabbitmq url to connect
+| EVENTORY_LOG_LEVEL | INFO | Rabbitmq log level
 
 ### Redis connection settings
-| Variable name | Default Value | Required | Description
-| --- | --- | --- | --- 
-| REDIS_HOST | redis | No | Redis hostname
-
+| Variable name | Default Value | Description
+| --- | --- | --- 
+| REDIS_HOST | mis-redis | Redis hostname
 
 ### Mongodb connection settings
-| Variable name | Default Value | Required | Description
-| --- | --- | --- | --- 
-| MONGODB_URI | mongodb://root:root@mongodb:27017/ | |
-| MONGODB_TABLE | mis | |
-### Unicorn server settings
-| Variable name | Default Value | Required | Description
-| --- | --- | --- | --- 
-| SERVER_HOST | localhost | No | Hostname
-| SERVER_PORT | 8000 | No | Port 
-| SERVER_LOG_LEVEL | debug | No | Log level
+| Variable name | Default Value | Description
+| --- | --- | --- 
+| MONGO_INITDB_ROOT_USERNAME | root      | Username to connect with
+| MONGO_INITDB_ROOT_PASSWORD | root      | Password to connect with
+| MONGO_INITDB_DATABASE      | mis       | Tablename to work with
+| MONGO_HOST                 | mis-mongo | Database hostname
+| MONGO_PORT                 | 27017     | Database port
 
 
 ## Contributing

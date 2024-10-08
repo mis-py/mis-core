@@ -7,13 +7,17 @@ settings = MongoSettings()
 
 
 class MongoService:
+    _db_url = (
+        f"mongodb://{settings.MONGO_INITDB_ROOT_USERNAME}:{settings.MONGO_INITDB_ROOT_PASSWORD}@{settings.MONGO_HOST}:{settings.MONGO_PORT}/"
+    )
+
     client: AsyncIOMotorClient
     database: AsyncIOMotorDatabase
 
     @classmethod
     async def init(cls):
-        cls.client = AsyncIOMotorClient(settings.MONGODB_URI)
-        cls.database = cls.client.get_database(settings.MONGODB_TABLE)
+        cls.client = AsyncIOMotorClient(cls._db_url)
+        cls.database = cls.client.get_database(settings.MONGO_INITDB_DATABASE)
 
     @classmethod
     async def close(cls):
