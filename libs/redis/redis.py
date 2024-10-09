@@ -84,7 +84,7 @@ class RedisService:
 
     @classmethod
     async def init(cls):
-        cls.client = aioredis.from_url("redis://" + settings.REDIS_HOST, decode_responses=True)
+        cls.client = aioredis.from_url(settings.REDIS_URI, decode_responses=True)
 
         if not cls.client:
             raise Exception("Please connect, before init services")

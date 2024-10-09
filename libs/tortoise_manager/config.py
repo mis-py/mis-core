@@ -1,5 +1,4 @@
 from pydantic_settings import BaseSettings
-from const import ENV_FILE
 
 
 class TortoiseSettings(BaseSettings):

@@ -32,11 +32,11 @@ class CoreSettings(BaseSettings):
     LOG_ROTATION: str = "00:00"
     LOG_LEVEL: str = "DEBUG"
 
-    ALLOW_ORIGINS: str = "http://localhost:9090"
+    ALLOW_ORIGINS: str = ""
 
     ROOT_PATH: str = "/api"
-    DOCS_URL: str = '/docs'
-    OPEN_API_URL: str = '/openapi.json'
+    DOCS_URL: str = "/docs"
+    OPEN_API_URL: str = "/openapi.json"
 
     SERVER_HOST: str = "localhost"
     SERVER_PORT: int = 8000
