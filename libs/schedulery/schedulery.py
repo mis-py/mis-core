@@ -7,11 +7,6 @@ from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.job import Job
 from apscheduler.jobstores.base import ConflictingIdError
 
-from .config import SchedulerSettings
-
-
-settings = SchedulerSettings()
-
 
 class Schedulery:
     _scheduler: AsyncIOScheduler

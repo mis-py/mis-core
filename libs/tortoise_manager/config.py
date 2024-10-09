@@ -1,19 +1,11 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from const import ENV_FILE
+from pydantic_settings import BaseSettings
 
 
 class TortoiseSettings(BaseSettings):
-    POSTGRES_USER: str = ""
-    POSTGRES_PASSWORD: str = ""
-    POSTGRES_HOST: str = ""
-    POSTGRES_PORT: str = ""
-    POSTGRES_DB: str = ""
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "postgres"
+    POSTGRES_HOST: str = "mis-postgres"
+    POSTGRES_PORT: str = "5432"
+    POSTGRES_DB: str = "mis"
 
     POSTGRES_CREATE_DB: bool = False
-
-    model_config = SettingsConfigDict(
-        env_file=ENV_FILE,
-        env_file_encoding='utf-8',
-        case_sensitive=True,
-        extra='ignore'
-    )

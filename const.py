@@ -21,7 +21,7 @@ LOGS_DIR = BASE_DIR / LOGS_DIR_NAME
 # dir for tasklog storing
 TASK_LOGS_DIR = LOGS_DIR / TASKS_DIR_NAME
 
-TIMEZONE: str = os.getenv('TIMEZONE', 'Europe/Kyiv')
+TIMEZONE: str = os.getenv('TZ', 'Europe/Kyiv')
 
 MODULES_DIR.mkdir(exist_ok=True, mode=775)
 APPDATA_DIR.mkdir(exist_ok=True, mode=775)
@@ -37,5 +37,3 @@ ENVIRONMENT: str = os.getenv('ENVIRONMENT', LOCAL_ENVIRONMENT)
 # this is for assign correct local env name to variable
 if LOCAL_ENVIRONMENT in ENVIRONMENT:
     LOCAL_ENVIRONMENT = ENVIRONMENT
-
-ENV_FILE = (BASE_DIR / 'envs' / ENVIRONMENT).with_suffix(".env")
