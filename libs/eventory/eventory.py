@@ -30,7 +30,7 @@ class Eventory:
     @classmethod
     async def init(cls):
         try:
-            cls._connection = await connect_robust(settings.RABBITMQ_URL)
+            cls._connection = await connect_robust(settings.RABBITMQ_URI)
         except AMQPConnectionError as e:
             logger.warning(f'RabbitMQ connection error. {type(e)}: {e}')
             raise Exception(f'RabbitMQ connection error. {type(e)}: {e}')
