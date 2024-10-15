@@ -49,21 +49,21 @@ async def init_database():
     #await drop_databases()
 
 
-@pytest.fixture(scope="session", autouse=True)
-def initialize_tests(request):
-    try:
-        from tortoise.backends.psycopg import PsycopgClient
-
-        PsycopgClient.default_timeout = float(os.environ.get("TORTOISE_POSTGRES_TIMEOUT", "15"))
-    except ImportError:
-        pass
-
-    init_db_with_migration = partial(init_db, migration_paths=TortoiseManager._migrations_to_apply.values())
-    test._init_db = init_db_with_migration
-    test.getDBConfig = get_db_config
-    initializer(
-        modules=TortoiseManager._modules['core'],
-        db_url=TortoiseManager._db_url,
-        app_label='core',
-    )
-    request.addfinalizer(finalizer)
+#@pytest.fixture(scope="session", autouse=True)
+#def initialize_tests(request):
+#    try:
+#        from tortoise.backends.psycopg import PsycopgClient
+#
+#        PsycopgClient.default_timeout = float(os.environ.get("TORTOISE_POSTGRES_TIMEOUT", "15"))
+#    except ImportError:
+#        pass
+#
+#    init_db_with_migration = partial(init_db, migration_paths=TortoiseManager._migrations_to_apply.values())
+#    test._init_db = init_db_with_migration
+#    test.getDBConfig = get_db_config
+#    initializer(
+#        modules=TortoiseManager._modules['core'],
+#        db_url=TortoiseManager._db_url,
+#        app_label='core',
+#    )
+#    request.addfinalizer(finalizer)
