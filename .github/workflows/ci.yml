@@ -63,7 +63,7 @@ jobs:
         ENVIRONMENT: TEST
         POSTGRES_HOST: postgres
         POSTGRES_DB: tests
-        POSTGRES_CREATE_DB: true
+        #POSTGRES_CREATE_DB: true
         REDIS_URI: redis://redis
         RABBITMQ_URI: amqp://guest:guest@rabbitmq:5672/
         MONGO_HOST: mongodb
