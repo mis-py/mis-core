@@ -15,20 +15,37 @@ from tests.tortoise_test_overwrite import init_db, get_db_config
 
 
 @pytest.fixture(scope="session")
-def get_mis_client(initialize_tests):
+def get_mis_client():
+    try:
+        from tortoise.backends.psycopg import PsycopgClient
+
+        PsycopgClient.default_timeout = float(os.environ.get("TORTOISE_POSTGRES_TIMEOUT", "15"))
+    except ImportError:
+        pass
+    
+    init_db_with_migration = partial(init_db, migration_paths=TortoiseManager._migrations_to_apply.values())
+    test._init_db = init_db_with_migration
+    test.getDBConfig = get_db_config
+    initializer(
+        modules=TortoiseManager._modules['core'],
+        db_url=TortoiseManager._db_url,
+        app_label='core',
+    )
+    
     log.info("Create app client")
     # maybe rework on full lifespan support for tests?
     # https://github.com/adriangb/misc/tree/starlette-state-lifespan
     with TestClient(app) as client:
         yield client
-    pass
+    
+    finalizer()
 
 
-async def drop_databases():
-    try:
-        await Tortoise._drop_databases()
-    except ConfigurationError:
-        log.warning("[TortoiseManager] Database not initialized")
+# async def drop_databases():
+#     try:
+#         await Tortoise._drop_databases()
+#     except ConfigurationError:
+#         log.warning("[TortoiseManager] Database not initialized")
 
 
 #@pytest.fixture(scope="session")
@@ -49,23 +66,23 @@ async def drop_databases():
     #await drop_databases()
 
 
-@pytest.fixture(scope="session")
-def initialize_tests(request):
-    try:
-        from tortoise.backends.psycopg import PsycopgClient
-
-        PsycopgClient.default_timeout = float(os.environ.get("TORTOISE_POSTGRES_TIMEOUT", "15"))
-    except ImportError:
-        pass
-
-    init_db_with_migration = partial(init_db, migration_paths=TortoiseManager._migrations_to_apply.values())
-    test._init_db = init_db_with_migration
-    test.getDBConfig = get_db_config
-    log.warning(TortoiseManager._db_url)
-    initializer(
-        modules=TortoiseManager._modules['core'],
-        db_url=TortoiseManager._db_url,
-        app_label='core',
-    )
-    
-    request.addfinalizer(finalizer)
+# @pytest.fixture(scope="session")
+# def initialize_tests(request):
+#     try:
+#         from tortoise.backends.psycopg import PsycopgClient
+# 
+#         PsycopgClient.default_timeout = float(os.environ.get("TORTOISE_POSTGRES_TIMEOUT", "15"))
+#     except ImportError:
+#         pass
+# 
+#     init_db_with_migration = partial(init_db, migration_paths=TortoiseManager._migrations_to_apply.values())
+#     test._init_db = init_db_with_migration
+#     test.getDBConfig = get_db_config
+#     log.warning(TortoiseManager._db_url)
+#     initializer(
+#         modules=TortoiseManager._modules['core'],
+#         db_url=TortoiseManager._db_url,
+#         app_label='core',
+#     )
+#     
+#     request.addfinalizer(finalizer)
