@@ -20,7 +20,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: mis_test
+          POSTGRES_DB: tests
       rabbitmq:
         image: rabbitmq:3.11.13-alpine
       mongodb:
@@ -60,6 +60,15 @@ jobs:
         job-summary: true
       env: 
         ENVIRONMENT: TEST
+        POSTGRES_HOST: postgres
+        POSTGRES_DB: tests
+        POSTGRES_CREATE_DB: true
+        REDIS_URI: redis://redis
+        RABBITMQ_URI: amqp://guest:guest@rabbitmq:5672/
+        MONGO_HOST: mongodb
+        MONGO_INITDB_ROOT_USERNAME: mongodb
+        MONGO_INITDB_ROOT_PASSWORD: mongodb
+        MONGO_INITDB_DATABASE: mis
 
   build:
     name: Build docker image
