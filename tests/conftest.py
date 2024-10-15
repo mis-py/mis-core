@@ -40,13 +40,13 @@ async def init_database():
         modules=TortoiseManager._modules,
     )
     # await Tortoise.init(config=TortoiseManager._tortiose_orm)
-    await drop_databases()
-    await connections.close_all()
+    #await drop_databases()
+    #await connections.close_all()
 
     yield
 
-    log.info("Cleanup Tortoise after tests")
-    await drop_databases()
+    #log.info("Cleanup Tortoise after tests")
+    #await drop_databases()
 
 
 @pytest.fixture(scope="session", autouse=True)
