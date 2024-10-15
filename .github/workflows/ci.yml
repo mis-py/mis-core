@@ -75,7 +75,7 @@ jobs:
   security:
     name: Check for vulnerabilities
     runs-on: ubuntu-latest
-
-    steps:
-      - name: Placeholder
+    needs: build
+    #steps:
+    #  - name: Placeholder
       # https://github.com/docker/scout-action
