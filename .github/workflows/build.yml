@@ -1,0 +1,17 @@
+name: Build
+
+on:
+  release:
+    types:
+      - created
+
+jobs:
+  build:
+    name: Build docker image
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag ${{ vars.IMAGE_NAME }}:$(date +%s)

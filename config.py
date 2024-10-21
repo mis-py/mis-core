@@ -1,11 +1,10 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from const import ENV_FILE
+from pydantic_settings import BaseSettings
 
 
 class CoreSettings(BaseSettings):
     DEFAULT_ADMIN_PASSWORD: str = "admin"
 
-    SECRET_KEY: str = "wherysecretshlyapa"
+    SECRET_KEY: str = "secret_key"
     ALGORITHM: str = "HS256"
 
     # 60 minutes * 24 hours * 2 days = 2 days
@@ -36,16 +35,10 @@ class CoreSettings(BaseSettings):
     ALLOW_ORIGINS: str = ""
 
     ROOT_PATH: str = "/api"
-    DOCS_URL: str = '/docs'
-    OPEN_API_URL: str = '/openapi.json'
+    DOCS_URL: str = "/docs"
+    OPEN_API_URL: str = "/openapi.json"
 
     SERVER_HOST: str = "localhost"
     SERVER_PORT: int = 8000
     SERVER_LOG_LEVEL: str = "debug"
 
-    model_config = SettingsConfigDict(
-        env_file=ENV_FILE,
-        env_file_encoding='utf-8',
-        case_sensitive=True,
-        extra='ignore'
-    )

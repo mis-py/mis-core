@@ -1,6 +1,9 @@
 .idea/*
 __pycache__
 /docs/.obsidian
-/logs
-/envs/prod.env
-/envs/*local*.env
+logs
+modules_data
+venv
+.venv
+.vscode/*
+.env

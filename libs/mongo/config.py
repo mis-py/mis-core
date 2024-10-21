@@ -1,14 +1,9 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from const import ENV_FILE
+from pydantic_settings import BaseSettings
 
 
 class MongoSettings(BaseSettings):
-    MONGODB_URI: str = "mongodb://root:root@mongo:27017/"
-    MONGODB_TABLE: str = "mis"
-
-    model_config = SettingsConfigDict(
-        env_file=ENV_FILE,
-        env_file_encoding='utf-8',
-        case_sensitive=True,
-        extra='ignore'
-    )
+    MONGO_INITDB_ROOT_USERNAME: str = "root"
+    MONGO_INITDB_ROOT_PASSWORD: str = "root"
+    MONGO_INITDB_DATABASE: str = "mis"
+    MONGO_HOST: str = "mis-mongo"
+    MONGO_PORT: str = "27017"
