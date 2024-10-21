@@ -1,6 +1,6 @@
-FROM python:3.12
+FROM python:3.12-alpine
 
-RUN apt-get -y update; apt-get -y install curl
+RUN apk add --update --no-cache curl
 
 COPY ./docker/start.sh /start.sh
 RUN chmod +x /start.sh

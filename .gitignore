@@ -2,5 +2,8 @@
 __pycache__
 /docs/.obsidian
 logs
+modules_data
 venv
+.venv
 .vscode/*
+.env
