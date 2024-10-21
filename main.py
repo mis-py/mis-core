@@ -54,6 +54,7 @@ origins = settings.ALLOW_ORIGINS.split(',')
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
+    logger.info(f'Version: {MIS_VERSION}, Environment: {ENVIRONMENT}')
     
     testmode = getattr(app.state, "testing", None)
     
