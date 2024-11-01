@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 MIS_TITLE = 'MIS Project API'
-MIS_VERSION = '2.2.0'
+MIS_VERSION = '2.2.2'
 
 DEFAULT_ADMIN_USERNAME = 'admin'
 

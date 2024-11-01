@@ -200,6 +200,11 @@ async def root():
     return Response(status_code=200)
 
 
+@app.get('/health')
+async def health():
+    return Response(status_code=200)
+
+
 # for debugging
 if __name__ == "__main__":
     if sys.platform == 'win32':
