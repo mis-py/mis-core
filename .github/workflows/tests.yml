@@ -5,6 +5,11 @@ on:
     branches: [ "main" ]
 
 jobs:
+  iwantmodify:
+    runs-on: ubuntu-latest
+    steps:
+    - run: echo "ivechangedit"
+
   tests:
     name: Pylint and Pytest check
     runs-on: ubuntu-latest
